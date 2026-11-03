@@ -140,7 +140,7 @@ const store = {
 };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const DEFAULT_MODELS = { gemini: 'gemini-2.5-flash', anthropic: 'claude-haiku-5-5', openai: 'llama3.1' };
+const DEFAULT_MODELS = { gemini: 'gemini-3.8-flash', anthropic: 'claude-haiku-5-5', openai: 'llama3.1' };
 let settings = Object.assign({ provider: 'gemini', apiKey: '', model: '', baseUrl: 'http://localhost:11434/v1', lang: 'العربية' }, store.get('settings', {}));
 let vocab = store.get('vocab', []);
 let pdfDoc = null, scale = 1, bookName = '';
@@ -247,8 +247,8 @@ function sentenceAround(span, offset) {
     text += el.textContent;
   }
   let start = at, end = at;
-  while (start > 0 && !/[.!?؟;]/.test(text[start - 1]) && at - start < 400) start--;
-  while (end < text.length && !/[.!?؟;]/.test(text[end]) && end - at < 400) end++;
+  while (start > 0 && !/[.!?؟;]/.test(text[start - 1]) && at - start < 200) start--;
+  while (end < text.length && !/[.!?؟;]/.test(text[end]) && end - at < 200) end++;
   return text.slice(start, end + 1).replace(/\s+/g, ' ').trim();
 }
 
@@ -307,9 +307,16 @@ async function askAI(word, sentence) {
   const model = settings.model || DEFAULT_MODELS[settings.provider];
   let r, text;
   if (settings.provider === 'gemini') {
-    r = await postJson(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    const call = m => postJson(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`,
       { 'x-goog-api-key': settings.apiKey },
       { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } });
+    r = await call(model);
+    // Google retires models and names the replacement in the error; switch to it once and remember it.
+    const next = !r.ok && (r.json?.error?.message || '').match(/\buse\s+models\/(gemini-[\w.-]*\w)/i)?.[1];
+    if (next && next !== model) {
+      r = await call(next);
+      if (r.ok) { settings.model = next; store.set('settings', settings); }
+    }
     if (!r.ok) throw new Error(r.json?.error?.message || r.status);
     text = (r.json.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
   } else if (settings.provider === 'anthropic') {
