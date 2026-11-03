@@ -1,0 +1,21 @@
+{
+  "name": "siyaq",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Context-aware word lookup for any PDF",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/vendor.mjs",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "web": "python3 -m http.server 8765 --directory src",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "pdfjs-dist": "3.11.174"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}
