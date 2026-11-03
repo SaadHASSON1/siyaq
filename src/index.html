@@ -285,6 +285,7 @@
   .passage { max-height: 180px; overflow: auto; font-size: 13.5px; }
   .ask-turn { margin-top: 22px; }
   .ask-turn .explain + .explain { margin-top: 10px; }
+  .took { margin: 18px 0 0; font-size: 11px; color: var(--muted); opacity: .7; text-align: end; }
   .chip { padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; }
 
   .skeleton { display: grid; gap: 10px; margin: 14px 0 6px; }
@@ -1590,11 +1591,13 @@ function sentenceAround(span, offset) {
   return cutSentence(text, at);
 }
 
-// The sentence around position `at`: back and forward to the nearest sentence end, at most 200 characters each way.
+// The sentence around position `at`: back and forward to the nearest sentence end, at most 120 characters each way.
+// Arabic text often runs on without full stops; a shorter limit keeps those lookups as quick as English ones,
+// since the reply translates the whole sentence too.
 function cutSentence(text, at) {
   let start = at, end = at;
-  while (start > 0 && !/[.!?؟\n]/.test(text[start - 1]) && at - start < 200) start--;
-  while (end < text.length && !/[.!?؟\n]/.test(text[end]) && end - at < 200) end++;
+  while (start > 0 && !/[.!?؟\n]/.test(text[start - 1]) && at - start < 120) start--;
+  while (end < text.length && !/[.!?؟\n]/.test(text[end]) && end - at < 120) end++;
   // A very long sentence is cut at the limit: make that cut fall between words, not inside one.
   if (start > 0 && !/[.!?؟\n]/.test(text[start - 1])) { const sp = text.indexOf(' ', start); if (sp > 0 && sp < at) start = sp + 1; }
   if (end < text.length && !/[.!?؟\n]/.test(text[end])) { const sp = text.lastIndexOf(' ', end); if (sp > at) end = sp - 1; }
@@ -1733,6 +1736,7 @@ async function resolveGeminiModel(name) {
   return (await listGeminiModels()).find(m => words.every(w => m.split('-').includes(w))) || null;
 }
 
+let lastModel = ''; // the model that gave the last answer, shown under it
 async function askGemini(prompt) {
   const chosen = settings.model && await resolveGeminiModel(settings.model);
   const queue = [chosen, geminiWorking].filter(Boolean);
@@ -1752,6 +1756,7 @@ async function askGemini(prompt) {
     if (r.ok) {
       // Only remember Flash-Lite: a stand-in Flash model would burn its much smaller daily quota.
       if (model.endsWith('-lite') && geminiWorking !== model) store.set('geminiWorking', geminiWorking = model);
+      lastModel = model;
       return (r.json.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
     }
     const msg = r.json?.error?.message || String(r.status);
@@ -1771,6 +1776,7 @@ async function askAI(word, sentence) {
 // Sends a prompt that asks for JSON to the chosen provider and returns the parsed reply.
 async function askModel(prompt, maxTokens = 800) {
   const model = settings.model || DEFAULT_MODELS[settings.provider];
+  lastModel = model;
   let r, text;
   if (settings.provider === 'gemini') {
     text = await askGemini(prompt);
@@ -1910,10 +1916,12 @@ async function lookup(word, sentence, fresh = false) {
     pane.innerHTML = `<article class="result">${wordHead(word)}<div class="skeleton"><span></span><span></span><span class="short"></span></div>${sentenceBlock(word, sentence)}</article>`;
   }
   try {
-    const fromCache = cache.has(key);
+    const fromCache = cache.has(key), started = performance.now();
     const r = cache.get(key) || await askAI(word, sentence);
     if (!fromCache) countUse('words');
-    cache.set(key, r);
+    const { _took, ...kept } = r;
+    cache.set(key, kept); // a saved answer shows no time: it took none
+    if (!fromCache) r._took = { model: lastModel, ms: Math.round(performance.now() - started) };
     store.set('cache', [...cache].slice(-500));
     if (id !== lookupId) return;
     renderResult(word, sentence, r);
@@ -1939,6 +1947,7 @@ function renderResult(word, sentence, r) {
       <button class="link-btn" type="button" data-ask-sentence>${icon('sparkle')}${t('askSentence')}</button>
       ${r.sentence_translation ? section(t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr'), `<p ${d}>${esc(r.sentence_translation)}</p>`) : ''}
       ${others ? section(t('others'), `<div class="chips" ${d}>${others}</div>`) : ''}
+      ${r._took ? `<p class="took" dir="ltr">${esc(r._took.model.replace(/^models\//, ''))} · ${(r._took.ms / 1000).toFixed(1)}s</p>` : ''}
     </article>`;
 }
 
