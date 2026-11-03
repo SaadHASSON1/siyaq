@@ -3,115 +3,285 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Glint — قارئ PDF</title>
+<title>Glint</title>
 <script src="vendor/pdf.min.js"></script>
 <style>
   :root {
-    --bg: #f4f2ee; --surface: #ffffff; --text: #1d1b18; --muted: #6b665e;
-    --border: #e2ddd4; --accent: #2f6f5e; --accent-soft: #e3efeb; --danger: #b3412f;
-    --page-shadow: 0 1px 3px rgba(0,0,0,.12);
+    --canvas: #e9e7e2;      /* behind the pages */
+    --surface: #ffffff;     /* bars and panel */
+    --surface-2: #f5f4f0;   /* inset areas */
+    --text: #1c1b19;
+    --muted: #77726a;
+    --border: #e3dfd7;
+    --accent: #2f6f5e;
+    --accent-hover: #285f51;
+    --accent-soft: #e5efeb;
+    --accent-text: #24584a;
+    --mark: rgba(242, 201, 76, .45);
+    --danger: #b3412f;
+    --shadow-page: 0 1px 2px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    --shadow-pop: 0 10px 40px rgba(0,0,0,.18);
+    --radius: 10px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #161513; --surface: #201f1c; --text: #ece8e1; --muted: #a39d93;
-      --border: #34312c; --accent: #6fbfa8; --accent-soft: #23352f; --danger: #e07a66;
-      --page-shadow: 0 1px 3px rgba(0,0,0,.5);
+      --canvas: #121211; --surface: #1c1c1a; --surface-2: #252523; --text: #ecebe7; --muted: #9b968d;
+      --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
+      --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
+      --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
     }
   }
+  :root[data-theme="dark"] {
+    --canvas: #121211; --surface: #1c1c1a; --surface-2: #252523; --text: #ecebe7; --muted: #9b968d;
+    --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
+    --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
+    --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
+  }
+
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; }
-  body { background: var(--bg); color: var(--text); font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; display: flex; flex-direction: column; }
-  header { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-  header h1 { font-size: 18px; margin: 0; margin-inline-end: auto; color: var(--accent); }
-  header .pick { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
-  header select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; }
-  header .file { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
-  button, .btn { font: inherit; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
-  button.primary, .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  button:hover, .btn:hover { filter: brightness(.96); }
+  body {
+    background: var(--canvas); color: var(--text);
+    font: 14px/1.55 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+    display: flex; flex-direction: column; -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  .i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  [dir="rtl"] .flip { transform: scaleX(-1); }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn.lg { height: 44px; padding: 0 22px; font-size: 15px; font-weight: 600; border-radius: 10px; }
+  .btn.small { height: 30px; padding: 0 10px; font-size: 13px; }
+  .icon-btn {
+    display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px;
+    border: 0; background: none; color: var(--muted); cursor: pointer; transition: background .15s, color .15s;
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Top bar ---------- */
+  .bar {
+    display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 12px 0 16px;
+    background: var(--surface); border-bottom: 1px solid var(--border); flex: none;
+  }
+  [dir="rtl"] .bar { padding: 0 16px 0 12px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
+  .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: grid; place-items: center; color: #fff; }
+  .logo svg { width: 16px; height: 16px; fill: currentColor; }
+  .book-title {
+    flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    padding-inline-start: 12px; border-inline-start: 1px solid var(--border);
+  }
+  .tools { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
+  .tools .icon-btn { width: 28px; height: 28px; }
+  .tools .readout { min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+  .tools .divider { width: 1px; height: 18px; background: var(--border); margin: 0 6px; }
+  .page-jump { display: flex; align-items: center; gap: 4px; padding: 0 6px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .page-jump input {
+    width: 44px; height: 26px; text-align: center; border: 1px solid transparent; border-radius: 6px;
+    background: var(--surface); color: var(--text); font-variant-numeric: tabular-nums;
+  }
+  .page-jump input:focus { border-color: var(--accent); outline: none; }
+  .langpair {
+    display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 4px 0 12px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+  }
+  [dir="rtl"] .langpair { padding: 0 12px 0 4px; }
+  .langpair .from { color: var(--muted); white-space: nowrap; }
+  .langpair .i { width: 14px; height: 14px; color: var(--muted); }
+  .langpair select {
+    border: 0; background: var(--accent-soft); color: var(--accent-text); font-weight: 600;
+    height: 26px; border-radius: 6px; padding: 0 8px; cursor: pointer;
+  }
+  .actions { display: flex; align-items: center; gap: 2px; }
+
+  /* ---------- Layout ---------- */
   main { flex: 1; display: flex; min-height: 0; }
-  #viewer { flex: 1; overflow: auto; padding: 16px; direction: ltr; }
-  #empty { max-width: 520px; margin: 10vh auto; text-align: center; color: var(--muted); border: 2px dashed var(--border); border-radius: 16px; padding: 40px 16px; }
-  #empty.drag { border-color: var(--accent); background: var(--accent-soft); }
-  .page { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: var(--page-shadow); }
-  .page canvas { display: block; }
+  #viewer { flex: 1; overflow: auto; padding: 24px; position: relative; direction: ltr; }
+
+  /* ---------- Welcome ---------- */
+  .welcome { min-height: 100%; display: grid; place-items: center; direction: inherit; }
+  [dir="rtl"] .welcome { direction: rtl; }
+  .welcome-card {
+    width: min(460px, 100%); text-align: center; padding: 40px 32px 28px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    transition: border-color .15s, background .15s;
+  }
+  .welcome.drag .welcome-card { border-color: var(--accent); background: var(--accent-soft); }
+  .welcome-icon { width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+  .welcome-icon .i { width: 28px; height: 28px; }
+  .welcome h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.01em; }
+  .welcome p { margin: 0 auto; color: var(--muted); max-width: 340px; }
+  .welcome .btn.lg { margin: 24px 0 10px; }
+  .welcome .drop-hint { font-size: 13px; }
+  .privacy {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 28px !important; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; max-width: none !important;
+  }
+  .privacy .i { width: 14px; height: 14px; }
+
+  /* ---------- Pages ---------- */
+  .page { position: relative; margin: 0 auto 20px; background: #fff; box-shadow: var(--shadow-page); border-radius: 2px; }
+  .page canvas { display: block; border-radius: 2px; }
   .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 2; }
   .textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: pointer; transform-origin: 0% 0%; }
-  .textLayer ::selection { background: rgba(47,111,94,.35); }
-  .textLayer .hit { background: rgba(255, 200, 0, .35); border-radius: 2px; }
+  .textLayer ::selection { background: rgba(47, 111, 94, .3); }
 
-  aside { width: 360px; max-width: 100%; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
-  .tabs { display: flex; border-bottom: 1px solid var(--border); }
-  .tabs button { flex: 1; border: 0; border-radius: 0; padding: 10px; background: none; color: var(--muted); }
-  .tabs button.on { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
-  .pane { flex: 1; overflow: auto; padding: 16px; }
-  .hint { color: var(--muted); }
-  .word { font-size: 24px; font-weight: 700; text-align: start; }
-  .tr { font-size: 22px; color: var(--accent); font-weight: 700; margin: 4px 0 12px; }
-  .label { font-size: 12px; color: var(--muted); margin-top: 14px; }
-  .sentence { text-align: start; background: var(--bg); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
-  .sentence mark { background: rgba(255,200,0,.45); color: inherit; border-radius: 2px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-  .chip { background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
-  .error { color: var(--danger); }
-  .spinner { width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .vocab-item { border-bottom: 1px solid var(--border); padding: 8px 0; display: flex; gap: 8px; }
-  .vocab-item .w { font-weight: 700; }
-  .vocab-item .x { margin-inline-start: auto; border: 0; background: none; color: var(--muted); padding: 0 4px; }
-  dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); width: min(460px, calc(100vw - 32px)); padding: 20px; }
-  dialog::backdrop { background: rgba(0,0,0,.4); }
-  dialog label { display: block; margin-top: 12px; font-size: 13px; color: var(--muted); }
-  dialog input, dialog select { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); margin-top: 4px; }
-  dialog .row { display: flex; gap: 8px; justify-content: flex-start; margin-top: 18px; }
-  dialog small { color: var(--muted); display: block; margin-top: 4px; }
+  /* ---------- Side panel ---------- */
+  .panel { width: 380px; flex: none; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  .seg { display: flex; gap: 2px; margin: 12px 12px 4px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
+  .seg button {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    height: 30px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; font-weight: 500;
+  }
+  .seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-text); font-size: 11px; font-weight: 600; display: inline-grid; place-items: center; }
+  .badge:empty { display: none; }
+  .pane { flex: 1; overflow: auto; padding: 16px 20px 24px; }
 
+  .state { text-align: center; color: var(--muted); padding: 28px 8px; }
+  .state .i { width: 28px; height: 28px; color: var(--muted); opacity: .8; margin-bottom: 10px; }
+  .state h3 { margin: 0 0 6px; color: var(--text); font-size: 15px; }
+  .state p { margin: 0 auto 14px; max-width: 280px; }
+  .state.error .i { color: var(--danger); opacity: 1; }
+  .state.error p { color: var(--danger); }
+
+  .result-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 2px; }
+  .word { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.01em; text-align: start; }
+  .meta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .pos { padding: 1px 8px; border-radius: 6px; background: var(--surface-2); }
+  .tr { margin: 6px 0 6px; font-size: 22px; font-weight: 700; color: var(--accent-text); }
+  .explain { margin: 0 0 4px; font-size: 15px; line-height: 1.65; }
+  .result section { margin-top: 20px; }
+  .label { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .result section p { margin: 0; }
+  .sentence {
+    margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--surface-2);
+    border-inline-start: 3px solid var(--accent); font-size: 14px; line-height: 1.6; text-align: start;
+  }
+  .sentence mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; }
+
+  .skeleton { display: grid; gap: 10px; margin: 14px 0 6px; }
+  .skeleton span { height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+  .skeleton span:first-child { height: 22px; width: 45%; }
+  .skeleton span.short { width: 70%; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  .vocab-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--muted); }
+  .vocab-list { list-style: none; margin: 0; padding: 0; }
+  .vocab-list li { position: relative; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .v-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding-inline-end: 34px; }
+  .v-main .w { font-weight: 600; }
+  .v-main .v-tr { color: var(--accent-text); }
+  .v-book { margin-top: 2px; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline-end: 34px; }
+  .vocab-list .x { position: absolute; inset-inline-end: 0; top: 8px; width: 28px; height: 28px; opacity: 0; }
+  .vocab-list li:hover .x, .vocab-list .x:focus-visible { opacity: 1; }
+  .vocab-list .x .i { width: 15px; height: 15px; }
+
+  /* ---------- Settings ---------- */
+  dialog {
+    border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text);
+    width: min(440px, calc(100vw - 32px)); padding: 24px; box-shadow: var(--shadow-pop);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog h3 { margin: 0 0 4px; font-size: 18px; }
+  dialog label { display: block; margin-top: 16px; font-size: 13px; font-weight: 500; }
+  dialog input, dialog select {
+    display: block; width: 100%; height: 38px; padding: 0 10px; margin-top: 6px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text);
+  }
+  dialog input:focus, dialog select:focus { outline: none; border-color: var(--accent); }
+  dialog small { display: block; margin-top: 6px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
+
+  /* ---------- Small screens ---------- */
+  @media (max-width: 900px) {
+    .book-title { display: none; }
+    .brand + .tools { margin-inline-start: auto; }
+  }
   @media (max-width: 760px) {
+    .bar { flex-wrap: wrap; height: auto; padding: 8px 12px; row-gap: 8px; }
+    [dir="rtl"] .bar { padding: 8px 12px; }
+    .tools { order: 5; width: 100%; justify-content: center; }
+    .langpair { margin-inline-start: auto; }
     main { flex-direction: column-reverse; }
-    aside { width: 100%; height: 42vh; border-inline-end: 0; border-top: 1px solid var(--border); }
-    #viewer { padding: 8px; }
+    .panel { width: 100%; height: 45vh; border-inline-end: 0; border-top: 1px solid var(--border); }
+    #viewer { padding: 12px; }
   }
 </style>
 </head>
 <body>
-<header>
-  <h1>Glint</h1>
-  <label class="btn primary"><span data-i18n="open"></span><input id="file" type="file" accept="application/pdf" hidden></label>
-  <label class="pick"><span data-i18n="translateTo"></span>
+<header class="bar">
+  <div class="brand">
+    <span class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l2 6.2L20 12l-6 2.8L12 21l-2-6.2L4 12l6-2.8z"/></svg></span>
+    <span>Glint</span>
+  </div>
+  <div class="book-title" id="bookTitle"></div>
+  <div class="tools" id="tools" hidden>
+    <button class="icon-btn" id="zoomOut" data-i18n-title="zoomOut"><i data-icon="minus"></i></button>
+    <span class="readout" id="zoomLabel">100%</span>
+    <button class="icon-btn" id="zoomIn" data-i18n-title="zoomIn"><i data-icon="plus"></i></button>
+    <span class="divider"></span>
+    <label class="page-jump"><input id="pageInput" inputmode="numeric" data-i18n-title="page"><span>/</span><span id="pageTotal"></span></label>
+  </div>
+  <div class="langpair" data-i18n-title="langPair">
+    <span class="from" id="bookLang"></span>
+    <i data-icon="arrow" class="flip"></i>
     <select id="target">
       <option value="ar">العربية</option>
       <option value="en">English</option>
       <option value="tr">Türkçe</option>
     </select>
-  </label>
-  <span class="chip" id="bookLang" hidden></span>
-  <button id="settingsBtn" data-i18n="settings"></button>
-  <span class="file" id="fileName"></span>
+  </div>
+  <div class="actions">
+    <label class="icon-btn" data-i18n-title="open"><i data-icon="folder"></i><input class="file-input" type="file" accept="application/pdf" hidden></label>
+    <button class="icon-btn" id="settingsBtn" data-i18n-title="settings"><i data-icon="sliders"></i></button>
+  </div>
 </header>
 
 <main>
-  <aside>
-    <div class="tabs">
-      <button class="on" data-tab="lookup" data-i18n="tabMeaning"></button>
-      <button data-tab="vocab" data-i18n="tabWords"></button>
+  <aside class="panel">
+    <div class="seg" role="tablist">
+      <button class="on" data-tab="lookup" role="tab"><span data-i18n="tabMeaning"></span></button>
+      <button data-tab="vocab" role="tab"><span data-i18n="tabWords"></span><span class="badge" id="vocabCount"></span></button>
     </div>
     <div class="pane" id="lookup">
-      <p class="hint" data-i18n="hint"></p>
+      <div class="state">
+        <i data-icon="pointer"></i>
+        <h3 data-i18n="panelTitle"></h3>
+        <p data-i18n="hint"></p>
+      </div>
     </div>
     <div class="pane" id="vocab" hidden></div>
   </aside>
   <div id="viewer">
-    <div id="empty">
-      <p style="font-size:18px;color:var(--text)" data-i18n="dropTitle"></p>
-      <p data-i18n="dropText"></p>
+    <div class="welcome" id="empty">
+      <div class="welcome-card">
+        <div class="welcome-icon"><i data-icon="book"></i></div>
+        <h2 data-i18n="emptyTitle"></h2>
+        <p data-i18n="emptyText"></p>
+        <label class="btn primary lg"><i data-icon="folder"></i><span data-i18n="open"></span><input class="file-input" type="file" accept="application/pdf" hidden></label>
+        <p class="drop-hint" data-i18n="dropHint"></p>
+        <p class="privacy"><i data-icon="lock"></i><span data-i18n="privacy"></span></p>
+      </div>
     </div>
   </div>
 </main>
 
 <dialog id="settings">
   <form method="dialog" id="settingsForm">
-    <h3 style="margin-top:0" data-i18n="settings"></h3>
+    <h3 data-i18n="settings"></h3>
     <label><span data-i18n="provider"></span>
       <select name="provider">
         <option value="gemini" data-i18n="optGemini"></option>
@@ -131,8 +301,8 @@
       <input name="model" dir="ltr">
     </label>
     <div class="row">
-      <button class="primary" value="save" data-i18n="save"></button>
-      <button value="cancel" formnovalidate data-i18n="cancel"></button>
+      <button class="btn" value="cancel" formnovalidate data-i18n="cancel"></button>
+      <button class="btn primary" value="save" data-i18n="save"></button>
     </div>
   </form>
 </dialog>
@@ -148,6 +318,25 @@ const store = {
 };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+// Icons (Lucide, ISC license).
+const ICONS = {
+  folder: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+  sliders: '<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+  arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  minus: '<path d="M5 12h14"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  pointer: '<path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/>',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+  key: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+  bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+};
+const icon = (name, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+document.querySelectorAll('i[data-icon]').forEach(el => el.outerHTML = icon(el.dataset.icon, el.className));
+
 // Gemini has no fixed default: we pick the newest Flash-Lite the key can use (biggest free quota, fastest).
 const DEFAULT_MODELS = { gemini: '', anthropic: 'claude-haiku-5-5', openai: 'llama3.1' };
 const LANGS = {
@@ -159,52 +348,64 @@ const LANGS = {
 // Interface text. The interface follows the "translate to" language: that's the reader's own language.
 const STRINGS = {
   ar: {
-    title: 'Glint — قارئ PDF', open: 'افتح PDF', translateTo: 'ترجم إلى', settings: 'الإعدادات',
+    title: 'Glint — قارئ PDF', open: 'افتح PDF', settings: 'الإعدادات', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
+    langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
-    hint: 'افتح ملف PDF واضغط على أي كلمة لتعرف معناها <b>حسب الجملة</b> اللي هي فيها. لعبارة كاملة، ظلّلها بالماوس.',
-    dropTitle: 'اسحب ملف PDF إلى هنا',
-    dropText: 'أو استخدم زر «افتح PDF». الملف ما بيطلع من جهازك، فقط الجملة اللي بتسأل عنها بتنبعت لنموذج الذكاء الاصطناعي اللي اخترته.',
+    panelTitle: 'اضغط على أي كلمة',
+    hint: 'بيطلعلك معناها <b>حسب الجملة</b> اللي هي فيها. لعبارة كاملة، ظلّلها بالماوس.',
+    emptyTitle: 'افتح كتاب وابدأ القراءة',
+    emptyText: 'اضغط على أي كلمة وبيطلعلك معناها حسب سياقها، بدون ما تترك الصفحة.',
+    dropHint: 'أو اسحب ملف PDF إلى هنا',
+    privacy: 'الكتاب بيضل على جهازك. بس الجملة اللي بتسأل عنها بتنبعت للذكاء الاصطناعي.',
     provider: 'مزوّد الذكاء الاصطناعي', optGemini: 'Google Gemini (فيه خطة مجانية)', optOpenai: 'Ollama / متوافق مع OpenAI (محلي ومجاني)',
     serverUrl: 'عنوان الخادم', serverHelp: 'لـ Ollama على جهازك، أو أي خدمة متوافقة مع OpenAI (OpenRouter، Groq، OpenAI…).',
     apiKey: 'مفتاح API', keyHelp: 'بيتخزن على جهازك فقط. لـ Gemini خذ مفتاح مجاني من aistudio.google.com. لـ Ollama اتركه فاضي.',
     model: 'اسم النموذج (اختياري)', autoModel: 'تلقائي (Flash-Lite)', save: 'حفظ', cancel: 'إلغاء',
-    bookLang: 'لغة الكتاب: ', langs: { ar: 'العربية', en: 'الإنجليزية', tr: 'التركية', other: 'لغة أخرى' },
-    needKey: 'لازم تضيف مفتاح API أولاً.', openSettings: 'افتح الإعدادات', failed: 'ما زبط الطلب: ',
+    langs: { ar: 'العربية', en: 'الإنجليزية', tr: 'التركية', other: 'لغة أخرى' },
+    needKey: 'لازم تضيف مفتاح API أولاً.', openSettings: 'افتح الإعدادات', retry: 'جرّب مرة تانية',
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
-    sentence: 'الجملة', meaningHere: 'المعنى هون', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
-    vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير CSV (لـ Anki)', count: n => `${n} كلمة`, remove: 'احذف',
+    sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
+    vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
   },
   en: {
-    title: 'Glint — PDF reader', open: 'Open PDF', translateTo: 'Translate to', settings: 'Settings',
+    title: 'Glint — PDF reader', open: 'Open PDF', settings: 'Settings', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
+    langPair: 'Book language → translation language', auto: 'Auto',
     tabMeaning: 'Meaning', tabWords: 'My words',
-    hint: 'Open a PDF and click any word to see what it means <b>in its sentence</b>. For a whole phrase, select it.',
-    dropTitle: 'Drop a PDF here',
-    dropText: 'Or use “Open PDF”. Your file never leaves your device; only the sentence you ask about is sent to the AI you chose.',
+    panelTitle: 'Click any word',
+    hint: 'You’ll see what it means <b>in its sentence</b>. For a whole phrase, select it.',
+    emptyTitle: 'Open a book to start reading',
+    emptyText: 'Click any word to see what it means in context, without leaving the page.',
+    dropHint: 'or drop a PDF here',
+    privacy: 'Your book stays on your device. Only the sentence you ask about is sent to the AI.',
     provider: 'AI provider', optGemini: 'Google Gemini (free plan available)', optOpenai: 'Ollama / OpenAI-compatible (local, free)',
     serverUrl: 'Server URL', serverHelp: 'For Ollama on your computer, or any OpenAI-compatible service (OpenRouter, Groq, OpenAI…).',
     apiKey: 'API key', keyHelp: 'Stored on your device only. Get a free Gemini key at aistudio.google.com. Leave empty for Ollama.',
     model: 'Model name (optional)', autoModel: 'Automatic (Flash-Lite)', save: 'Save', cancel: 'Cancel',
-    bookLang: 'Book language: ', langs: { ar: 'Arabic', en: 'English', tr: 'Turkish', other: 'Other' },
-    needKey: 'Add an API key first.', openSettings: 'Open settings', failed: 'Lookup failed: ',
+    langs: { ar: 'Arabic', en: 'English', tr: 'Turkish', other: 'Other' },
+    needKey: 'Add an API key first.', openSettings: 'Open settings', retry: 'Try again',
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
-    sentence: 'Sentence', meaningHere: 'Meaning here', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
-    vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export CSV (for Anki)', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
+    sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
+    vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
   },
   tr: {
-    title: 'Glint — PDF okuyucu', open: 'PDF aç', translateTo: 'Çeviri dili', settings: 'Ayarlar',
+    title: 'Glint — PDF okuyucu', open: 'PDF aç', settings: 'Ayarlar', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
+    langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',
-    hint: 'Bir PDF açın ve herhangi bir kelimeye tıklayarak <b>cümledeki</b> anlamını görün. Bir ifadenin tamamı için onu seçin.',
-    dropTitle: 'PDF dosyasını buraya bırakın',
-    dropText: 'Ya da “PDF aç” düğmesini kullanın. Dosyanız cihazınızdan çıkmaz; yalnızca sorduğunuz cümle seçtiğiniz yapay zekâya gönderilir.',
+    panelTitle: 'Herhangi bir kelimeye tıklayın',
+    hint: '<b>Cümledeki</b> anlamını göreceksiniz. Bir ifadenin tamamı için onu seçin.',
+    emptyTitle: 'Okumaya başlamak için bir kitap açın',
+    emptyText: 'Herhangi bir kelimeye tıklayın, sayfadan ayrılmadan bağlamdaki anlamını görün.',
+    dropHint: 'ya da PDF dosyasını buraya sürükleyin',
+    privacy: 'Kitabınız cihazınızda kalır. Yalnızca sorduğunuz cümle yapay zekâya gönderilir.',
     provider: 'Yapay zekâ sağlayıcısı', optGemini: 'Google Gemini (ücretsiz plan var)', optOpenai: 'Ollama / OpenAI uyumlu (yerel, ücretsiz)',
     serverUrl: 'Sunucu adresi', serverHelp: 'Bilgisayarınızdaki Ollama ya da OpenAI uyumlu herhangi bir hizmet için (OpenRouter, Groq, OpenAI…).',
     apiKey: 'API anahtarı', keyHelp: 'Yalnızca cihazınızda saklanır. Ücretsiz Gemini anahtarını aistudio.google.com adresinden alın. Ollama için boş bırakın.',
     model: 'Model adı (isteğe bağlı)', autoModel: 'Otomatik (Flash-Lite)', save: 'Kaydet', cancel: 'İptal',
-    bookLang: 'Kitap dili: ', langs: { ar: 'Arapça', en: 'İngilizce', tr: 'Türkçe', other: 'Diğer' },
-    needKey: 'Önce bir API anahtarı ekleyin.', openSettings: 'Ayarları aç', failed: 'İstek başarısız: ',
+    langs: { ar: 'Arapça', en: 'İngilizce', tr: 'Türkçe', other: 'Diğer' },
+    needKey: 'Önce bir API anahtarı ekleyin.', openSettings: 'Ayarları aç', retry: 'Tekrar dene',
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
-    sentence: 'Cümle', meaningHere: 'Buradaki anlamı', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
-    vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'CSV dışa aktar (Anki için)', count: n => `${n} kelime`, remove: 'Sil',
+    sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
+    vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
   },
 };
 
@@ -216,9 +417,10 @@ const t = key => STRINGS[settings.lang][key] ?? STRINGS.en[key];
 if (/^gemini-(2\.5|3\.8)-flash$/.test(settings.model)) { settings.model = ''; store.set('settings', settings); }
 let vocab = store.get('vocab', []);
 let pdfDoc = null, scale = 1, bookName = '';
-let bookLang = null; // 'ar' | 'en' | 'tr' | 'other', or null when the PDF has too little text
+let fitScale = 1, zoom = 1, pageSize = null; // scale = fitScale × zoom; pageSize is page 1 at scale 1
+let bookLang = null; // 'ar' | 'en' | 'tr' | 'other', or null when unknown
 let lastLookup = null;
-const cache = new Map(store.get('cache', [])); // word|sentence → answer, kept between sessions
+const cache = new Map(store.get('cache', [])); // lang|word|sentence → answer, kept between sessions
 let lookupId = 0;
 
 // ---------- PDF ----------
@@ -228,27 +430,166 @@ const observer = new IntersectionObserver(entries => {
 }, { root: viewer, rootMargin: '600px 0px' });
 
 async function openPdf(data, name) {
-  pdfDoc = await pdfjsLib.getDocument({ data }).promise;
+  const doc = await pdfjsLib.getDocument({ data }).promise;
+  pdfDoc = doc;
   bookName = name;
-  $('#fileName').textContent = name;
-  viewer.innerHTML = '';
-  const first = await pdfDoc.getPage(1);
-  const base = first.getViewport({ scale: 1 });
-  scale = Math.max(Math.min((viewer.clientWidth - 32) / base.width, 1.8), 0.5);
-  for (let i = 1; i <= pdfDoc.numPages; i++) {
+  $('#bookTitle').textContent = name.replace(/\.pdf$/i, '');
+  $('#bookTitle').title = name;
+  viewer.replaceChildren();
+  const base = (await doc.getPage(1)).getViewport({ scale: 1 });
+  pageSize = { w: base.width, h: base.height };
+  fitScale = fitWidthScale();
+  zoom = 1;
+  scale = fitScale;
+  for (let i = 1; i <= doc.numPages; i++) {
     const div = document.createElement('div');
     div.className = 'page';
     div.dataset.page = i;
-    div.style.width = base.width * scale + 'px';
-    div.style.height = base.height * scale + 'px';
+    div.style.width = pageSize.w * scale + 'px';
+    div.style.height = pageSize.h * scale + 'px';
     viewer.appendChild(div);
     observer.observe(div);
   }
+  viewer.scrollTop = 0;
+  $('#tools').hidden = false;
+  $('#pageTotal').textContent = doc.numPages;
+  updatePageLabel();
+  updateZoomLabel();
   bookLang = null;
   showBookLang();
-  const lang = await detectBookLanguage(pdfDoc);
-  if (pdfDoc.numPages && bookName === name) { bookLang = lang; showBookLang(); }
+  const lang = await detectBookLanguage(doc);
+  if (pdfDoc === doc) { bookLang = lang; showBookLang(); }
 }
+
+const fitWidthScale = () => Math.max(Math.min((viewer.clientWidth - 48) / pageSize.w, 1.8), 0.4);
+
+async function renderPage(div) {
+  if (div.dataset.rendered) return;
+  div.dataset.rendered = '1';
+  const s = scale, doc = pdfDoc;
+  const page = await doc.getPage(+div.dataset.page);
+  if (s !== scale || doc !== pdfDoc) return; // zoomed or switched book meanwhile
+  const vp = page.getViewport({ scale: s });
+  const dpr = window.devicePixelRatio || 1;
+  div.dataset.w = vp.width / s;
+  div.dataset.h = vp.height / s;
+  div.style.width = vp.width + 'px';
+  div.style.height = vp.height + 'px';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.floor(vp.width * dpr);
+  canvas.height = Math.floor(vp.height * dpr);
+  canvas.style.width = vp.width + 'px';
+  canvas.style.height = vp.height + 'px';
+  div.appendChild(canvas);
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+  if (s !== scale || !canvas.isConnected) return;
+
+  const layer = document.createElement('div');
+  layer.className = 'textLayer';
+  layer.style.setProperty('--scale-factor', s);
+  div.appendChild(layer);
+  const textContent = await page.getTextContent();
+  await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: layer, viewport: vp, textDivs: [] }).promise;
+}
+
+// ---------- Page number and zoom ----------
+function currentPage() {
+  const line = viewer.scrollTop + viewer.clientHeight / 3;
+  let n = 1;
+  for (const p of viewer.children) {
+    if (p.offsetTop > line) break;
+    n = +p.dataset.page || n;
+  }
+  return n;
+}
+
+function updatePageLabel() {
+  const input = $('#pageInput');
+  if (pdfDoc && document.activeElement !== input) input.value = currentPage();
+}
+
+function goToPage(n) {
+  const page = viewer.querySelector(`.page[data-page="${Math.min(Math.max(1, n | 0), pdfDoc.numPages)}"]`);
+  if (page) viewer.scrollTop = page.offsetTop - 24;
+}
+
+let scrollQueued = false;
+viewer.addEventListener('scroll', () => {
+  if (scrollQueued) return;
+  scrollQueued = true;
+  requestAnimationFrame(() => { scrollQueued = false; updatePageLabel(); });
+}, { passive: true });
+
+$('#pageInput').addEventListener('change', e => { goToPage(+e.target.value); e.target.blur(); });
+$('#pageInput').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+$('#pageInput').addEventListener('blur', updatePageLabel);
+
+const ZOOM_STEPS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+const zoomStep = dir => setZoom(dir > 0 ? ZOOM_STEPS.find(z => z > zoom + 0.001) ?? zoom : [...ZOOM_STEPS].reverse().find(z => z < zoom - 0.001) ?? zoom);
+
+function setZoom(z, keepFit = false) {
+  if (!pdfDoc) return;
+  const page = currentPage();
+  if (!keepFit) zoom = z;
+  scale = fitScale * zoom;
+  for (const div of viewer.children) {
+    div.replaceChildren();
+    delete div.dataset.rendered;
+    div.style.width = (+div.dataset.w || pageSize.w) * scale + 'px';
+    div.style.height = (+div.dataset.h || pageSize.h) * scale + 'px';
+    observer.unobserve(div);
+    observer.observe(div); // re-observing re-renders the pages in view
+  }
+  goToPage(page);
+  updateZoomLabel();
+}
+
+const updateZoomLabel = () => { $('#zoomLabel').textContent = Math.round(zoom * 100) + '%'; };
+$('#zoomIn').onclick = () => zoomStep(1);
+$('#zoomOut').onclick = () => zoomStep(-1);
+document.addEventListener('keydown', e => {
+  if (!(e.metaKey || e.ctrlKey)) return;
+  if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomStep(1); }
+  else if (e.key === '-') { e.preventDefault(); zoomStep(-1); }
+  else if (e.key === '0') { e.preventDefault(); setZoom(1); }
+});
+
+// Keep "100%" meaning "fits the width" when the window is resized.
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (!pdfDoc) return;
+    const fit = fitWidthScale();
+    if (Math.abs(fit - fitScale) > 0.01) { fitScale = fit; setZoom(zoom, true); }
+  }, 200);
+});
+
+// ---------- Opening files ----------
+document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
+  e.target.value = '';
+}));
+// PDFs double-clicked in Finder / Explorer, or opened with "Open with Glint".
+async function openFromOS(path) {
+  if (!path) return;
+  const bytes = await tauri.core.invoke('read_pdf', { path });
+  openPdf(new Uint8Array(bytes), path.split(/[\\/]/).pop());
+}
+if (tauri) {
+  tauri.event.listen('open-file', () => tauri.core.invoke('take_pending_file').then(openFromOS));
+  tauri.core.invoke('take_pending_file').then(openFromOS);
+}
+
+viewer.addEventListener('dragover', e => { e.preventDefault(); $('#empty')?.classList.add('drag'); });
+viewer.addEventListener('dragleave', () => $('#empty')?.classList.remove('drag'));
+viewer.addEventListener('drop', async e => {
+  e.preventDefault();
+  const f = [...e.dataTransfer.files].find(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
+});
 
 // ---------- Book language ----------
 const STOPWORDS = {
@@ -257,7 +598,7 @@ const STOPWORDS = {
 };
 
 function detectLanguage(text) {
-  const arabic = (text.match(/[\u0600-\u06FF]/g) || []).length;
+  const arabic = (text.match(/[؀-ۿ]/g) || []).length;
   const latin = (text.match(/\p{Script=Latin}/gu) || []).length;
   if (arabic + latin < 200) return null; // scanned pages, or too little text to tell
   if (arabic > latin) return 'ar';
@@ -280,59 +621,7 @@ async function detectBookLanguage(doc) {
   return detectLanguage(text);
 }
 
-function showBookLang() {
-  const chip = $('#bookLang');
-  chip.hidden = !bookLang;
-  chip.textContent = t('bookLang') + t('langs')[bookLang];
-}
-
-async function renderPage(div) {
-  if (div.dataset.rendered) return;
-  div.dataset.rendered = '1';
-  const page = await pdfDoc.getPage(+div.dataset.page);
-  const vp = page.getViewport({ scale });
-  const dpr = window.devicePixelRatio || 1;
-  div.style.width = vp.width + 'px';
-  div.style.height = vp.height + 'px';
-
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.floor(vp.width * dpr);
-  canvas.height = Math.floor(vp.height * dpr);
-  canvas.style.width = vp.width + 'px';
-  canvas.style.height = vp.height + 'px';
-  div.appendChild(canvas);
-  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
-
-  const layer = document.createElement('div');
-  layer.className = 'textLayer';
-  layer.style.setProperty('--scale-factor', scale);
-  div.appendChild(layer);
-  const textContent = await page.getTextContent();
-  await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: layer, viewport: vp, textDivs: [] }).promise;
-}
-
-$('#file').addEventListener('change', async e => {
-  const f = e.target.files[0];
-  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
-});
-// PDFs double-clicked in Finder / Explorer, or opened with "Open with Glint".
-async function openFromOS(path) {
-  if (!path) return;
-  const bytes = await tauri.core.invoke('read_pdf', { path });
-  openPdf(new Uint8Array(bytes), path.split(/[\\/]/).pop());
-}
-if (tauri) {
-  tauri.event.listen('open-file', () => tauri.core.invoke('take_pending_file').then(openFromOS));
-  tauri.core.invoke('take_pending_file').then(openFromOS);
-}
-
-viewer.addEventListener('dragover', e => { e.preventDefault(); $('#empty')?.classList.add('drag'); });
-viewer.addEventListener('dragleave', () => $('#empty')?.classList.remove('drag'));
-viewer.addEventListener('drop', async e => {
-  e.preventDefault();
-  const f = [...e.dataTransfer.files].find(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
-  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
-});
+const showBookLang = () => { $('#bookLang').textContent = bookLang ? t('langs')[bookLang] : t('auto'); };
 
 // ---------- Word picking ----------
 const isWordChar = c => /[\p{L}\p{M}\p{N}'’-]/u.test(c);
@@ -511,17 +800,31 @@ async function askAI(word, sentence) {
   return JSON.parse(m[0]);
 }
 
+// ---------- Lookup panel ----------
+const wordHead = (word, meta = '') => `<header class="result-head"><h2 class="word" dir="auto">${esc(word)}</h2>${meta}</header>`;
+const section = (title, body) => `<section><h3 class="label">${title}</h3>${body}</section>`;
+const stateCard = (iconName, text, action = '', cls = '') => `<div class="state ${cls}">${icon(iconName)}<p>${text}</p>${action}</div>`;
+
+function sentenceBlock(word, sentence) {
+  const w = esc(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const marked = esc(sentence).replace(new RegExp(w, 'i'), m => `<mark>${m}</mark>`);
+  return section(t('sentence'), `<blockquote class="sentence" dir="auto">${marked}</blockquote>`);
+}
+
 async function lookup(word, sentence) {
   showTab('lookup');
   const pane = $('#lookup');
   if (!settings.apiKey && settings.provider !== 'openai') {
-    pane.innerHTML = `<div class="word" dir="auto">${esc(word)}</div><p>${t('needKey')}</p><button class="primary" onclick="openSettings()">${t('openSettings')}</button>`;
+    pane.innerHTML = wordHead(word) + stateCard('key', t('needKey'), `<button class="btn primary" id="keyBtn">${t('openSettings')}</button>`);
+    $('#keyBtn').onclick = openSettings;
     return;
   }
   const id = ++lookupId;
   lastLookup = { word, sentence };
-  pane.innerHTML = `<div class="word" dir="auto">${esc(word)}</div><div style="margin:16px 0"><div class="spinner"></div></div>${sentenceHtml(word, sentence)}`;
   const key = settings.lang + '|' + word.toLowerCase() + '|' + sentence;
+  if (!cache.has(key)) {
+    pane.innerHTML = `<article class="result">${wordHead(word)}<div class="skeleton"><span></span><span></span><span class="short"></span></div>${sentenceBlock(word, sentence)}</article>`;
+  }
   try {
     const r = cache.get(key) || await askAI(word, sentence);
     cache.set(key, r);
@@ -531,28 +834,25 @@ async function lookup(word, sentence) {
     saveWord(word, sentence, r);
   } catch (err) {
     if (id !== lookupId) return;
-    pane.innerHTML = `<div class="word" dir="auto">${esc(word)}</div><p class="error">${t('failed')}${esc(err.message)}</p>${sentenceHtml(word, sentence)}`;
+    pane.innerHTML = `<article class="result">${wordHead(word)}${stateCard('alert', esc(err.message), `<button class="btn" id="retryBtn">${t('retry')}</button>`, 'error')}${sentenceBlock(word, sentence)}</article>`;
+    $('#retryBtn').onclick = () => lookup(word, sentence);
   }
 }
 
-function sentenceHtml(word, sentence) {
-  const safe = esc(sentence);
-  const w = esc(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return `<div class="label">${t('sentence')}</div><div class="sentence" dir="auto">${safe.replace(new RegExp(w, 'i'), m => `<mark>${m}</mark>`)}</div>`;
-}
-
 function renderResult(word, sentence, r) {
-  const d = `dir="${LANGS[settings.lang].dir}" style="text-align:start"`;
+  const d = `dir="${LANGS[settings.lang].dir}"`;
+  const pos = r.part_of_speech ? `<span class="pos" ${d}>${esc(r.part_of_speech)}</span>` : '';
+  const base = r.base_form && r.base_form.toLowerCase() !== word.toLowerCase() ? `<span dir="auto">${esc(r.base_form)}</span>` : '';
   const others = (r.other_meanings || []).map(m => `<span class="chip">${esc(m)}</span>`).join('');
   $('#lookup').innerHTML = `
-    <div class="word" dir="auto">${esc(word)}</div>
-    ${r.base_form && r.base_form.toLowerCase() !== word.toLowerCase() ? `<div class="hint" dir="auto" style="text-align:start">${esc(r.base_form)}</div>` : ''}
-    <div class="tr" ${d}>${esc(r.translation)}</div>
-    ${r.part_of_speech ? `<span class="chip">${esc(r.part_of_speech)}</span>` : ''}
-    <div class="label">${t('meaningHere')}</div><div ${d}>${esc(r.explanation)}</div>
-    ${sentenceHtml(word, sentence)}
-    ${r.sentence_translation ? `<div class="label">${t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr')}</div><div ${d}>${esc(r.sentence_translation)}</div>` : ''}
-    ${others ? `<div class="label">${t('others')}</div><div class="chips" ${d}>${others}</div>` : ''}`;
+    <article class="result">
+      ${wordHead(word, pos || base ? `<div class="meta">${pos}${base}</div>` : '')}
+      <p class="tr" ${d}>${esc(r.translation)}</p>
+      <p class="explain" ${d}>${esc(r.explanation)}</p>
+      ${sentenceBlock(word, sentence)}
+      ${r.sentence_translation ? section(t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr'), `<p ${d}>${esc(r.sentence_translation)}</p>`) : ''}
+      ${others ? section(t('others'), `<div class="chips" ${d}>${others}</div>`) : ''}
+    </article>`;
 }
 
 // ---------- Vocabulary ----------
@@ -560,13 +860,24 @@ function saveWord(word, sentence, r) {
   vocab = vocab.filter(v => !(v.word.toLowerCase() === word.toLowerCase() && v.sentence === sentence));
   vocab.unshift({ word, translation: r.translation, explanation: r.explanation, sentence, book: bookName, date: new Date().toISOString() });
   store.set('vocab', vocab);
+  updateVocabCount();
 }
 
+const updateVocabCount = () => { $('#vocabCount').textContent = vocab.length || ''; };
+
 function renderVocab() {
+  updateVocabCount();
   const pane = $('#vocab');
-  if (!vocab.length) { pane.innerHTML = `<p class="hint">${t('vocabEmpty')}</p>`; return; }
-  pane.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:8px"><button id="exportBtn">${t('export')}</button><span class="hint" style="align-self:center">${t('count')(vocab.length)}</span></div>` +
-    vocab.map((v, i) => `<div class="vocab-item"><div><div class="w" dir="auto">${esc(v.word)}</div><div dir="auto">${esc(v.translation)}</div><div class="hint" style="font-size:12px">${esc(v.book)}</div></div><button class="x" data-i="${i}" title="${t('remove')}">✕</button></div>`).join('');
+  if (!vocab.length) { pane.innerHTML = stateCard('bookmark', t('vocabEmpty')); return; }
+  pane.innerHTML = `
+    <div class="vocab-head"><span>${t('count')(vocab.length)}</span><button class="btn small" id="exportBtn">${icon('download')}${t('export')}</button></div>
+    <ul class="vocab-list">${vocab.map((v, i) => `
+      <li>
+        <div class="v-main"><span class="w" dir="auto">${esc(v.word)}</span><span class="v-tr" dir="auto">${esc(v.translation)}</span></div>
+        <div class="v-book" dir="auto">${esc(v.book.replace(/\.pdf$/i, ''))}</div>
+        <button class="icon-btn x" data-i="${i}" title="${t('remove')}" aria-label="${t('remove')}">${icon('x')}</button>
+      </li>`).join('')}
+    </ul>`;
   $('#exportBtn').onclick = exportCsv;
   pane.querySelectorAll('.x').forEach(b => b.onclick = () => { vocab.splice(+b.dataset.i, 1); store.set('vocab', vocab); renderVocab(); });
 }
@@ -584,12 +895,12 @@ function exportCsv() {
 
 // ---------- UI ----------
 function showTab(name) {
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   $('#lookup').hidden = name !== 'lookup';
   $('#vocab').hidden = name !== 'vocab';
   if (name === 'vocab') renderVocab();
 }
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
 
 const form = $('#settingsForm');
 function syncProviderFields() {
@@ -614,6 +925,10 @@ function applyUiLanguage() {
   document.documentElement.dir = LANGS[settings.lang].dir;
   document.title = t('title');
   document.querySelectorAll('[data-i18n]').forEach(el => el.innerHTML = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+    el.setAttribute('aria-label', el.title);
+  });
   showBookLang();
   if (!$('#vocab').hidden) renderVocab();
 }
@@ -627,6 +942,7 @@ target.onchange = () => {
   if (lastLookup) lookup(lastLookup.word, lastLookup.sentence); // show the open word in the new language
 };
 applyUiLanguage();
+updateVocabCount();
 </script>
 </body>
 </html>
