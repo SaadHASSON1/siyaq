@@ -159,7 +159,11 @@ test('EPUB: contents, a word, and a highlight across formatting', async () => {
 test('Arabic PDF: a click picks the whole word, and the sentence reads right to left', async () => {
   await fresh();
   await openPdf('/books/arabic.pdf');
-  const [word, sentence] = await page.eval(`(() => { const sp = spanWith('بيطبع'); const at = sp.textContent.indexOf('بيطبع') + 2; return [wordAt(sp, at), sentenceAround(sp, at)]; })()`);
+  // Found through its line, so it works whether the PDF gives a piece per word or per letter (Chrome on Linux).
+  const [word, sentence] = await page.eval(`(() => { for (const layer of document.querySelectorAll('.textLayer')) for (const line of textLines(layer)) {
+    const i = line.text.indexOf('بيطبع'); if (i < 0) continue;
+    const span = line.spans.find(sp => line.starts.get(sp) <= i + 2 && i + 2 < line.starts.get(sp) + sp.textContent.length);
+    const at = i + 2 - line.starts.get(span); return [wordAt(span, at), sentenceAround(span, at)]; } return ['(not found)', textLines(document.querySelector('.textLayer')).map(l => l.text).join(' | ')]; })()`);
   assert.equal(word, 'بيطبع');
   assert.match(sentence, /^الأمر اللي بيطبع على الشاشة/);
 });
