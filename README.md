@@ -42,18 +42,21 @@ When you read a book in a language you're still learning, every unknown word mea
 - 🎯 **Meaning in context**: the translation that fits *this* sentence, why, the whole sentence translated, and other meanings
 - 🗣️ **Hear it**: pronunciation for any word
 - ✍️ **Whole phrases**: select up to ten words, like *give up*
+- ✨ **Ask about a passage**: select a sentence or paragraph and ask for an explanation, a summary, a translation or anything else
 - 🌍 **Arabic, English and Turkish**: translate into any of them; the book's language is detected automatically
 
 **Reading**
 - 📚 **PDF and EPUB**, opened by double-clicking like any reader
 - 🔍 **Scanned books too**: picture-only pages are read on your device (OCR), in all three languages
-- 📍 **Picks up where you left off** in every book
+- 📍 **Picks up where you left off** in every book, with your recent books on the start screen
 - 🧭 **Contents sidebar, search** (`⌘F` / `Ctrl+F`) and working links
 - 🌙 **Dark mode** that darkens pages but keeps pictures in their real colours
 
 **Remembering**
 - 📝 **Every word you look up is saved** and underlined wherever it appears again
 - 🃏 **Flashcards** with spaced repetition, or export to Anki
+- ↩️ **Back to the page**: jump from any saved word to the page you found it on
+- 💾 **Backup** your words, progress and settings to a file, and restore them on another computer
 - 🤖 **Works with Claude** and other MCP apps: summarise chapters or the whole book, search it, quiz yourself on your words
 
 **Respect**
