@@ -21,6 +21,10 @@
 </p>
 
 <p align="center">
+  <a href="https://saadhasson1.github.io/siyaq/?lang=ar"><b>🌐 الموقع والتحميل</b></a>
+</p>
+
+<p align="center">
   <a href="README.md">English</a> · <b>العربية</b>
 </p>
 
@@ -68,7 +72,7 @@
 | **Windows** | `Siyaq_x.y.z_x64-setup.exe` |
 | **Linux** | `Siyaq_x.y.z_amd64.AppImage` |
 
-افتح **[آخر إصدار](https://github.com/SaadHASSON1/siyaq/releases/latest)** وحمّل ملفاً واحداً فقط يناسب جهازك من الجدول في أعلى الصفحة.
+الطريقة الأسهل: **[موقع سياق](https://saadhasson1.github.io/siyaq/?lang=ar)** يختار الملف المناسب لجهازك تلقائياً. أو افتح **[آخر إصدار](https://github.com/SaadHASSON1/siyaq/releases/latest)** وحمّل ملفاً واحداً فقط يناسب جهازك من الجدول في أعلى الصفحة.
 
 > [!NOTE]
 > سياق غير موقّع بشهادة مطوّر مدفوعة حتى الآن، لذلك يظهر تحذير عند أول تشغيل.

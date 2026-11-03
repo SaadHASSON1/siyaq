@@ -18,6 +18,10 @@
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/SaadHASSON1/siyaq?color=c9a45a"></a>
 </p>
 
+<p align="center">
+  <a href="https://saadhasson1.github.io/siyaq/"><b>🌐 Website &amp; download</b></a>
+</p>
+
 <p align="center"><b>English</b> · <a href="README.ar.md">العربية</a></p>
 
 <p align="center">
@@ -64,7 +68,7 @@ When you read a book in a language you're still learning, every unknown word mea
 | **Windows** | `Siyaq_x.y.z_x64-setup.exe` |
 | **Linux** | `Siyaq_x.y.z_amd64.AppImage` |
 
-Open the **[latest release](https://github.com/SaadHASSON1/siyaq/releases/latest)** and download just the one file for your device from the table at the top.
+The easiest way: **[saadhasson1.github.io/siyaq](https://saadhasson1.github.io/siyaq/)** picks the right file for your device. Or open the **[latest release](https://github.com/SaadHASSON1/siyaq/releases/latest)** and download the one file for your device from the table at the top.
 
 > [!NOTE]
 > Siyaq isn't signed with a paid developer certificate yet, so the first launch shows a warning.
