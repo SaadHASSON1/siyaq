@@ -18,11 +18,16 @@ struct AiResponse {
 /// allow browser (CORS) requests. That is what makes local Ollama just work.
 #[tauri::command]
 async fn ai_request(
+    method: String,
     url: String,
     headers: HashMap<String, String>,
-    body: serde_json::Value,
+    body: Option<serde_json::Value>,
 ) -> Result<AiResponse, String> {
-    let mut req = reqwest::Client::new().post(&url).json(&body);
+    let method = reqwest::Method::from_bytes(method.as_bytes()).map_err(|e| e.to_string())?;
+    let mut req = reqwest::Client::new().request(method, &url);
+    if let Some(body) = body {
+        req = req.json(&body);
+    }
     for (k, v) in headers {
         req = req.header(k, v);
     }

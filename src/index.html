@@ -144,7 +144,7 @@ const DEFAULT_MODELS = { gemini: 'gemini-3.8-flash', anthropic: 'claude-haiku-5-
 let settings = Object.assign({ provider: 'gemini', apiKey: '', model: '', baseUrl: 'http://localhost:11434/v1', lang: 'العربية' }, store.get('settings', {}));
 let vocab = store.get('vocab', []);
 let pdfDoc = null, scale = 1, bookName = '';
-const cache = new Map();
+const cache = new Map(store.get('cache', [])); // word|sentence → answer, kept between sessions
 let lookupId = 0;
 
 // ---------- PDF ----------
@@ -292,26 +292,80 @@ Reply with JSON only, no markdown fences, in exactly this shape:
  "sentence_translation": "translation of the whole sentence into ${lang}"}`;
 }
 
+const BUSY = [429, 503, 529]; // rate limited, high demand, overloaded
+const BUSY_MSG = 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.';
+
 // In the app, requests go through Rust so AI servers needn't allow browser (CORS) calls.
-// Busy servers (429 rate limit, 503 high demand, 529 overloaded) usually recover within seconds.
-async function postJson(url, headers, body) {
-  for (const wait of [1000, 3000, 6000]) {
-    const r = await postJsonOnce(url, headers, body);
-    if (![429, 503, 529].includes(r.status)) return r;
-    await new Promise(res => setTimeout(res, wait));
+async function requestJson(method, url, headers, body) {
+  if (tauri) {
+    const r = await tauri.core.invoke('ai_request', { method, url, headers, body: body ?? null });
+    return { ok: r.status >= 200 && r.status < 300, status: r.status, json: r.body };
   }
-  const r = await postJsonOnce(url, headers, body);
-  if ([429, 503, 529].includes(r.status)) throw new Error('خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.');
+  const res = await fetch(url, { method, headers: { 'content-type': 'application/json', ...headers }, body: body && JSON.stringify(body) });
+  return { ok: res.ok, status: res.status, json: await res.json() };
+}
+
+// One short retry for busy servers; anything longer defeats the point of a quick lookup.
+async function postJson(url, headers, body) {
+  let r = await requestJson('POST', url, headers, body);
+  if (BUSY.includes(r.status)) {
+    await new Promise(res => setTimeout(res, 800));
+    r = await requestJson('POST', url, headers, body);
+  }
+  if (BUSY.includes(r.status)) throw new Error(BUSY_MSG);
   return r;
 }
 
-async function postJsonOnce(url, headers, body) {
-  if (tauri) {
-    const r = await tauri.core.invoke('ai_request', { url, headers, body });
-    return { ok: r.status >= 200 && r.status < 300, status: r.status, json: r.body };
+// ----- Gemini: when one model is busy or retired, move straight on to another -----
+const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/';
+let geminiModels = null; // Flash models this key can use, newest first
+let geminiWorking = null; // the model that answered last, tried first next time
+
+async function listGeminiModels() {
+  if (geminiModels) return geminiModels;
+  const r = await requestJson('GET', GEMINI + 'models?pageSize=1000', { 'x-goog-api-key': settings.apiKey });
+  const version = n => parseFloat(n.match(/gemini-([\d.]+)/)[1]);
+  geminiModels = (r.json?.models || [])
+    .filter(m => m.supportedGenerationMethods?.includes('generateContent') && /^models\/gemini-[\d.]+-flash(-lite)?$/.test(m.name))
+    .map(m => m.name.slice(7))
+    .sort((a, b) => version(b) - version(a) || a.length - b.length);
+  return geminiModels;
+}
+
+async function geminiCall(model, prompt, noThinking) {
+  const generationConfig = { responseMimeType: 'application/json', temperature: 0.2 };
+  // A word lookup needs no step-by-step reasoning, and skipping it saves seconds.
+  if (noThinking) generationConfig.thinkingConfig = /gemini-2\./.test(model) ? { thinkingBudget: 0 } : { thinkingLevel: 'minimal' };
+  return requestJson('POST', `${GEMINI}models/${encodeURIComponent(model)}:generateContent`,
+    { 'x-goog-api-key': settings.apiKey }, { contents: [{ parts: [{ text: prompt }] }], generationConfig });
+}
+
+async function askGemini(prompt) {
+  const queue = [geminiWorking, settings.model || DEFAULT_MODELS.gemini].filter(Boolean);
+  const tried = new Set();
+  let listed = false, lastError = BUSY_MSG;
+  while (tried.size < 5) {
+    const model = queue.find(m => !tried.has(m));
+    if (!model) {
+      if (listed) break;
+      listed = true;
+      queue.push(...await listGeminiModels());
+      continue;
+    }
+    tried.add(model);
+    let r = await geminiCall(model, prompt, true);
+    if (r.status === 400 && /thinking/i.test(r.json?.error?.message || '')) r = await geminiCall(model, prompt, false);
+    if (r.ok) {
+      geminiWorking = model;
+      return (r.json.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+    }
+    const msg = r.json?.error?.message || String(r.status);
+    const suggested = msg.match(/\buse\s+models\/(gemini-[\w.-]*\w)/i)?.[1];
+    if (suggested) queue.unshift(suggested);
+    else if (!BUSY.includes(r.status) && r.status !== 404) throw new Error(msg); // e.g. a wrong API key
+    lastError = BUSY.includes(r.status) ? BUSY_MSG : msg;
   }
-  const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
-  return { ok: res.ok, status: res.status, json: await res.json() };
+  throw new Error(lastError);
 }
 
 async function askAI(word, sentence) {
@@ -319,18 +373,7 @@ async function askAI(word, sentence) {
   const model = settings.model || DEFAULT_MODELS[settings.provider];
   let r, text;
   if (settings.provider === 'gemini') {
-    const call = m => postJson(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`,
-      { 'x-goog-api-key': settings.apiKey },
-      { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } });
-    r = await call(model);
-    // Google retires models and names the replacement in the error; switch to it once and remember it.
-    const next = !r.ok && (r.json?.error?.message || '').match(/\buse\s+models\/(gemini-[\w.-]*\w)/i)?.[1];
-    if (next && next !== model) {
-      r = await call(next);
-      if (r.ok) { settings.model = next; store.set('settings', settings); }
-    }
-    if (!r.ok) throw new Error(r.json?.error?.message || r.status);
-    text = (r.json.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+    text = await askGemini(prompt);
   } else if (settings.provider === 'anthropic') {
     r = await postJson('https://api.anthropic.com/v1/messages',
       { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
@@ -362,6 +405,7 @@ async function lookup(word, sentence) {
   try {
     const r = cache.get(key) || await askAI(word, sentence);
     cache.set(key, r);
+    store.set('cache', [...cache].slice(-500));
     if (id !== lookupId) return;
     renderResult(word, sentence, r);
     saveWord(word, sentence, r);
