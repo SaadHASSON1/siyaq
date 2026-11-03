@@ -88,6 +88,14 @@
   }
   .tools { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
   .tools .icon-btn { width: 28px; height: 28px; }
+  .ask-btn { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 8px; border: 0; border-radius: 7px; background: none; color: var(--accent-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  [dir="rtl"] .ask-btn { padding: 0 8px 0 10px; }
+  .ask-btn svg { width: 15px; height: 15px; }
+  .ask-btn:hover, body.ask-mode .ask-btn { background: var(--accent-soft); }
+  body.ask-mode .textLayer span, body.ask-mode .epub-chapter { cursor: text; }
+  .link-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 0; border: 0; background: none; color: var(--accent-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .link-btn svg { width: 14px; height: 14px; }
+  .link-btn:hover { text-decoration: underline; }
   .tools .readout { min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
   .tools .divider { width: 1px; height: 18px; background: var(--border); margin: 0 6px; }
   .page-jump { display: flex; align-items: center; gap: 4px; padding: 0 6px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -301,14 +309,32 @@
   [dir="rtl"] .ocr-badge { direction: rtl; }
 
   /* ---------- Contents ---------- */
+  .toc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 2px 8px 12px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .toc-head b { font-size: 15px; line-height: 1.35; }
+  .toc-head small { flex: none; font-size: 12px; color: var(--muted); }
   .toc, .toc ul { list-style: none; margin: 0; padding: 0; }
-  .toc ul { padding-inline-start: 14px; }
-  .toc button {
-    display: block; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none;
-    color: var(--text); text-align: start; line-height: 1.4; cursor: pointer;
-  }
-  .toc button:hover { background: var(--surface-2); }
-  .toc > li > button { font-weight: 600; }
+  .toc ul { margin-inline-start: 17px; padding-inline-start: 6px; border-inline-start: 1px solid var(--border); }
+  .toc li.closed > ul { display: none; }
+  .toc > li + li { margin-top: 2px; }
+  .toc-row { display: flex; align-items: center; border-radius: 8px; }
+  .toc-row:hover { background: var(--surface-2); }
+  .toc-fold { flex: none; display: grid; place-items: center; width: 22px; height: 22px; margin-inline-start: 2px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+  .toc-fold:hover { color: var(--text); background: var(--border); }
+  .toc-fold svg { width: 14px; height: 14px; transition: transform .15s; }
+  .toc li.closed > .toc-row .toc-fold svg { transform: rotate(-90deg); }
+  .toc[dir="rtl"] li.closed > .toc-row .toc-fold svg { transform: rotate(90deg); }
+  .toc-fold.none { visibility: hidden; }
+  .toc-go { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12px; padding: 7px 8px 7px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: 13.5px; text-align: start; cursor: pointer; }
+  .toc[dir="rtl"] .toc-go { padding: 7px 4px 7px 8px; }
+  .toc-go .t { flex: 1; line-height: 1.4; }
+  .toc-go .p { flex: none; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .toc > li > .toc-row .toc-go { font-size: 14px; font-weight: 600; }
+  .toc ul .toc-go { color: var(--muted); }
+  .toc ul .toc-go:hover { color: var(--text); }
+  /* Where the reader is now */
+  .toc li.current > .toc-row { background: var(--accent-soft); }
+  .toc li.current > .toc-row .toc-go, .toc li.current > .toc-row .p { color: var(--accent-text); }
+  .toc li.current > .toc-row .toc-go .t { font-weight: 600; }
 
   /* ---------- Pronunciation, saved meanings ---------- */
   .result-head .speak { width: 30px; height: 30px; align-self: center; }
@@ -436,6 +462,8 @@
     <label class="page-jump"><input id="pageInput" inputmode="numeric" data-i18n-title="page"><span>/</span><span id="pageTotal"></span></label>
     <span class="divider"></span>
     <button class="icon-btn" id="searchBtn" data-i18n-title="search"><i data-icon="search"></i></button>
+    <span class="divider"></span>
+    <button class="ask-btn" id="askBtn" data-i18n-title="askBtnTitle"><i data-icon="sparkle"></i><span data-i18n="askBtn"></span></button>
   </div>
   <div class="langpair" data-i18n-title="langPair">
     <span class="from" id="bookLang"></span>
@@ -717,7 +745,7 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askBtn: 'اسأل', askBtnTitle: 'اسأل عن جملة أو فقرة', askPick: 'ظلّل الجملة أو الفقرة اللي بدّك تسأل عنها، أو اكبس على أي جملة.', askSentence: 'اسأل عن هالجملة', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', tocCount: n => n === 1 ? 'قسم واحد' : n === 2 ? 'قسمين' : n <= 10 ? `${n} أقسام` : `${n} قسم`, noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
@@ -749,7 +777,7 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    setupHelp: 'Help me set up a Gemini key', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
+    setupHelp: 'Help me set up a Gemini key', askBtn: 'Ask', askBtnTitle: 'Ask about a sentence or paragraph', askPick: 'Select the sentence or paragraph you want to ask about, or click any sentence.', askSentence: 'Ask about this sentence', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', tocCount: n => n === 1 ? '1 section' : `${n} sections`, noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
@@ -781,7 +809,7 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    setupHelp: 'Gemini anahtarı kurulumu', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
+    setupHelp: 'Gemini anahtarı kurulumu', askBtn: 'Sor', askBtnTitle: 'Bir cümle ya da paragraf hakkında sor', askPick: 'Sormak istediğiniz cümleyi veya paragrafı seçin ya da herhangi bir cümleye tıklayın.', askSentence: 'Bu cümle hakkında sor', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', tocCount: n => `${n} bölüm`, noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
@@ -1006,6 +1034,7 @@ function currentPage() {
 function updatePageLabel() {
   const input = $('#pageInput');
   if (pdfDoc && document.activeElement !== input) input.value = currentPage();
+  markTocCurrent();
   queueShare();
 }
 
@@ -1156,14 +1185,24 @@ function caretAt(x, y) {
 
 // Joins the page's text spans and cuts out the sentence around the clicked spot.
 function sentenceAround(span, offset) {
+  const children = [...span.parentElement.children];
+  // "Short" is relative to this page: in large print every line is short, and only headings are much shorter.
+  const lengths = [];
+  let len = 0;
+  for (const el of children) {
+    if (el.tagName === 'BR') { if (len) lengths.push(len); len = 0; } else len += el.textContent.length;
+  }
+  if (len) lengths.push(len);
+  const typical = lengths.sort((a, b) => a - b)[Math.floor(lengths.length / 2)] || 60;
+  const short = Math.min(45, typical * 0.6);
   let text = '', at = 0, lineStart = 0;
-  for (const el of span.parentElement.children) {
+  for (const el of children) {
     if (el.tagName === 'BR') {
       const line = text.slice(lineStart).trim();
       // "contin-" at a line end + "ue" on the next line → "continue"
       if (/\p{L}-$/u.test(text)) text = text.slice(0, -1);
       // A short line that doesn't carry on (a heading like "Down the Rabbit-Hole") ends a sentence.
-      else if (line.length < 45 && !/[,;:\-–—]$/.test(line)) text += '\n';
+      else if (line.length < short && !/[,;:\-–—]$/.test(line)) text += '\n';
       else text += ' ';
       lineStart = text.length;
       continue;
@@ -1179,6 +1218,9 @@ function cutSentence(text, at) {
   let start = at, end = at;
   while (start > 0 && !/[.!?؟\n]/.test(text[start - 1]) && at - start < 200) start--;
   while (end < text.length && !/[.!?؟\n]/.test(text[end]) && end - at < 200) end++;
+  // A very long sentence is cut at the limit: make that cut fall between words, not inside one.
+  if (start > 0 && !/[.!?؟\n]/.test(text[start - 1])) { const sp = text.indexOf(' ', start); if (sp > 0 && sp < at) start = sp + 1; }
+  if (end < text.length && !/[.!?؟\n]/.test(text[end])) { const sp = text.lastIndexOf(' ', end); if (sp > at) end = sp - 1; }
   return text.slice(start, end + 1).replace(/\s+/g, ' ').trim();
 }
 
@@ -1198,8 +1240,8 @@ viewer.addEventListener('click', e => {
   if (selected) {
     const node = sel.anchorNode;
     const span = (node?.nodeType === 3 ? node.parentElement : node)?.closest('.textLayer > span');
-    if (span && selected.split(' ').length <= 10) lookup(selected, sentenceAround(span, offsetIn(span, node, sel.anchorOffset)));
-    else if (span) openAsk(selected);
+    if (span && (askMode || selected.split(' ').length > 10)) openAsk(selected);
+    else if (span) lookup(selected, sentenceAround(span, offsetIn(span, node, sel.anchorOffset)));
     return;
   }
   // A plain click on a link follows it; selecting the link's text still translates it (above).
@@ -1216,7 +1258,8 @@ viewer.addEventListener('click', e => {
   while (en < text.length && isWordChar(text[en])) en++;
   const word = text.slice(s, en).replace(/^['’-]+|['’-]+$/g, '');
   if (!word || !/\p{L}/u.test(word)) return;
-  lookup(word, sentenceAround(span, s));
+  const sentence = sentenceAround(span, s);
+  if (askMode) openAsk(sentence); else lookup(word, sentence);
 });
 
 // ---------- AI ----------
@@ -1382,7 +1425,26 @@ const askForm = () => `
     </button>
   </form>`;
 
+// The Ask button: with text already selected it asks about it; otherwise the next selection
+// (or a click on a sentence) does. Long selections open Ask on their own too.
+let askMode = false, askHeld = '';
+function setAskMode(on) {
+  askMode = on;
+  document.body.classList.toggle('ask-mode', on);
+  if (on) showToast(t('askPick'), { label: t('cancel'), run: () => { setAskMode(false); $('#toast').hidden = true; } });
+  else if ($('#toast').textContent.includes(t('askPick'))) $('#toast').hidden = true;
+}
+// Read the selection before the click on the button can clear it.
+$('#askBtn').addEventListener('mousedown', () => { askHeld = window.getSelection().toString().replace(/\s+/g, ' ').trim(); });
+$('#askBtn').onclick = () => {
+  if (askHeld) { openAsk(askHeld); askHeld = ''; return; }
+  setAskMode(!askMode);
+};
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && askMode) setAskMode(false); });
+document.addEventListener('click', e => { if (e.target.closest('[data-ask-sentence]') && lastLookup) openAsk(lastLookup.sentence); });
+
 function openAsk(passage) {
+  if (askMode) setAskMode(false);
   showTab('lookup');
   askPassage = passage;
   lastLookup = null;
@@ -1478,6 +1540,7 @@ function renderResult(word, sentence, r) {
       <p class="tr" ${d}>${esc(r.translation)}</p>
       <p class="explain" ${d}>${esc(r.explanation)}</p>
       ${sentenceBlock(word, sentence)}
+      <button class="link-btn" type="button" data-ask-sentence>${icon('sparkle')}${t('askSentence')}</button>
       ${r.sentence_translation ? section(t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr'), `<p ${d}>${esc(r.sentence_translation)}</p>`) : ''}
       ${others ? section(t('others'), `<div class="chips" ${d}>${others}</div>`) : ''}
     </article>`;
@@ -1742,8 +1805,8 @@ function zoomEpub(z) {
 function clickEpub(e, sel, selected) {
   if (selected) {
     const node = sel.anchorNode, block = (node?.nodeType === 3 ? node.parentElement : node)?.closest(EPUB_BLOCKS);
-    if (block && selected.split(' ').length <= 10) lookup(selected, cutSentence(block.textContent, offsetIn(block, node, sel.anchorOffset)));
-    else if (block) openAsk(selected);
+    if (block && (askMode || selected.split(' ').length > 10)) openAsk(selected);
+    else if (block) lookup(selected, cutSentence(block.textContent, offsetIn(block, node, sel.anchorOffset)));
     return;
   }
   const a = e.target.closest('a[data-href], a[data-url]');
@@ -1761,7 +1824,7 @@ function clickEpub(e, sel, selected) {
   while (start > 0 && isWordChar(text[start - 1])) start--;
   while (end < text.length && isWordChar(text[end])) end++;
   const word = text.slice(start, end).replace(/^['’-]+|['’-]+$/g, '');
-  if (word && /\p{L}/u.test(word)) lookup(word, cutSentence(text, start));
+  if (word && /\p{L}/u.test(word)) askMode ? openAsk(cutSentence(text, start)) : lookup(word, cutSentence(text, start));
 }
 
 function markKnownInEpub(section) {
@@ -1820,21 +1883,65 @@ function savePosition() {
 }
 
 // ---------- Contents ----------
+// The contents as a tree: levels, the page each entry starts on, and where the reader is now.
+let tocItems = []; // { title, dest, depth, parent, page } in reading order
+
 async function loadToc(doc) {
   const pane = $('#toc');
+  tocItems = [];
   const outline = await doc.getOutline();
   if (pdfDoc !== doc) return;
   if (!outline?.length) { pane.innerHTML = stateCard('list', t('noToc')); return; }
   const items = [];
-  const build = (list, depth) => `<ul${depth ? '' : ' class="toc"'}>${list.map(it => {
-    items.push(it);
-    return `<li><button data-toc="${items.length - 1}" dir="auto">${esc(it.title)}</button>${it.items?.length && depth < 3 ? build(it.items, depth + 1) : ''}</li>`;
-  }).join('')}</ul>`;
-  pane.innerHTML = build(outline, 0);
+  const collect = (list, depth, parent) => list.forEach(it => {
+    items.push({ title: it.title, dest: it.dest, depth, parent, page: null });
+    if (it.items?.length && depth < 3) collect(it.items, depth + 1, items.length - 1);
+  });
+  collect(outline, 0, -1);
+  await Promise.all(items.map(async x => { x.page = await destPage(doc, x.dest); }));
+  if (pdfDoc !== doc) return;
+  tocItems = items;
+  const kids = i => items.flatMap((x, j) => x.parent === i ? [j] : []);
+  const many = items.length > 25; // long contents start folded, except around the reader
+  const showPages = bookType !== 'epub'; // EPUB "pages" are chapters, not page numbers
+  const build = parent => kids(parent).map(i => {
+    const x = items[i], sub = kids(i);
+    return `<li data-i="${i}" class="${sub.length && many ? 'closed' : ''}">
+      <div class="toc-row">
+        <button class="toc-fold${sub.length ? '' : ' none'}" data-fold="${i}" tabindex="${sub.length ? 0 : -1}" aria-label="${esc(x.title)}">${icon('chevDown')}</button>
+        <button class="toc-go" data-toc="${i}"><span class="t">${esc(x.title)}</span>${showPages && x.page ? `<span class="p">${x.page}</span>` : ''}</button>
+      </div>${sub.length ? `<ul>${build(i)}</ul>` : ''}</li>`;
+  }).join('');
+  // Lay it out in the direction of the book's own headings.
+  const rtlChars = (items.map(x => x.title).join('').match(/[\u0590-\u08FF]/g) || []).length;
+  const dir = rtlChars * 2 > items.map(x => x.title).join('').replace(/\s/g, '').length ? 'rtl' : 'ltr';
+  pane.innerHTML = `<header class="toc-head" dir="auto"><b>${esc(bookName.replace(/\.(pdf|epub)$/i, ''))}</b><small dir="${LANGS[settings.uiLang].dir}">${t('tocCount')(kids(-1).length)}</small></header>
+    <ul class="toc" dir="${dir}">${build(-1)}</ul>`;
   pane.onclick = e => {
+    const fold = e.target.closest('[data-fold]');
+    if (fold) { fold.closest('li').classList.toggle('closed'); return; }
     const b = e.target.closest('[data-toc]');
     if (b && items[+b.dataset.toc].dest) goToDest(items[+b.dataset.toc].dest, false);
   };
+  markTocCurrent(true);
+}
+
+// Highlights the entry the reader is in (the last one starting at or before this page) and opens its branch.
+let tocCurrent = -1;
+function markTocCurrent(scroll = false) {
+  if (!tocItems.length) return;
+  const page = currentPage();
+  let at = -1;
+  tocItems.forEach((x, i) => { if (x.page && x.page <= page && (at < 0 || x.page >= tocItems[at].page)) at = i; });
+  if (at === tocCurrent && !scroll) return;
+  tocCurrent = at;
+  const pane = $('#toc');
+  pane.querySelectorAll('li.current').forEach(li => li.classList.remove('current'));
+  const li = pane.querySelector(`li[data-i="${at}"]`);
+  if (!li) return;
+  li.classList.add('current');
+  for (let p = li.parentElement.closest('li'); p; p = p.parentElement.closest('li')) p.classList.remove('closed');
+  if (scroll && !pane.hidden) li.scrollIntoView({ block: 'center' });
 }
 
 // ---------- Search ----------
@@ -2383,6 +2490,7 @@ function showTab(name) {
   $('#lookup').hidden = name !== 'lookup';
   $('#vocab').hidden = name !== 'vocab';
   $('#toc').hidden = name !== 'toc';
+  if (name === 'toc') markTocCurrent(true);
   if (name === 'vocab' && !reviewQueue) renderVocab();
 }
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
