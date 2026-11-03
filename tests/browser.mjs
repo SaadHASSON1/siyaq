@@ -48,11 +48,12 @@ export async function launch() {
   const ws = new WebSocket(targets.find(t => t.type === 'page').webSocketDebuggerUrl);
   await new Promise(r => ws.addEventListener('open', r));
   let id = 0;
-  const pending = {}, errors = [];
+  const pending = {}, errors = [], events = { listener: null };
   ws.addEventListener('message', e => {
     const m = JSON.parse(e.data);
     if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description?.split('\n')[0] || m.params.exceptionDetails.text);
     if (m.id && pending[m.id]) { pending[m.id](m); delete pending[m.id]; }
+    if (m.method) events.listener?.(m.method, m.params);
   });
   const send = (method, params = {}) => new Promise(r => { pending[++id] = r; ws.send(JSON.stringify({ id, method, params })); }).then(m => {
     if (m.error) throw new Error(`${method}: ${m.error.message}`);
@@ -63,6 +64,8 @@ export async function launch() {
 
   const page = {
     errors,
+    // Receives every DevTools event (method, params), e.g. screencast frames.
+    set onEvent(fn) { events.listener = fn; },
     send,
     sleep,
     // Runs an expression (awaited) in the page and returns its value; a thrown error fails the call.

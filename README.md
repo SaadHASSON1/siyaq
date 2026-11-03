@@ -25,6 +25,10 @@
 <p align="center"><b>English</b> · <a href="README.ar.md">العربية</a></p>
 
 <p align="center">
+  <img src="docs/demo.gif" alt="Siyaq in action: clicking words in the demo book shows their meaning in context, then a highlight, My words and a flashcard" width="900">
+</p>
+
+<p align="center">
   <img src="docs/screenshot-en-dark.png" alt="Siyaq showing the meaning of “bank” in a sentence from Alice in Wonderland, translated to Turkish" width="900">
 </p>
 
@@ -80,7 +84,7 @@ The easiest way: **[saadhasson1.github.io/siyaq](https://saadhasson1.github.io/s
 
 ## Getting started
 
-1. Open Siyaq. A short setup walks you through getting a **free Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey) and tests it.
+1. Open Siyaq. A short tour shows how it works (or click **Try a demo book** to see it first, no key needed), then walks you through getting a **free Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey) and tests it.
 2. Open a PDF or EPUB, or drop it on the window.
 3. Click any word.
 
@@ -105,6 +109,7 @@ cd siyaq
 npm install
 npm run dev     # run the app while developing
 npm run build   # build installers for your system
+npm test        # the tests, in headless Chrome
 ```
 
 Pushing a tag such as `v0.5.0` builds signed installers and update files for every platform with GitHub Actions.

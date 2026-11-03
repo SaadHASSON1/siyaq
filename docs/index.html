@@ -138,6 +138,8 @@
 
   /* ---------- Sections ---------- */
   section.block { padding: 96px 0; }
+  .demo-video { margin: 0 auto; max-width: 1040px; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--surface); }
+  .demo-video video { display: block; width: 100%; height: auto; }
   section.alt { background: var(--bg-2); }
   .eyebrow { color: var(--green-dark); font-weight: 700; font-size: 14px; letter-spacing: .04em; }
   @media (prefers-color-scheme: dark) { .eyebrow { color: #5fd49a; } }
@@ -303,6 +305,18 @@
     </div>
   </section>
 
+  <section class="block" id="video">
+    <div class="wrap">
+      <div class="center reveal">
+        <div class="eyebrow" data-t="videoEyebrow"></div>
+        <h2 data-t="videoTitle"></h2>
+      </div>
+      <figure class="demo-video reveal">
+        <video src="demo.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Siyaq demo"></video>
+      </figure>
+    </div>
+  </section>
+
   <section class="block" id="features">
     <div class="wrap">
       <div class="reveal">
@@ -399,7 +413,7 @@ const T = {
     tryIt: 'جرّبه بنفسك: اضغط على الكلمات المنقّطة، أو غيّر لغة الترجمة من الأعلى.', pill: 'مجاني ومفتوح المصدر', heroTitle: 'اقرأ بأي لغة،<br>دون أن <span class="hl">تغادر الصفحة</span>.',
     heroLead: 'اضغط على أي كلمة في كتاب PDF أو EPUB، ويظهر معناها كما وردت في تلك الجملة بالذات، لا معناها الأشهر في القاموس.',
     ctaNote: 'لـ Mac وWindows وLinux · بالعربية والإنجليزية والتركية', dlFor: { mac: 'حمّل لـ Mac', windows: 'حمّل لـ Windows', linux: 'حمّل لـ Linux', other: 'حمّل سياق' },
-    howEyebrow: 'كيف يعمل', howTitle: 'ثلاث خطوات، ولا شيء غيرها', howSub: 'لا حسابات، ولا نسخ ولصق، ولا تنقّل بين النوافذ.',
+    videoEyebrow: 'شاهده يعمل', videoTitle: 'عشرون ثانية مع سياق', howEyebrow: 'كيف يعمل', howTitle: 'ثلاث خطوات، ولا شيء غيرها', howSub: 'لا حسابات، ولا نسخ ولصق، ولا تنقّل بين النوافذ.',
     s1t: 'افتح كتابك', s1p: 'أي ملف PDF أو EPUB على جهازك، حتى الكتب الممسوحة ضوئياً.',
     s2t: 'اضغط على الكلمة', s2p: 'أو ظلّل عبارة كاملة. يقرأ سياق الجملة كلها قبل أن يجيب.',
     s3t: 'افهمها وتابع', s3p: 'المعنى الصحيح وسببه بجانب الصفحة، والكلمة تُحفظ لتراجعها لاحقاً.',
@@ -431,7 +445,7 @@ const T = {
     tryIt: 'Try it yourself: click the dotted words, or change the translation language at the top.', pill: 'Free and open source', heroTitle: 'Read any language<br>without <span class="hl">leaving the page</span>.',
     heroLead: 'Click any word in a PDF or EPUB and see what it means in that exact sentence, not just its most common meaning in the dictionary.',
     ctaNote: 'For Mac, Windows and Linux · in Arabic, English and Turkish', dlFor: { mac: 'Download for Mac', windows: 'Download for Windows', linux: 'Download for Linux', other: 'Download Siyaq' },
-    howEyebrow: 'How it works', howTitle: 'Three steps. That’s all.', howSub: 'No accounts, no copy and paste, no switching windows.',
+    videoEyebrow: 'See it work', videoTitle: 'Twenty seconds with Siyaq', howEyebrow: 'How it works', howTitle: 'Three steps. That’s all.', howSub: 'No accounts, no copy and paste, no switching windows.',
     s1t: 'Open your book', s1p: 'Any PDF or EPUB on your device, even scanned books.',
     s2t: 'Click the word', s2p: 'Or select a whole phrase. Siyaq reads the whole sentence before it answers.',
     s3t: 'Understand, keep reading', s3p: 'The right meaning and why, right beside the page. The word is saved for review.',
@@ -463,7 +477,7 @@ const T = {
     tryIt: 'Kendiniz deneyin: noktalı kelimelere tıklayın ya da yukarıdan çeviri dilini değiştirin.', pill: 'Ücretsiz ve açık kaynak', heroTitle: 'Her dilde okuyun,<br><span class="hl">sayfadan ayrılmadan</span>.',
     heroLead: 'Bir PDF veya EPUB’daki herhangi bir kelimeye tıklayın; sözlükteki en yaygın anlamını değil, o cümledeki anlamını görün.',
     ctaNote: 'Mac, Windows ve Linux için · Arapça, İngilizce ve Türkçe', dlFor: { mac: 'Mac için indir', windows: 'Windows için indir', linux: 'Linux için indir', other: 'Siyaq’ı indir' },
-    howEyebrow: 'Nasıl çalışır', howTitle: 'Üç adım. Hepsi bu.', howSub: 'Hesap yok, kopyala-yapıştır yok, pencereler arasında gezinmek yok.',
+    videoEyebrow: 'Çalışırken görün', videoTitle: 'Siyaq ile yirmi saniye', howEyebrow: 'Nasıl çalışır', howTitle: 'Üç adım. Hepsi bu.', howSub: 'Hesap yok, kopyala-yapıştır yok, pencereler arasında gezinmek yok.',
     s1t: 'Kitabınızı açın', s1p: 'Cihazınızdaki herhangi bir PDF veya EPUB, taranmış kitaplar bile.',
     s2t: 'Kelimeye tıklayın', s2p: 'Ya da bir ifadenin tamamını seçin. Siyaq cevap vermeden önce bütün cümleyi okur.',
     s3t: 'Anlayın, okumaya devam edin', s3p: 'Doğru anlam ve nedeni sayfanın hemen yanında. Kelime tekrar için kaydedilir.',
