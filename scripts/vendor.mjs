@@ -1,5 +1,5 @@
 // Copies PDF.js and the OCR engine into src/vendor so the app works offline.
-import { copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readdirSync } from 'node:fs';
 
 const copy = (from, to, files) => {
   mkdirSync(to, { recursive: true });
@@ -8,6 +8,9 @@ const copy = (from, to, files) => {
 
 // The legacy build also runs on the older Safari engines of Macs that cannot update past macOS 12 or 13.
 copy('node_modules/pdfjs-dist/legacy/build/', 'src/vendor/', ['pdf.min.js', 'pdf.worker.min.js']);
+// Character maps and the standard 14 fonts, for PDFs that use fonts they don't carry inside them.
+cpSync('node_modules/pdfjs-dist/cmaps/', 'src/vendor/cmaps/', { recursive: true });
+cpSync('node_modules/pdfjs-dist/standard_fonts/', 'src/vendor/standard_fonts/', { recursive: true });
 copyFileSync('node_modules/fflate/umd/index.js', 'src/vendor/fflate.min.js'); // unzips EPUB books
 
 // OCR for scanned pages: Tesseract, its WebAssembly core, and compact Arabic, English and Turkish models.
