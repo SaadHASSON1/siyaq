@@ -247,8 +247,8 @@ function sentenceAround(span, offset) {
     text += el.textContent;
   }
   let start = at, end = at;
-  while (start > 0 && !/[.!?؟;]/.test(text[start - 1]) && at - start < 200) start--;
-  while (end < text.length && !/[.!?؟;]/.test(text[end]) && end - at < 200) end++;
+  while (start > 0 && !/[.!?؟]/.test(text[start - 1]) && at - start < 200) start--;
+  while (end < text.length && !/[.!?؟]/.test(text[end]) && end - at < 200) end++;
   return text.slice(start, end + 1).replace(/\s+/g, ' ').trim();
 }
 
@@ -293,7 +293,19 @@ Reply with JSON only, no markdown fences, in exactly this shape:
 }
 
 // In the app, requests go through Rust so AI servers needn't allow browser (CORS) calls.
+// Busy servers (429 rate limit, 503 high demand, 529 overloaded) usually recover within seconds.
 async function postJson(url, headers, body) {
+  for (const wait of [1000, 3000, 6000]) {
+    const r = await postJsonOnce(url, headers, body);
+    if (![429, 503, 529].includes(r.status)) return r;
+    await new Promise(res => setTimeout(res, wait));
+  }
+  const r = await postJsonOnce(url, headers, body);
+  if ([429, 503, 529].includes(r.status)) throw new Error('خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.');
+  return r;
+}
+
+async function postJsonOnce(url, headers, body) {
   if (tauri) {
     const r = await tauri.core.invoke('ai_request', { url, headers, body });
     return { ok: r.status >= 200 && r.status < 300, status: r.status, json: r.body };
