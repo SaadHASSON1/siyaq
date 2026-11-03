@@ -38,6 +38,51 @@ async fn ai_request(
     Ok(AiResponse { status, body })
 }
 
+/// Opens a web page in the user's browser (used for getting an API key).
+#[tauri::command]
+fn open_link(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    if !url.starts_with("https://") {
+        return Err("only https links can be opened".into());
+    }
+    app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
+}
+
+/// The newer version on GitHub Releases, if there is one.
+#[cfg(desktop)]
+#[tauri::command]
+async fn check_update(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let update = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())?;
+    Ok(update.map(|u| u.version))
+}
+
+/// Downloads the signed update, installs it and restarts.
+#[cfg(desktop)]
+#[tauri::command]
+async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+        app.restart();
+    }
+    Ok(())
+}
+
+// Phones and tablets update through their app stores.
+#[cfg(mobile)]
+#[tauri::command]
+async fn check_update() -> Result<Option<String>, String> {
+    Ok(None)
+}
+
+#[cfg(mobile)]
+#[tauri::command]
+async fn install_update() -> Result<(), String> {
+    Ok(())
+}
+
 #[tauri::command]
 fn read_pdf(path: String) -> Result<Response, String> {
     std::fs::read(&path).map(Response::new).map_err(|e| e.to_string())
@@ -60,8 +105,19 @@ fn open_file(app: &tauri::AppHandle, path: PathBuf) {
 pub fn run() {
     tauri::Builder::default()
         .manage(PendingFile::default())
-        .invoke_handler(tauri::generate_handler![ai_request, read_pdf, take_pending_file])
+        .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![
+            ai_request,
+            read_pdf,
+            take_pending_file,
+            open_link,
+            check_update,
+            install_update
+        ])
         .setup(|app| {
+            #[cfg(desktop)]
+            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+
             // Windows and Linux pass the double-clicked file as an argument.
             if let Some(arg) = std::env::args().skip(1).find(|a| a.to_lowercase().ends_with(".pdf")) {
                 open_file(app.handle(), PathBuf::from(arg));

@@ -1,7 +1,7 @@
 {
   "name": "siyaq",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Context-aware word lookup for any PDF",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,11 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "pdfjs-dist": "3.11.174"
+    "@tesseract.js-data/ara": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/tur": "^1.0.0",
+    "pdfjs-dist": "3.11.174",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4"

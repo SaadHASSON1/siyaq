@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>سياق</title>
 <script src="vendor/pdf.min.js"></script>
+<script src="vendor/tesseract/tesseract.min.js"></script>
 <style>
   :root {
     --canvas: #e9e7e2;      /* behind the pages */
@@ -210,6 +211,80 @@
   dialog small { display: block; margin-top: 6px; color: var(--muted); font-weight: 400; line-height: 1.5; }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
 
+  /* ---------- Search ---------- */
+  .searchbar {
+    position: absolute; top: 12px; inset-inline-end: 24px; z-index: 6; display: flex; align-items: center; gap: 2px;
+    padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-pop);
+  }
+  .searchbar input {
+    width: 220px; height: 30px; padding: 0 10px; margin-inline-end: 4px;
+    border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); color: var(--text);
+  }
+  .searchbar input:focus { outline: none; border-color: var(--accent); }
+  .searchbar .count { min-width: 70px; text-align: center; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .searchbar .icon-btn { width: 30px; height: 30px; }
+  .textLayer span.hit { background: rgba(242, 201, 76, .55); border-radius: 2px; }
+  .textLayer mark.known { color: transparent; background: none; border-bottom: 2px solid var(--accent); opacity: .75; }
+
+  /* ---------- Toast and page notes ---------- */
+  .toast {
+    position: absolute; left: 50%; bottom: 72px; transform: translateX(-50%); z-index: 7;
+    display: flex; align-items: center; gap: 10px; max-width: calc(100% - 32px); padding: 8px 8px 8px 14px;
+    background: var(--text); color: var(--surface); border-radius: 10px; box-shadow: var(--shadow-pop); font-size: 13px;
+  }
+  [dir="rtl"] .toast { padding: 8px 14px 8px 8px; }
+  .toast .icon-btn { width: 28px; height: 28px; color: inherit; opacity: .7; }
+  .toast .icon-btn:hover { background: none; opacity: 1; }
+  .ocr-badge {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 3; padding: 4px 12px;
+    border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 12px; box-shadow: var(--shadow-page);
+  }
+  [dir="rtl"] .ocr-badge { direction: rtl; }
+
+  /* ---------- Contents ---------- */
+  .toc, .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc ul { padding-inline-start: 14px; }
+  .toc button {
+    display: block; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none;
+    color: var(--text); text-align: start; line-height: 1.4; cursor: pointer;
+  }
+  .toc button:hover { background: var(--surface-2); }
+  .toc > li > button { font-weight: 600; }
+
+  /* ---------- Pronunciation, saved meanings ---------- */
+  .result-head .speak { width: 30px; height: 30px; align-self: center; }
+  .saved-note { margin: 10px 0 8px; color: var(--muted); font-size: 12px; }
+
+  /* ---------- Flashcards ---------- */
+  .review { display: flex; flex-direction: column; gap: 14px; }
+  .review-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 13px; }
+  .card { padding: 24px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); text-align: center; }
+  .card .result-head { justify-content: center; }
+  .card .word { font-size: 30px; }
+  .card .sentence { margin-top: 14px; background: var(--surface); }
+  .card .answer { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .review-actions { display: flex; gap: 8px; }
+  .review-actions .btn { flex: 1; height: 42px; }
+  .btn.again { color: var(--danger); }
+  .vocab-head .btns { display: flex; gap: 6px; }
+  .btn .badge { background: rgba(255,255,255,.25); color: inherit; }
+
+  /* ---------- First-run setup ---------- */
+  .setup-head { text-align: center; }
+  .setup-logo { display: block; width: 84px; height: 56px; margin: 0 auto 10px; }
+  .setup-head p { margin: 6px 0 0; color: var(--muted); }
+  .steps { display: grid; gap: 14px; margin: 20px 0 0; padding-inline-start: 22px; }
+  .steps li::marker { color: var(--accent); font-weight: 700; }
+  .steps .btn { margin-top: 8px; }
+  .steps input {
+    display: block; width: 100%; height: 38px; margin-top: 8px; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text);
+  }
+  .steps input:focus { outline: none; border-color: var(--accent); }
+  .msg { min-height: 20px; margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+  .msg.ok { color: var(--accent-text); }
+  .msg.err { color: var(--danger); }
+
   /* ---------- Small screens ---------- */
   @media (max-width: 900px) {
     .book-title { display: none; }
@@ -239,6 +314,8 @@
     <button class="icon-btn" id="zoomIn" data-i18n-title="zoomIn"><i data-icon="plus"></i></button>
     <span class="divider"></span>
     <label class="page-jump"><input id="pageInput" inputmode="numeric" data-i18n-title="page"><span>/</span><span id="pageTotal"></span></label>
+    <span class="divider"></span>
+    <button class="icon-btn" id="searchBtn" data-i18n-title="search"><i data-icon="search"></i></button>
   </div>
   <div class="langpair" data-i18n-title="langPair">
     <span class="from" id="bookLang"></span>
@@ -260,6 +337,7 @@
   <aside class="panel">
     <div class="seg" role="tablist">
       <button class="on" data-tab="lookup" role="tab"><span data-i18n="tabMeaning"></span></button>
+      <button data-tab="toc" role="tab"><span data-i18n="tabContents"></span></button>
       <button data-tab="vocab" role="tab"><span data-i18n="tabWords"></span><span class="badge" id="vocabCount"></span></button>
     </div>
     <div class="pane" id="lookup">
@@ -269,8 +347,17 @@
         <p data-i18n="hint"></p>
       </div>
     </div>
+    <div class="pane" id="toc" hidden></div>
     <div class="pane" id="vocab" hidden></div>
   </aside>
+  <div class="searchbar" id="searchBar" hidden>
+    <input id="searchInput" type="search" dir="auto">
+    <span class="count" id="searchCount"></span>
+    <button class="icon-btn" id="searchPrev" data-i18n-title="prev"><i data-icon="chevUp"></i></button>
+    <button class="icon-btn" id="searchNext" data-i18n-title="next"><i data-icon="chevDown"></i></button>
+    <button class="icon-btn" id="searchClose" data-i18n-title="close"><i data-icon="x"></i></button>
+  </div>
+  <div class="toast" id="toast" hidden></div>
   <button class="btn back" id="backBtn" hidden><i data-icon="arrow" class="flip-back"></i><span data-i18n="back"></span></button>
   <div id="viewer">
     <div class="welcome" id="empty">
@@ -328,6 +415,27 @@
   </form>
 </dialog>
 
+<dialog id="setup">
+  <div class="setup-head">
+    <i data-logo class="setup-logo"></i>
+    <h3 data-i18n="setupTitle"></h3>
+    <p data-i18n="setupText"></p>
+  </div>
+  <ol class="steps">
+    <li><span data-i18n="setupStep1"></span><br>
+      <button class="btn small" id="setupOpen" type="button"><i data-icon="external"></i><span data-i18n="setupOpen"></span></button></li>
+    <li data-i18n="setupStep2"></li>
+    <li><span data-i18n="setupStep3"></span><input id="setupKey" dir="ltr" autocomplete="off" spellcheck="false" placeholder="AIza…"></li>
+  </ol>
+  <p class="msg" id="setupMsg"></p>
+  <div class="row">
+    <button class="btn" id="setupOther" type="button" data-i18n="setupOther"></button>
+    <span style="flex:1"></span>
+    <button class="btn" id="setupLater" type="button" data-i18n="setupLater"></button>
+    <button class="btn primary" id="setupSave" type="button" data-i18n="setupTest"></button>
+  </div>
+</dialog>
+
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
 const tauri = window.__TAURI__; // set when running as the installed app
@@ -361,6 +469,14 @@ const ICONS = {
   alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
   bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  chevUp: '<path d="m18 15-6-6-6 6"/>',
+  chevDown: '<path d="m6 9 6 6 6-6"/>',
+  volume: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  list: '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+  repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
 };
 const LOGO = `<svg viewBox="0 0 1200 800" aria-hidden="true"><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="#17786c"><path d="M7968 5791 c-63 -5 -92 -11 -106 -24 -11 -10 -45 -22 -75 -26 -85 -11 -357 -165 -357 -201 0 -5 -36 -47 -79 -94 -75 -81 -151 -204 -151 -245 0 -9 -9 -40 -20 -69 -15 -39 -20 -76 -20 -146 0 -65 -6 -112 -19 -154 -11 -34 -23 -78 -27 -99 -12 -68 -86 -246 -141 -338 -194 -323 -445 -480 -863 -537 -41 -6 -282 -12 -536 -14 l-461 -5 -7 -447 c-4 -246 -4 -500 0 -564 l7 -118 601 0 c513 1 607 3 641 16 22 8 88 19 147 23 65 5 116 14 130 23 13 8 45 18 71 21 26 4 72 18 101 32 29 14 62 25 72 25 11 0 30 7 43 16 13 9 41 21 64 26 22 5 52 18 68 28 15 11 33 20 40 20 13 0 176 93 249 143 178 121 500 460 605 637 21 36 48 81 61 101 38 61 81 152 97 204 8 28 22 64 31 80 9 17 19 46 22 65 3 19 13 50 21 69 8 18 17 61 20 95 3 34 14 76 25 96 17 29 22 64 29 200 4 92 13 179 19 196 7 18 12 106 12 234 0 113 2 310 4 439 7 322 15 315 -318 292z"/></g><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="#1fb08c"><path d="M7885 7534 c-268 -16 -623 -110 -875 -232 -707 -342 -1181 -929 -1370 -1699 -46 -187 -60 -392 -60 -859 0 -544 -19 -504 240 -506 222 -1 357 12 396 39 16 11 44 23 63 26 84 17 260 160 363 296 32 42 58 81 58 88 0 7 11 33 25 59 14 26 25 64 25 85 0 21 9 55 20 76 14 28 22 73 29 173 14 197 52 334 140 510 39 78 87 161 107 186 20 24 55 71 78 104 111 158 464 375 688 421 29 6 73 20 96 31 73 34 645 35 751 1 40 -12 85 -23 98 -23 28 0 194 -55 301 -99 226 -94 382 -192 580 -361 57 -48 180 -203 227 -285 15 -27 43 -70 61 -94 42 -55 182 -337 190 -382 3 -19 16 -59 30 -90 16 -38 26 -84 30 -145 3 -49 13 -111 22 -139 21 -68 21 -297 -1 -392 -35 -154 -50 -242 -54 -316 l-5 -77 74 0 c74 0 74 0 105 53 18 28 43 79 58 112 14 33 37 70 50 83 14 13 25 32 25 44 0 11 9 37 19 57 39 75 74 205 81 306 5 66 14 112 26 135 17 32 19 63 19 380 0 337 -1 346 -22 392 -17 35 -23 65 -23 117 0 162 -165 575 -322 807 -178 263 -420 516 -648 676 -59 41 -266 159 -380 215 -158 78 -411 161 -560 183 -41 6 -115 18 -165 25 -88 14 -471 26 -590 19z"/></g><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="var(--logo)"><path d="M8790 6197 c0 -73 0 -73 71 -122 70 -48 172 -152 251 -256 41 -54 148 -264 148 -291 0 -7 8 -29 18 -48 10 -19 24 -71 31 -115 7 -44 20 -91 29 -105 25 -36 25 -309 0 -360 -9 -19 -22 -66 -28 -105 -7 -38 -25 -97 -41 -130 -15 -33 -33 -73 -39 -89 -33 -88 -177 -294 -261 -372 -54 -51 -161 -134 -194 -151 -16 -9 -41 -24 -54 -34 -13 -11 -32 -19 -43 -19 -10 0 -38 -10 -61 -21 -23 -12 -67 -28 -97 -35 -126 -29 -155 -57 -249 -244 -162 -317 -389 -589 -653 -783 l-98 -71 0 -74 0 -75 463 5 c407 4 466 7 495 22 20 10 74 20 145 25 70 5 125 15 145 25 17 9 42 16 55 16 34 0 150 36 222 70 33 15 73 31 89 34 17 4 41 15 55 25 14 10 47 25 73 35 149 55 493 320 576 443 123 183 233 392 252 479 6 25 19 63 30 84 11 22 20 55 20 74 0 19 8 57 19 83 48 122 56 628 13 798 -11 44 -25 100 -31 125 -27 119 -57 186 -188 427 -154 281 -331 457 -647 642 -48 29 -116 63 -150 75 -33 13 -96 38 -139 55 -63 25 -93 31 -153 31 l-74 0 0 -73z M4730 5591 c-106 -5 -142 -10 -163 -23 -14 -10 -36 -18 -47 -18 -23 0 -121 -47 -195 -95 -155 -99 -301 -300 -324 -446 -4 -26 -13 -54 -18 -61 -20 -26 -22 -118 -25 -1193 -2 -1240 -5 -1366 -38 -1475 -33 -111 -126 -313 -188 -410 -125 -195 -364 -373 -574 -426 -35 -9 -69 -21 -77 -28 -43 -34 -461 -36 -516 -2 -11 7 -45 19 -75 26 -110 27 -356 150 -478 240 -533 394 -798 1176 -622 1842 58 224 117 357 238 543 80 124 328 375 439 445 72 45 72 45 72 118 l1 72 -85 0 c-66 0 -96 -5 -127 -20 -23 -11 -45 -20 -49 -20 -15 0 -157 -70 -262 -129 -194 -109 -287 -181 -490 -386 -142 -142 -208 -227 -366 -470 -86 -133 -211 -438 -211 -517 0 -19 -7 -44 -17 -57 -11 -17 -19 -60 -25 -145 -5 -67 -13 -148 -19 -181 -20 -119 -23 -421 -4 -488 10 -34 21 -113 25 -177 4 -75 13 -126 23 -147 10 -18 17 -44 17 -58 0 -27 49 -181 79 -250 65 -146 192 -387 230 -435 15 -19 39 -55 54 -80 129 -222 555 -590 832 -720 39 -18 93 -43 120 -56 96 -45 313 -114 376 -120 35 -4 77 -14 94 -22 92 -46 883 -45 973 2 17 9 46 16 64 16 18 0 56 7 83 15 28 8 84 24 125 35 41 12 79 25 85 29 5 4 28 13 50 20 338 115 741 436 1006 802 141 194 289 473 289 542 0 11 6 28 14 36 15 18 36 97 36 138 0 16 7 39 17 52 12 17 18 57 23 140 4 66 15 137 25 166 21 60 29 1113 18 2514 l-6 843 -33 14 c-35 15 -114 16 -374 5z"/></g><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="#c9a45a"><path d="M2403 4821 c-35 -16 -42 -25 -45 -52 -3 -30 -11 -36 -120 -94 -197 -105 -280 -167 -439 -325 -350 -348 -505 -746 -504 -1290 2 -364 114 -744 304 -1027 56 -83 56 -83 129 -83 l72 0 0 70 c0 49 -7 88 -24 132 -183 478 30 1069 485 1346 72 43 199 102 222 102 7 0 38 8 69 19 87 30 201 40 562 47 337 7 340 7 363 30 23 23 23 23 23 556 -1 403 -4 537 -13 549 -29 38 -43 39 -549 39 -463 0 -496 -2 -535 -19z"/></g></svg>`;
@@ -397,6 +513,18 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
+    tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
+    search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
+    speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
+    review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
+    nothingDue: 'ما في كلمات بدها مراجعة هلق. ارجع بكرا!', backToList: 'رجوع للقائمة', left: n => `باقي ${n}`,
+    setupTitle: 'خطوة وحدة قبل ما تبلّش', setupText: 'سياق بيستخدم Gemini من Google ليفهم الكلمات. المفتاح مجاني وبياخد دقيقة.',
+    setupStep1: 'افتح Google AI Studio وسجّل دخولك بحساب Google.', setupOpen: 'افتح الصفحة',
+    setupStep2: 'اكبس <b>Create API key</b> وانسخ المفتاح.', setupStep3: 'الصقه هون:',
+    setupTest: 'جرّب واحفظ', setupLater: 'لاحقاً', setupOther: 'عندي مزوّد تاني',
+    setupChecking: 'عم نجرّب المفتاح…', setupOk: 'المفتاح شغّال ✓', setupBad: 'المفتاح ما زبط: ',
+    resumed: n => `رجعناك للصفحة ${n}، وين وقفت آخر مرة`, ocrRunning: 'عم نقرأ نص الصفحة…',
+    updateAvail: v => `في نسخة جديدة من سياق (${v})`, updateNow: 'حدّث هلق', updating: 'عم يتحدّث… سياق رح يفتح من جديد', updateFailed: 'ما زبط التحديث: ',
   },
   en: {
     brand: 'Siyaq', title: 'Siyaq — PDF reader', open: 'Open PDF', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
@@ -417,6 +545,18 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
+    tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
+    search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
+    speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
+    review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
+    nothingDue: 'Nothing to review right now. Come back tomorrow!', backToList: 'Back to list', left: n => `${n} left`,
+    setupTitle: 'One step before you start', setupText: 'Siyaq uses Google’s Gemini to understand words. The key is free and takes a minute.',
+    setupStep1: 'Open Google AI Studio and sign in with your Google account.', setupOpen: 'Open the page',
+    setupStep2: 'Press <b>Create API key</b> and copy the key.', setupStep3: 'Paste it here:',
+    setupTest: 'Test and save', setupLater: 'Later', setupOther: 'I use another provider',
+    setupChecking: 'Checking the key…', setupOk: 'The key works ✓', setupBad: 'The key didn’t work: ',
+    resumed: n => `Back on page ${n}, where you left off`, ocrRunning: 'Reading the page’s text…',
+    updateAvail: v => `A new version of Siyaq is available (${v})`, updateNow: 'Update now', updating: 'Updating… Siyaq will reopen', updateFailed: 'Update failed: ',
   },
   tr: {
     brand: 'Siyaq', title: 'Siyaq — PDF okuyucu', open: 'PDF aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
@@ -437,6 +577,18 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
+    tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
+    search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
+    speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
+    review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
+    nothingDue: 'Şu an tekrar edilecek kelime yok. Yarın tekrar gelin!', backToList: 'Listeye dön', left: n => `${n} kaldı`,
+    setupTitle: 'Başlamadan önce tek adım', setupText: 'Siyaq, kelimeleri anlamak için Google’ın Gemini’sini kullanır. Anahtar ücretsizdir ve bir dakika sürer.',
+    setupStep1: 'Google AI Studio’yu açın ve Google hesabınızla giriş yapın.', setupOpen: 'Sayfayı aç',
+    setupStep2: '<b>Create API key</b> düğmesine basın ve anahtarı kopyalayın.', setupStep3: 'Buraya yapıştırın:',
+    setupTest: 'Dene ve kaydet', setupLater: 'Sonra', setupOther: 'Başka bir sağlayıcı kullanıyorum',
+    setupChecking: 'Anahtar deneniyor…', setupOk: 'Anahtar çalışıyor ✓', setupBad: 'Anahtar çalışmadı: ',
+    resumed: n => `Kaldığınız yere, ${n}. sayfaya döndünüz`, ocrRunning: 'Sayfanın metni okunuyor…',
+    updateAvail: v => `Siyaq’ın yeni sürümü var (${v})`, updateNow: 'Şimdi güncelle', updating: 'Güncelleniyor… Siyaq yeniden açılacak', updateFailed: 'Güncelleme başarısız: ',
   },
 };
 
@@ -453,6 +605,7 @@ let pdfDoc = null, scale = 1, bookName = '';
 let fitScale = 1, zoom = 1, pageSize = null; // scale = fitScale × zoom; pageSize is page 1 at scale 1
 let bookLang = null; // 'ar' | 'en' | 'tr' | 'other', or null when unknown
 let lastLookup = null;
+let bookKey = ''; // name + page count: identifies a book for its saved reading position
 const cache = new Map(store.get('cache', [])); // lang|word|sentence → answer, kept between sessions
 let lookupId = 0;
 
@@ -484,6 +637,12 @@ async function openPdf(data, name) {
     observer.observe(div);
   }
   viewer.scrollTop = 0;
+  bookKey = name + '|' + doc.numPages;
+  ocrCache.clear();
+  pageTexts.clear();
+  closeSearch();
+  loadToc(doc);
+  restorePosition();
   backTo = null;
   $('#backBtn').hidden = true;
   $('#tools').hidden = false;
@@ -527,6 +686,12 @@ async function renderPage(div) {
   div.appendChild(layer);
   const textContent = await page.getTextContent();
   await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: layer, viewport: vp, textDivs: [] }).promise;
+  if (s !== scale || !layer.isConnected) return;
+  markKnownWords(layer);
+  highlightSearch(div);
+  // Scanned pages are pictures of text: almost no text, and an image covering most of the page.
+  const chars = textContent.items.reduce((n, it) => n + it.str.replace(/\s/g, '').length, 0);
+  if (chars < 20 && (await imageCoverage(page)) > 0.5) queueOcr(div, canvas, layer);
 
   // Links inside the book (table of contents, footnotes), in page pixels.
   div._links = (await page.getAnnotations())
@@ -543,14 +708,16 @@ function linkAt(pageDiv, clientX, clientY) {
 }
 
 let backTo = null; // where to return after following a link
-async function goToDest(dest) {
+async function goToDest(dest, remember = true) {
   const explicit = typeof dest === 'string' ? await pdfDoc.getDestination(dest) : dest;
   if (!Array.isArray(explicit)) return;
   const index = typeof explicit[0] === 'object' ? await pdfDoc.getPageIndex(explicit[0]) : explicit[0];
   const div = viewer.querySelector(`.page[data-page="${index + 1}"]`);
   if (!div) return;
-  backTo = viewer.scrollTop;
-  $('#backBtn').hidden = false;
+  if (remember) {
+    backTo = viewer.scrollTop;
+    $('#backBtn').hidden = false;
+  }
   const top = explicit[1]?.name === 'XYZ' ? explicit[3] : null; // PDF units, measured from the page bottom
   const h = +div.dataset.h || pageSize.h;
   viewer.scrollTop = div.offsetTop + (top != null ? Math.max(0, (h - top) * scale - 16) : -24);
@@ -630,7 +797,7 @@ let scrollQueued = false;
 viewer.addEventListener('scroll', () => {
   if (scrollQueued) return;
   scrollQueued = true;
-  requestAnimationFrame(() => { scrollQueued = false; updatePageLabel(); });
+  requestAnimationFrame(() => { scrollQueued = false; updatePageLabel(); savePosition(); });
 }, { passive: true });
 
 $('#pageInput').addEventListener('change', e => { goToPage(+e.target.value); e.target.blur(); });
@@ -671,6 +838,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomStep(1); }
   else if (e.key === '-') { e.preventDefault(); zoomStep(-1); }
   else if (e.key === '0') { e.preventDefault(); setZoom(1); }
+  else if (e.key.toLowerCase() === 'f' && pdfDoc) { e.preventDefault(); openSearch(); }
 });
 
 // Keep "100%" meaning "fits the width" when the window is resized.
@@ -773,13 +941,21 @@ function sentenceAround(span, offset) {
   return text.slice(start, end + 1).replace(/\s+/g, ' ').trim();
 }
 
+// Characters from the start of a text span up to a point inside it (spans can hold <mark> children).
+function offsetIn(span, node, offset) {
+  const r = document.createRange();
+  r.setStart(span, 0);
+  r.setEnd(node, offset);
+  return r.toString().length;
+}
+
 viewer.addEventListener('click', e => {
   const sel = window.getSelection();
   const selected = sel.toString().replace(/\s+/g, ' ').trim();
   if (selected) {
     const node = sel.anchorNode;
     const span = (node?.nodeType === 3 ? node.parentElement : node)?.closest('.textLayer > span');
-    if (span && selected.split(' ').length <= 10) lookup(selected, sentenceAround(span, sel.anchorOffset));
+    if (span && selected.split(' ').length <= 10) lookup(selected, sentenceAround(span, offsetIn(span, node, sel.anchorOffset)));
     return;
   }
   // A plain click on a link follows it; selecting the link's text still translates it (above).
@@ -790,8 +966,8 @@ viewer.addEventListener('click', e => {
   if (!span) return;
   const pos = caretAt(e.clientX, e.clientY);
   if (!pos || pos.node.nodeType !== 3 || !span.contains(pos.node)) return;
-  const text = pos.node.textContent;
-  let s = pos.offset, en = pos.offset;
+  const text = span.textContent, at = offsetIn(span, pos.node, pos.offset);
+  let s = at, en = at;
   while (s > 0 && isWordChar(text[s - 1])) s--;
   while (en < text.length && isWordChar(text[en])) en++;
   const word = text.slice(s, en).replace(/^['’-]+|['’-]+$/g, '');
@@ -933,27 +1109,34 @@ async function askAI(word, sentence) {
 }
 
 // ---------- Lookup panel ----------
-const wordHead = (word, meta = '') => `<header class="result-head"><h2 class="word" dir="auto">${esc(word)}</h2>${meta}</header>`;
+const canSpeak = 'speechSynthesis' in window;
+const speakBtn = word => canSpeak ? `<button class="icon-btn speak" data-say="${esc(word)}" title="${t('speak')}" aria-label="${t('speak')}">${icon('volume')}</button>` : '';
+const wordHead = (word, meta = '') => `<header class="result-head"><h2 class="word" dir="auto">${esc(word)}</h2>${speakBtn(word)}${meta}</header>`;
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const markWord = (sentence, word) => esc(sentence).replace(new RegExp(escRe(esc(word)), 'i'), m => `<mark>${m}</mark>`);
 const section = (title, body) => `<section><h3 class="label">${title}</h3>${body}</section>`;
 const stateCard = (iconName, text, action = '', cls = '') => `<div class="state ${cls}">${icon(iconName)}<p>${text}</p>${action}</div>`;
 
 function sentenceBlock(word, sentence) {
-  const w = esc(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const marked = esc(sentence).replace(new RegExp(w, 'i'), m => `<mark>${m}</mark>`);
-  return section(t('sentence'), `<blockquote class="sentence" dir="auto">${marked}</blockquote>`);
+  return section(t('sentence'), `<blockquote class="sentence" dir="auto">${markWord(sentence, word)}</blockquote>`);
 }
 
-async function lookup(word, sentence) {
+async function lookup(word, sentence, fresh = false) {
   showTab('lookup');
   const pane = $('#lookup');
   if (!settings.apiKey && settings.provider !== 'openai') {
+    lastLookup = { word, sentence };
     pane.innerHTML = wordHead(word) + stateCard('key', t('needKey'), `<button class="btn primary" id="keyBtn">${t('openSettings')}</button>`);
-    $('#keyBtn').onclick = openSettings;
+    $('#keyBtn').onclick = openSetup;
+    openSetup();
     return;
   }
   const id = ++lookupId;
   lastLookup = { word, sentence };
   const key = settings.lang + '|' + word.toLowerCase() + '|' + sentence;
+  // A word looked up before in another sentence: show what we know right away, spending nothing.
+  const saved = !fresh && !cache.has(key) && !word.includes(' ') && vocab.find(v => v.word.toLowerCase() === word.toLowerCase());
+  if (saved) { renderSaved(word, sentence, saved); return; }
   if (!cache.has(key)) {
     pane.innerHTML = `<article class="result">${wordHead(word)}<div class="skeleton"><span></span><span></span><span class="short"></span></div>${sentenceBlock(word, sentence)}</article>`;
   }
@@ -987,12 +1170,43 @@ function renderResult(word, sentence, r) {
     </article>`;
 }
 
+function renderSaved(word, sentence, v) {
+  const d = `dir="${LANGS[settings.lang].dir}"`;
+  $('#lookup').innerHTML = `
+    <article class="result">
+      ${wordHead(word)}
+      <p class="tr" ${d}>${esc(v.translation)}</p>
+      <p class="explain" ${d}>${esc(v.explanation || '')}</p>
+      <p class="saved-note">${t('savedMeaning')}</p>
+      <button class="btn" id="hereBtn">${t('explainHere')}</button>
+      ${sentenceBlock(word, sentence)}
+    </article>`;
+  $('#hereBtn').onclick = () => lookup(word, sentence, true);
+}
+
+// ---------- Pronunciation ----------
+function speak(text) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const lang = LANGS[bookLang] ? bookLang : /[\u0600-\u06FF]/.test(text) ? 'ar' : null;
+  const voice = lang && speechSynthesis.getVoices().find(v => v.lang.toLowerCase().startsWith(lang));
+  if (voice) u.voice = voice;
+  if (lang) u.lang = voice?.lang || lang;
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-say]');
+  if (b) speak(b.dataset.say);
+});
+
 // ---------- Vocabulary ----------
 function saveWord(word, sentence, r) {
   vocab = vocab.filter(v => !(v.word.toLowerCase() === word.toLowerCase() && v.sentence === sentence));
   vocab.unshift({ word, translation: r.translation, explanation: r.explanation, sentence, book: bookName, date: new Date().toISOString() });
   store.set('vocab', vocab);
   updateVocabCount();
+  refreshKnown();
 }
 
 const updateVocabCount = () => { $('#vocabCount').textContent = vocab.length || ''; };
@@ -1002,7 +1216,9 @@ function renderVocab() {
   const pane = $('#vocab');
   if (!vocab.length) { pane.innerHTML = stateCard('bookmark', t('vocabEmpty')); return; }
   pane.innerHTML = `
-    <div class="vocab-head"><span>${t('count')(vocab.length)}</span><button class="btn small" id="exportBtn">${icon('download')}${t('export')}</button></div>
+    <div class="vocab-head"><span>${t('count')(vocab.length)}</span><span class="btns">
+      <button class="btn small primary" id="reviewBtn">${icon('repeat')}${t('review')}<span class="badge">${dueWords().length || ''}</span></button>
+      <button class="btn small" id="exportBtn" title="${t('export')}">${icon('download')}</button></span></div>
     <ul class="vocab-list">${vocab.map((v, i) => `
       <li>
         <div class="v-main"><span class="w" dir="auto">${esc(v.word)}</span><span class="v-tr" dir="auto">${esc(v.translation)}</span></div>
@@ -1011,6 +1227,7 @@ function renderVocab() {
       </li>`).join('')}
     </ul>`;
   $('#exportBtn').onclick = exportCsv;
+  $('#reviewBtn').onclick = startReview;
   pane.querySelectorAll('.x').forEach(b => b.onclick = () => { vocab.splice(+b.dataset.i, 1); store.set('vocab', vocab); renderVocab(); });
 }
 
@@ -1025,12 +1242,386 @@ function exportCsv() {
   URL.revokeObjectURL(a.href);
 }
 
+// ---------- Reading position ----------
+function restorePosition() {
+  const p = store.get('positions', {})[bookKey];
+  const div = p && viewer.querySelector(`.page[data-page="${p.page}"]`);
+  if (!div || p.page < 2) return;
+  viewer.scrollTop = div.offsetTop - 24 + p.frac * div.offsetHeight;
+  showToast(t('resumed')(p.page));
+}
+
+let saveTimer;
+function savePosition() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (!pdfDoc) return;
+    const n = currentPage(), div = viewer.querySelector(`.page[data-page="${n}"]`);
+    const frac = div ? (viewer.scrollTop + 24 - div.offsetTop) / div.offsetHeight : 0;
+    const all = store.get('positions', {});
+    all[bookKey] = { page: n, frac: Math.min(1, Math.max(0, frac)), at: Date.now() };
+    const recent = Object.keys(all).sort((a, b) => all[b].at - all[a].at).slice(0, 100); // the last 100 books
+    store.set('positions', Object.fromEntries(recent.map(k => [k, all[k]])));
+  }, 600);
+}
+
+// ---------- Contents ----------
+async function loadToc(doc) {
+  const pane = $('#toc');
+  const outline = await doc.getOutline();
+  if (pdfDoc !== doc) return;
+  if (!outline?.length) { pane.innerHTML = stateCard('list', t('noToc')); return; }
+  const items = [];
+  const build = (list, depth) => `<ul${depth ? '' : ' class="toc"'}>${list.map(it => {
+    items.push(it);
+    return `<li><button data-toc="${items.length - 1}" dir="auto">${esc(it.title)}</button>${it.items?.length && depth < 3 ? build(it.items, depth + 1) : ''}</li>`;
+  }).join('')}</ul>`;
+  pane.innerHTML = build(outline, 0);
+  pane.onclick = e => {
+    const b = e.target.closest('[data-toc]');
+    if (b && items[+b.dataset.toc].dest) goToDest(items[+b.dataset.toc].dest, false);
+  };
+}
+
+// ---------- Search ----------
+const search = { query: '', pages: [], shown: 0, token: 0 };
+const pageTexts = new Map(); // page number → lower-cased text
+const normText = s => s.toLocaleLowerCase().replace(/\s+/g, ' ');
+
+async function pageText(doc, n) {
+  if (!pageTexts.has(n)) {
+    const ocr = ocrCache.get(n);
+    const text = ocr ? ocr.flat().map(w => w.text).join(' ')
+      : (await (await doc.getPage(n)).getTextContent()).items.map(it => it.str).join(' ');
+    pageTexts.set(n, normText(text));
+  }
+  return pageTexts.get(n);
+}
+
+function openSearch() {
+  $('#searchBar').hidden = false;
+  $('#searchInput').focus();
+  $('#searchInput').select();
+}
+
+function closeSearch() {
+  $('#searchBar').hidden = true;
+  $('#searchInput').value = '';
+  search.token++;
+  search.query = '';
+  search.pages = [];
+  viewer.querySelectorAll('.page').forEach(highlightSearch);
+  $('#searchCount').textContent = '';
+}
+
+// Searches every page, starting from the one on screen; the first hit is shown as soon as it's found.
+async function runSearch(q) {
+  const token = ++search.token, doc = pdfDoc;
+  search.query = normText(q.trim());
+  search.pages = [];
+  search.shown = 0;
+  viewer.querySelectorAll('.page').forEach(highlightSearch);
+  if (!search.query || !doc) { updateSearchCount(false); return; }
+  updateSearchCount(true);
+  const start = currentPage();
+  for (let i = 0; i < doc.numPages; i++) {
+    const n = (start - 1 + i) % doc.numPages + 1;
+    const text = await pageText(doc, n);
+    if (token !== search.token) return;
+    if (!text.includes(search.query)) continue;
+    search.pages.splice(search.pages.findIndex(p => p > n) >>> 0, 0, n); // keep in page order
+    if (!search.shown) showSearchResult(n);
+    updateSearchCount(true);
+  }
+  updateSearchCount(false);
+}
+
+function showSearchResult(n) {
+  search.shown = n;
+  goToPage(n);
+  viewer.querySelectorAll('.page').forEach(highlightSearch);
+}
+
+function stepSearch(dir) {
+  if (!search.pages.length) return;
+  const i = search.pages.indexOf(search.shown);
+  showSearchResult(search.pages[(i + dir + search.pages.length) % search.pages.length]);
+  updateSearchCount(false);
+}
+
+function updateSearchCount(busy) {
+  const n = search.pages.length;
+  $('#searchCount').textContent = !search.query ? '' : n ? `${search.pages.indexOf(search.shown) + 1} / ${n}${busy ? '…' : ''}` : busy ? t('searching') : t('searchNone');
+}
+
+function highlightSearch(div) {
+  for (const span of div.querySelectorAll('.textLayer > span')) {
+    span.classList.toggle('hit', !!search.query && normText(span.textContent).includes(search.query));
+  }
+}
+
+let searchTimer;
+$('#searchInput').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runSearch(e.target.value), 300);
+});
+$('#searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); stepSearch(e.shiftKey ? -1 : 1); }
+  if (e.key === 'Escape') closeSearch();
+});
+$('#searchBtn').onclick = openSearch;
+$('#searchPrev').onclick = () => stepSearch(-1);
+$('#searchNext').onclick = () => stepSearch(1);
+$('#searchClose').onclick = closeSearch;
+
+// ---------- Words looked up before, underlined in the book ----------
+let knownRe = null;
+function refreshKnown() {
+  const words = [...new Set(vocab.map(v => v.word.toLowerCase()).filter(w => /^[\p{L}\p{M}'’-]+$/u.test(w)))];
+  knownRe = words.length
+    ? new RegExp(`(?<![\\p{L}\\p{M}])(?:${words.sort((a, b) => b.length - a.length).map(escRe).join('|')})(?![\\p{L}\\p{M}])`, 'giu')
+    : null;
+  viewer.querySelectorAll('.textLayer').forEach(markKnownWords);
+}
+
+function markKnownWords(layer) {
+  for (const span of layer.querySelectorAll(':scope > span')) {
+    if (span.querySelector('mark')) span.textContent = span.textContent; // back to plain text first
+    if (!knownRe) continue;
+    const text = span.textContent, matches = [...text.matchAll(knownRe)];
+    if (!matches.length) continue;
+    const parts = [];
+    let last = 0;
+    for (const m of matches) {
+      parts.push(text.slice(last, m.index));
+      const mark = document.createElement('mark');
+      mark.className = 'known';
+      mark.textContent = m[0];
+      parts.push(mark);
+      last = m.index + m[0].length;
+    }
+    parts.push(text.slice(last));
+    span.replaceChildren(...parts);
+  }
+}
+
+// ---------- Flashcards ----------
+// Spaced repetition: each time you know a word it comes back later (1, 3, 7, 16, then 35 days).
+const DAY = 864e5, INTERVALS = [0, 1, 3, 7, 16, 35];
+const dueWords = () => vocab.filter(v => (v.due || 0) <= Date.now());
+let reviewQueue = null;
+
+function startReview() {
+  reviewQueue = dueWords().sort((a, b) => (a.due || 0) - (b.due || 0));
+  showCard(false);
+}
+
+function showCard(revealed) {
+  const pane = $('#vocab');
+  if (!reviewQueue.length) {
+    pane.innerHTML = stateCard('check', t(vocab.some(v => v.box) ? 'reviewDone' : 'nothingDue'), `<button class="btn" id="listBtn">${t('backToList')}</button>`);
+    $('#listBtn').onclick = endReview;
+    return;
+  }
+  const v = reviewQueue[0], d = `dir="${LANGS[settings.lang].dir}"`;
+  pane.innerHTML = `
+    <div class="review">
+      <div class="review-top"><span>${t('left')(reviewQueue.length)}</span><button class="btn small" id="listBtn">${t('backToList')}</button></div>
+      <div class="card">
+        ${wordHead(v.word)}
+        ${v.sentence ? `<blockquote class="sentence" dir="auto">${markWord(v.sentence, v.word)}</blockquote>` : ''}
+        ${revealed ? `<div class="answer"><p class="tr" ${d}>${esc(v.translation)}</p><p class="explain" ${d}>${esc(v.explanation || '')}</p></div>` : ''}
+      </div>
+      ${revealed
+        ? `<div class="review-actions"><button class="btn again" id="againBtn">${t('again')}</button><button class="btn primary" id="goodBtn">${t('good')}</button></div>`
+        : `<button class="btn primary lg" id="revealBtn">${t('reveal')}</button>`}
+    </div>`;
+  $('#listBtn').onclick = endReview;
+  if (revealed) {
+    $('#againBtn').onclick = () => grade(false);
+    $('#goodBtn').onclick = () => grade(true);
+  } else {
+    $('#revealBtn').onclick = () => showCard(true);
+  }
+}
+
+function grade(knew) {
+  const v = reviewQueue.shift();
+  v.box = knew ? Math.min((v.box || 0) + 1, INTERVALS.length - 1) : 0;
+  v.due = Date.now() + INTERVALS[v.box] * DAY;
+  if (!knew) reviewQueue.push(v); // comes back later in this session
+  store.set('vocab', vocab);
+  showCard(false);
+}
+
+function endReview() {
+  reviewQueue = null;
+  renderVocab();
+}
+
+// ---------- Scanned pages (OCR) ----------
+const ocrCache = new Map(); // page number → lines of words, positioned in page units (scale 1)
+let ocrWorker = null, ocrChain = Promise.resolve();
+
+function ocrWorkerReady() {
+  ocrWorker ??= Tesseract.createWorker(['eng', 'ara', 'tur'], 1, {
+    workerPath: 'vendor/tesseract/worker.min.js',
+    corePath: 'vendor/tesseract/core',
+    langPath: 'vendor/tesseract/lang',
+    gzip: true,
+    cacheMethod: 'none',
+    workerBlobURL: false,
+  });
+  return ocrWorker;
+}
+
+async function imageCoverage(page) {
+  const vp = page.getViewport({ scale: 1 });
+  const area = (await imageBoxes(page, vp, 1)).reduce((sum, [, , w, h]) => sum + w * h, 0);
+  return area / (vp.width * vp.height);
+}
+
+// Pages are read one at a time, in the order they come into view.
+function queueOcr(div, canvas, layer) {
+  const n = +div.dataset.page;
+  if (ocrCache.has(n)) { buildOcrLayer(layer, ocrCache.get(n), scale); return; }
+  const badge = document.createElement('div');
+  badge.className = 'ocr-badge';
+  badge.textContent = t('ocrRunning');
+  div.appendChild(badge);
+  ocrChain = ocrChain.then(async () => {
+    try {
+      if (!canvas.isConnected) return; // zoomed or scrolled away: read again when it's drawn again
+      const worker = await ocrWorkerReady();
+      const { data } = await worker.recognize(canvas, {}, { blocks: true, text: true });
+      const k = canvas.width / +div.dataset.w; // canvas pixels per page unit
+      const lines = [];
+      for (const block of data.blocks || []) for (const para of block.paragraphs) for (const line of para.lines) {
+        const words = line.words
+          // Unsure guesses are usually bits of pictures; the engine also adds invisible direction marks.
+          .filter(w => w.confidence > 55)
+          .map(w => ({ ...w, text: w.text.replace(/[\u200e\u200f\u202a-\u202e]/g, '').trim() }))
+          .filter(w => /[\p{L}\p{N}]/u.test(w.text))
+          .map(w => ({ text: w.text, x: w.bbox.x0 / k, y: w.bbox.y0 / k, w: (w.bbox.x1 - w.bbox.x0) / k, h: (w.bbox.y1 - w.bbox.y0) / k }));
+        // Reading order: right to left for Arabic lines.
+        const rtl = /[؀-ۿ]/.test(words.map(w => w.text).join(''));
+        words.sort((a, b) => rtl ? b.x - a.x : a.x - b.x);
+        if (words.length) lines.push(words);
+      }
+      ocrCache.set(n, lines);
+      pageTexts.delete(n);
+      if (!bookLang) {
+        bookLang = detectLanguage(lines.flat().map(w => w.text).join(' '));
+        showBookLang();
+      }
+      if (layer.isConnected) buildOcrLayer(layer, lines, scale);
+    } catch (err) {
+      console.error('OCR failed', err);
+    } finally {
+      badge.remove();
+    }
+  });
+}
+
+// Invisible, clickable words placed over the picture, like the text layer of a normal page.
+function buildOcrLayer(layer, lines, s) {
+  layer.replaceChildren();
+  const placed = [];
+  for (const words of lines) {
+    words.forEach((w, i) => {
+      const span = document.createElement('span');
+      span.textContent = w.text + (i < words.length - 1 ? ' ' : '');
+      Object.assign(span.style, { left: w.x * s + 'px', top: w.y * s + 'px', fontSize: w.h * s * 0.9 + 'px', fontFamily: 'sans-serif' });
+      layer.appendChild(span);
+      placed.push([span, w.w * s]);
+    });
+    layer.appendChild(document.createElement('br'));
+  }
+  for (const [span, width] of placed) {
+    const natural = span.getBoundingClientRect().width;
+    if (natural) span.style.transform = `scaleX(${width / natural})`;
+  }
+  markKnownWords(layer);
+  highlightSearch(layer.parentElement);
+}
+
+// ---------- Toast ----------
+function showToast(text, action) {
+  const el = $('#toast');
+  el.innerHTML = `<span>${esc(text)}</span>`
+    + (action ? `<button class="btn small primary" id="toastBtn">${esc(action.label)}</button>` : '')
+    + `<button class="icon-btn" id="toastClose" aria-label="${t('close')}">${icon('x')}</button>`;
+  el.hidden = false;
+  if (action) $('#toastBtn').onclick = action.run;
+  $('#toastClose').onclick = () => { el.hidden = true; };
+  clearTimeout(showToast.timer);
+  if (!action) showToast.timer = setTimeout(() => { el.hidden = true; }, 4000);
+}
+
+// ---------- First-run setup ----------
+const AI_STUDIO = 'https://aistudio.google.com/apikey';
+
+function openSetup() {
+  $('#setupKey').value = settings.apiKey || '';
+  $('#setupMsg').className = 'msg';
+  $('#setupMsg').textContent = '';
+  if (!$('#setup').open) $('#setup').showModal();
+}
+
+async function openLink(url) {
+  if (tauri) await tauri.core.invoke('open_link', { url });
+  else window.open(url, '_blank', 'noopener');
+}
+
+$('#setupOpen').onclick = () => openLink(AI_STUDIO);
+$('#setupLater').onclick = () => { store.set('setupSkipped', true); $('#setup').close(); };
+$('#setupOther').onclick = () => { $('#setup').close(); openSettings(); };
+$('#setupKey').addEventListener('keydown', e => { if (e.key === 'Enter') $('#setupSave').click(); });
+$('#setupSave').onclick = async () => {
+  const key = $('#setupKey').value.trim(), msg = $('#setupMsg');
+  if (!key) { $('#setupKey').focus(); return; }
+  msg.className = 'msg';
+  msg.textContent = t('setupChecking');
+  try {
+    const r = await requestJson('GET', GEMINI + 'models?pageSize=1', { 'x-goog-api-key': key });
+    if (!r.ok) throw new Error(r.json?.error?.message || r.status);
+    Object.assign(settings, { provider: 'gemini', apiKey: key });
+    store.set('settings', settings);
+    geminiModels = null;
+    msg.className = 'msg ok';
+    msg.textContent = t('setupOk');
+    setTimeout(() => {
+      $('#setup').close();
+      if (lastLookup) lookup(lastLookup.word, lastLookup.sentence);
+    }, 900);
+  } catch (err) {
+    msg.className = 'msg err';
+    msg.textContent = t('setupBad') + err.message;
+  }
+};
+
+// ---------- Updates (installed app only) ----------
+if (tauri) setTimeout(async () => {
+  try {
+    const version = await tauri.core.invoke('check_update');
+    if (!version) return;
+    showToast(t('updateAvail')(version), {
+      label: t('updateNow'),
+      run: async () => {
+        showToast(t('updating'));
+        try { await tauri.core.invoke('install_update'); } catch (err) { showToast(t('updateFailed') + err); }
+      },
+    });
+  } catch {} // offline, or no releases yet
+}, 3000);
+
 // ---------- UI ----------
 function showTab(name) {
   document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   $('#lookup').hidden = name !== 'lookup';
   $('#vocab').hidden = name !== 'vocab';
-  if (name === 'vocab') renderVocab();
+  $('#toc').hidden = name !== 'toc';
+  if (name === 'vocab' && !reviewQueue) renderVocab();
 }
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
 
@@ -1088,7 +1679,9 @@ function applyUiLanguage() {
     el.setAttribute('aria-label', el.title);
   });
   showBookLang();
-  if (!$('#vocab').hidden) renderVocab();
+  if (!$('#vocab').hidden && !reviewQueue) renderVocab();
+  if (!pdfDoc) $('#toc').innerHTML = stateCard('list', t('noBook'));
+  $('#searchInput').placeholder = t('searchPh');
 }
 
 const target = $('#target');
@@ -1101,6 +1694,8 @@ target.onchange = () => {
 applyTheme();
 applyUiLanguage();
 updateVocabCount();
+refreshKnown();
+if (!settings.apiKey && settings.provider === 'gemini' && !store.get('setupSkipped', false)) openSetup();
 </script>
 </body>
 </html>
