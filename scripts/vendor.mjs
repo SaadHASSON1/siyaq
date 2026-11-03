@@ -6,7 +6,8 @@ const copy = (from, to, files) => {
   for (const f of files) copyFileSync(from + f, to + f);
 };
 
-copy('node_modules/pdfjs-dist/build/', 'src/vendor/', ['pdf.min.js', 'pdf.worker.min.js']);
+// The legacy build also runs on the older Safari engines of Macs that cannot update past macOS 12 or 13.
+copy('node_modules/pdfjs-dist/legacy/build/', 'src/vendor/', ['pdf.min.js', 'pdf.worker.min.js']);
 copyFileSync('node_modules/fflate/umd/index.js', 'src/vendor/fflate.min.js'); // unzips EPUB books
 
 // OCR for scanned pages: Tesseract, its WebAssembly core, and compact Arabic, English and Turkish models.

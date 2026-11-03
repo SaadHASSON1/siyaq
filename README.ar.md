@@ -2,8 +2,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="src/logo-dark.svg">
-    <img src="src/logo.svg" width="140" alt="شعار سياق">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-full-dark.svg">
+    <img src="docs/logo-full.svg" width="150" alt="شعار سياق">
   </picture>
 </p>
 
@@ -15,9 +15,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/SaadHASSON1/siyaq/releases/latest"><img alt="آخر إصدار" src="https://img.shields.io/github/v/release/SaadHASSON1/siyaq?label=download&color=1fb08c"></a>
-  <img alt="الأنظمة" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-0c1e33">
-  <a href="LICENSE"><img alt="رخصة MIT" src="https://img.shields.io/github/license/SaadHASSON1/siyaq?color=c9a45a"></a>
+  <a href="https://github.com/SaadHASSON1/siyaq/releases/latest"><img alt="آخر إصدار" src="https://img.shields.io/github/v/release/SaadHASSON1/siyaq?label=download&color=1f9e66"></a>
+  <img alt="الأنظمة" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-475559">
+  <a href="LICENSE"><img alt="رخصة MIT" src="https://img.shields.io/github/license/SaadHASSON1/siyaq?color=127a52"></a>
 </p>
 
 <p align="center">
