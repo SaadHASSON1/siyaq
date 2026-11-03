@@ -164,7 +164,7 @@ test('Arabic PDF: a click picks the whole word, and the sentence reads right to 
     const i = line.text.indexOf('بيطبع'); if (i < 0) continue;
     const span = line.spans.find(sp => line.starts.get(sp) <= i + 2 && i + 2 < line.starts.get(sp) + sp.textContent.length);
     const at = i + 2 - line.starts.get(span); return [wordAt(span, at), sentenceAround(span, at)]; } return ['(not found)', textLines(document.querySelector('.textLayer')).map(l => l.text).join(' | ')]; })()`);
-  assert.equal(word, 'بيطبع');
+  assert.equal(word, 'بيطبع', `lines: ${JSON.stringify(sentence)} codes: ${[...String(sentence).slice(0, 40)].map(c => c.codePointAt(0).toString(16)).join(' ')}`);
   assert.match(sentence, /^الأمر اللي بيطبع على الشاشة/);
 });
 
