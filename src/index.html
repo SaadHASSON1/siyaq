@@ -236,16 +236,38 @@
   .skeleton span.short { width: 70%; }
   @keyframes shimmer { to { background-position: -200% 0; } }
 
-  .vocab-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--muted); }
-  .vocab-list { list-style: none; margin: 0; padding: 0; }
-  .vocab-list li { position: relative; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .v-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding-inline-end: 34px; }
-  .v-main .w { font-weight: 600; }
-  .v-main .v-tr { color: var(--accent-text); }
-  .v-book { margin-top: 2px; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline-end: 34px; }
-  .vocab-list .x { position: absolute; inset-inline-end: 0; top: 8px; width: 28px; height: 28px; opacity: 0; }
+  .vocab-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--muted); font-size: 13px; }
+  .vocab-filter { width: 100%; height: 34px; margin: 0 0 14px; padding: 0 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; }
+  .vocab-filter:focus { outline: none; border-color: var(--accent); }
+  .v-group + .v-group { margin-top: 18px; }
+  .v-group-head { display: flex; align-items: center; gap: 8px; margin: 0 2px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .v-group-head svg { width: 14px; height: 14px; flex: none; }
+  .v-group-head .n { margin-inline-start: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .v-group-head.open-book { color: var(--accent-text); }
+  .vocab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .vocab-list li { position: relative; display: flex; gap: 8px; align-items: flex-start; padding: 10px 10px 10px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s; }
+  [dir="rtl"] .vocab-list li { padding: 10px 12px 10px 10px; }
+  .vocab-list li:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); background: var(--surface-2); }
+  .v-body { flex: 1; min-width: 0; }
+  .v-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .v-main .w { font-weight: 700; font-size: 15px; }
+  .v-main .v-tr { color: var(--accent-text); font-size: 14px; }
+  .v-sent { margin-top: 4px; font-size: 12.5px; line-height: 1.5; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .v-sent mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+  .v-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+  .v-dots { display: inline-flex; gap: 3px; }
+  .v-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+  .v-dots span.on { background: var(--accent); }
+  .v-acts { display: flex; flex-direction: column; gap: 2px; flex: none; }
+  .v-acts .icon-btn { width: 28px; height: 28px; }
+  .v-acts .icon-btn .i { width: 15px; height: 15px; }
+  .v-acts .go { color: var(--accent-text); background: var(--accent-soft); }
+  .v-acts .go:hover { filter: brightness(.96); }
+  [dir="rtl"] .v-acts .go .i { transform: scaleX(-1); }
+  .v-acts .x { opacity: 0; }
   .vocab-list li:hover .x, .vocab-list .x:focus-visible { opacity: 1; }
-  .vocab-list .x .i { width: 15px; height: 15px; }
+  .textLayer mark.flash, .epub-chapter mark.flash { animation: flash 1.6s ease 2; }
+  @keyframes flash { 0%, 100% { background: transparent; } 40% { background: var(--mark); box-shadow: 0 0 0 4px var(--mark); } }
 
   /* ---------- Settings ---------- */
   dialog {
@@ -262,6 +284,16 @@
   dialog input:focus, dialog select:focus { outline: none; border-color: var(--accent); }
   dialog small { display: block; margin-top: 6px; color: var(--muted); font-weight: 400; line-height: 1.5; }
   #setupFromSettings { margin-top: 12px; }
+  dialog#settings { width: min(480px, calc(100vw - 32px)); }
+  .set-tabs { display: flex; gap: 2px; margin: 14px 0 4px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
+  .set-tabs button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px; white-space: nowrap; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+  .set-tabs button svg { width: 16px; height: 16px; }
+  .set-tabs button:hover { color: var(--text); }
+  .set-tabs button.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .set-tabs button.on svg { color: var(--accent-text); }
+  .set-pane { min-height: 290px; }
+  .set-pane[hidden] { display: none; }
+  .set-pane > .mcp-box:first-child, .set-pane > .about:first-child { margin-top: 18px; padding-top: 0; border-top: 0; }
   .mcp-box { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
   .mcp-box .check { display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; }
   .mcp-box .check input { display: inline; width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
@@ -526,6 +558,13 @@
 <dialog id="settings">
   <form method="dialog" id="settingsForm">
     <h3 data-i18n="settings"></h3>
+    <nav class="set-tabs" role="tablist">
+      <button type="button" data-pane="general"><i data-icon="sliders"></i><span data-i18n="setTabGeneral"></span></button>
+      <button type="button" data-pane="ai"><i data-icon="sparkle"></i><span data-i18n="setTabAi"></span></button>
+      <button type="button" data-pane="connect" id="connectTab"><i data-icon="plug"></i><span data-i18n="setTabConnect"></span></button>
+      <button type="button" data-pane="about"><i data-icon="alert"></i><span data-i18n="setTabAbout"></span></button>
+    </nav>
+    <section class="set-pane" data-pane="general">
     <label><span data-i18n="uiLang"></span>
       <select name="uiLang">
         <option value="ar">العربية</option>
@@ -540,6 +579,8 @@
         <option value="dark" data-i18n="themeDark"></option>
       </select>
     </label>
+    </section>
+    <section class="set-pane" data-pane="ai">
     <label><span data-i18n="provider"></span>
       <select name="provider">
         <option value="gemini" data-i18n="optGemini"></option>
@@ -559,6 +600,8 @@
     <label><span data-i18n="model"></span>
       <input name="model" dir="ltr">
     </label>
+    </section>
+    <section class="set-pane" data-pane="connect">
     <div class="mcp-box" id="mcpBox">
       <label class="check"><input type="checkbox" name="mcp"><span data-i18n="mcpToggle"></span></label>
       <small data-i18n="mcpHelp"></small>
@@ -567,6 +610,14 @@
         <button class="btn small" type="button" id="mcpCopy"><i data-icon="copy"></i><span data-i18n="mcpCopy"></span></button>
       </div>
       <small class="mcp-msg" id="mcpMsg" hidden></small>
+    </div>
+    </section>
+    <section class="set-pane" data-pane="about">
+    <div class="about">
+      <i data-logo class="about-logo"></i>
+      <span><b data-i18n="brand"></b> <span class="ver" data-version></span></span>
+      <button class="btn small" type="button" id="updateCheck"><i data-icon="refresh"></i><span data-i18n="updateCheck"></span></button>
+      <small class="update-msg" id="updateMsg" hidden></small>
     </div>
     <div class="mcp-box feedback">
       <b data-i18n="fbTitle"></b>
@@ -577,12 +628,7 @@
         <button class="btn small" type="button" id="fbMail"><i data-icon="mail"></i><span dir="ltr">contact@x13labs.com</span></button>
       </div>
     </div>
-    <div class="about">
-      <i data-logo class="about-logo"></i>
-      <span><b data-i18n="brand"></b> <span class="ver" data-version></span></span>
-      <button class="btn small" type="button" id="updateCheck"><i data-icon="refresh"></i><span data-i18n="updateCheck"></span></button>
-      <small class="update-msg" id="updateMsg" hidden></small>
-    </div>
+    </section>
     <div class="row">
       <button class="btn" value="cancel" formnovalidate data-i18n="cancel"></button>
       <button class="btn primary" value="save" data-i18n="save"></button>
@@ -744,8 +790,8 @@ const STRINGS = {
     back: 'رجوع', needKey: 'لازم تضيف مفتاح API أولاً.', openSettings: 'افتح الإعدادات', retry: 'جرّب مرة تانية',
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
-    vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askBtn: 'اسأل', askBtnTitle: 'اسأل عن جملة أو فقرة', askPick: 'ظلّل الجملة أو الفقرة اللي بدّك تسأل عنها، أو اكبس على أي جملة.', askSentence: 'اسأل عن هالجملة', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', tocCount: n => n === 1 ? 'قسم واحد' : n === 2 ? 'قسمين' : n <= 10 ? `${n} أقسام` : `${n} قسم`, noBook: 'افتح كتاب لتشوف فهرسه.',
+    vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', pageN: n => `صفحة ${n}`, progress: 'تقدّمك بالمراجعة', goToWord: 'روح على الصفحة', vocabFilterPh: 'دوّر بكلماتك…', noBookName: 'بدون كتاب', noMatches: 'ما في كلمات بتطابق.', openBookFirst: b => `افتح «${b}» أول لتروح على صفحة هالكلمة.`, export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askBtn: 'اسأل', askBtnTitle: 'اسأل عن جملة أو فقرة', askPick: 'ظلّل الجملة أو الفقرة اللي بدّك تسأل عنها، أو اكبس على أي جملة.', askSentence: 'اسأل عن هالجملة', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', setTabGeneral: 'عام', setTabAi: 'الذكاء الاصطناعي', setTabConnect: 'الربط', setTabAbout: 'حول ومساعدة', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', tocCount: n => n === 1 ? 'قسم واحد' : n === 2 ? 'قسمين' : n <= 10 ? `${n} أقسام` : `${n} قسم`, noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
@@ -776,8 +822,8 @@ const STRINGS = {
     back: 'Back', needKey: 'Add an API key first.', openSettings: 'Open settings', retry: 'Try again',
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
-    vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    setupHelp: 'Help me set up a Gemini key', askBtn: 'Ask', askBtnTitle: 'Ask about a sentence or paragraph', askPick: 'Select the sentence or paragraph you want to ask about, or click any sentence.', askSentence: 'Ask about this sentence', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', tocCount: n => n === 1 ? '1 section' : `${n} sections`, noBook: 'Open a book to see its contents.',
+    vocabEmpty: 'Words you look up are saved here automatically.', pageN: n => `Page ${n}`, progress: 'Review progress', goToWord: 'Go to the page', vocabFilterPh: 'Search your words…', noBookName: 'No book', noMatches: 'No words match.', openBookFirst: b => `Open “${b}” first to go to this word’s page.`, export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
+    setupHelp: 'Help me set up a Gemini key', askBtn: 'Ask', askBtnTitle: 'Ask about a sentence or paragraph', askPick: 'Select the sentence or paragraph you want to ask about, or click any sentence.', askSentence: 'Ask about this sentence', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', setTabGeneral: 'General', setTabAi: 'AI', setTabConnect: 'Connections', setTabAbout: 'About & help', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', tocCount: n => n === 1 ? '1 section' : `${n} sections`, noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
@@ -808,8 +854,8 @@ const STRINGS = {
     back: 'Geri', needKey: 'Önce bir API anahtarı ekleyin.', openSettings: 'Ayarları aç', retry: 'Tekrar dene',
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
-    vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    setupHelp: 'Gemini anahtarı kurulumu', askBtn: 'Sor', askBtnTitle: 'Bir cümle ya da paragraf hakkında sor', askPick: 'Sormak istediğiniz cümleyi veya paragrafı seçin ya da herhangi bir cümleye tıklayın.', askSentence: 'Bu cümle hakkında sor', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', tocCount: n => `${n} bölüm`, noBook: 'İçindekileri görmek için bir kitap açın.',
+    vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', pageN: n => `Sayfa ${n}`, progress: 'Tekrar ilerlemesi', goToWord: 'Sayfaya git', vocabFilterPh: 'Kelimelerinizde arayın…', noBookName: 'Kitapsız', noMatches: 'Eşleşen kelime yok.', openBookFirst: b => `Bu kelimenin sayfasına gitmek için önce “${b}” kitabını açın.`, export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
+    setupHelp: 'Gemini anahtarı kurulumu', askBtn: 'Sor', askBtnTitle: 'Bir cümle ya da paragraf hakkında sor', askPick: 'Sormak istediğiniz cümleyi veya paragrafı seçin ya da herhangi bir cümleye tıklayın.', askSentence: 'Bu cümle hakkında sor', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', setTabGeneral: 'Genel', setTabAi: 'Yapay zekâ', setTabConnect: 'Bağlantılar', setTabAbout: 'Hakkında', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', tocCount: n => `${n} bölüm`, noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
@@ -1232,7 +1278,9 @@ function offsetIn(span, node, offset) {
   return r.toString().length;
 }
 
+let clickPage = null; // the page of the last word clicked, saved with it
 viewer.addEventListener('click', e => {
+  clickPage = +e.target.closest('.page')?.dataset.page || null;
   const sel = window.getSelection();
   const selected = sel.toString().replace(/\s+/g, ' ').trim();
   const chapter = e.target.closest('.epub-chapter');
@@ -1579,7 +1627,7 @@ document.addEventListener('click', e => {
 // ---------- Vocabulary ----------
 function saveWord(word, sentence, r) {
   vocab = vocab.filter(v => !(v.word.toLowerCase() === word.toLowerCase() && v.sentence === sentence));
-  vocab.unshift({ word, translation: r.translation, explanation: r.explanation, sentence, book: bookName, date: new Date().toISOString() });
+  vocab.unshift({ word, translation: r.translation, explanation: r.explanation, sentence, book: bookName, bookKey, page: clickPage, date: new Date().toISOString() });
   store.set('vocab', vocab);
   updateVocabCount();
   refreshKnown();
@@ -1587,24 +1635,73 @@ function saveWord(word, sentence, r) {
 
 const updateVocabCount = () => { $('#vocabCount').textContent = vocab.length || ''; };
 
+// My words, grouped by book (the open one first), each with its sentence, review progress, and an arrow
+// back to the page it was looked up on.
+let vocabFilter = '';
 function renderVocab() {
   updateVocabCount();
   const pane = $('#vocab');
   if (!vocab.length) { pane.innerHTML = stateCard('bookmark', t('vocabEmpty')); return; }
+  const q = vocabFilter.toLowerCase();
+  const shown = vocab.map((v, i) => [v, i]).filter(([v]) => !q || [v.word, v.translation, v.book].some(x => String(x || '').toLowerCase().includes(q)));
+  const groups = new Map();
+  for (const [v, i] of shown) {
+    const key = v.book || '';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push([v, i]);
+  }
+  const isOpen = name => name && name === bookName;
+  const ordered = [...groups].sort(([a], [b]) => isOpen(b) - isOpen(a));
+  const when = d => { const days = Math.round((Date.parse(d) - Date.now()) / 864e5); return Number.isFinite(days) ? new Intl.RelativeTimeFormat(settings.uiLang, { numeric: 'auto' }).format(days, 'day') : ''; };
+  const item = (v, i) => `
+    <li data-open="${i}">
+      <div class="v-body">
+        <div class="v-main"><span class="w" dir="auto">${esc(v.word)}</span><span class="v-tr" dir="auto">${esc(v.translation)}</span></div>
+        ${v.sentence ? `<div class="v-sent" dir="auto">${markWord(v.sentence, v.word)}</div>` : ''}
+        <div class="v-meta">
+          ${v.page ? `<span>${t('pageN')(v.page)}</span>` : ''}
+          <span>${when(v.date)}</span>
+          <span class="v-dots" title="${t('progress')}">${[1, 2, 3, 4, 5].map(n => `<span class="${(v.box || 0) >= n ? 'on' : ''}"></span>`).join('')}</span>
+        </div>
+      </div>
+      <div class="v-acts">
+        ${v.page ? `<button class="icon-btn go" data-go="${i}" title="${t('goToWord')}" aria-label="${t('goToWord')}">${icon('arrow')}</button>` : ''}
+        <button class="icon-btn x" data-x="${i}" title="${t('remove')}" aria-label="${t('remove')}">${icon('x')}</button>
+      </div>
+    </li>`;
   pane.innerHTML = `
     <div class="vocab-head"><span>${t('count')(vocab.length)}</span><span class="btns">
       <button class="btn small primary" id="reviewBtn">${icon('repeat')}${t('review')}<span class="badge">${dueWords().length || ''}</span></button>
       <button class="btn small" id="exportBtn" title="${t('export')}">${icon('download')}</button></span></div>
-    <ul class="vocab-list">${vocab.map((v, i) => `
-      <li>
-        <div class="v-main"><span class="w" dir="auto">${esc(v.word)}</span><span class="v-tr" dir="auto">${esc(v.translation)}</span></div>
-        <div class="v-book" dir="auto">${esc(v.book.replace(/\.pdf$/i, ''))}</div>
-        <button class="icon-btn x" data-i="${i}" title="${t('remove')}" aria-label="${t('remove')}">${icon('x')}</button>
-      </li>`).join('')}
-    </ul>`;
+    ${vocab.length > 8 ? `<input class="vocab-filter" id="vocabFilter" type="search" dir="auto" placeholder="${t('vocabFilterPh')}" value="${esc(vocabFilter)}">` : ''}
+    ${ordered.map(([book, list]) => `<section class="v-group">
+      <h3 class="v-group-head${isOpen(book) ? ' open-book' : ''}" dir="auto">${icon('book')}<span>${esc(book.replace(/\.(pdf|epub)$/i, '') || t('noBookName'))}</span><span class="n">${list.length}</span></h3>
+      <ul class="vocab-list">${list.map(([v, i]) => item(v, i)).join('')}</ul></section>`).join('') || stateCard('search', t('noMatches'))}`;
   $('#exportBtn').onclick = exportCsv;
   $('#reviewBtn').onclick = startReview;
-  pane.querySelectorAll('.x').forEach(b => b.onclick = () => { vocab.splice(+b.dataset.i, 1); store.set('vocab', vocab); renderVocab(); });
+  const filter = $('#vocabFilter');
+  if (filter) filter.oninput = () => { vocabFilter = filter.value; const at = filter.selectionStart; renderVocab(); const f = $('#vocabFilter'); f.focus(); f.setSelectionRange(at, at); };
+  pane.onclick = e => {
+    const x = e.target.closest('[data-x]'), go = e.target.closest('[data-go]'), open = e.target.closest('[data-open]');
+    if (x) { vocab.splice(+x.dataset.x, 1); store.set('vocab', vocab); refreshKnown(); renderVocab(); }
+    else if (go) goToWord(vocab[+go.dataset.go]);
+    else if (open) { const v = vocab[+open.dataset.open]; lastLookup = { word: v.word, sentence: v.sentence }; showTab('lookup'); renderSaved(v.word, v.sentence, v); }
+  };
+}
+
+// Back to the page a word was looked up on, with the word flashing there; or say which book to open.
+function goToWord(v) {
+  const sameBook = pdfDoc && (v.bookKey ? v.bookKey === bookKey : v.book === bookName);
+  if (!sameBook) { showToast(t('openBookFirst')(String(v.book || '').replace(/\.(pdf|epub)$/i, ''))); return; }
+  backTo = viewer.scrollTop;
+  $('#backBtn').hidden = false;
+  goToPage(v.page);
+  setTimeout(() => {
+    const page = viewer.querySelector(`.page[data-page="${v.page}"]`);
+    const marks = [...(page?.querySelectorAll('mark.known') || [])].filter(m => m.textContent.toLowerCase() === v.word.toLowerCase());
+    marks.forEach(m => { m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash'); });
+    marks[0]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, 600);
 }
 
 function exportCsv() {
@@ -2417,7 +2514,7 @@ async function openLink(url) {
 
 $('#setupOpen').onclick = () => openLink(AI_STUDIO);
 $('#setupLater').onclick = () => { store.set('setupSkipped', true); $('#setup').close(); };
-$('#setupOther').onclick = () => { $('#setup').close(); openSettings(); };
+$('#setupOther').onclick = () => { $('#setup').close(); openSettings('ai'); };
 $('#setupKey').addEventListener('keydown', e => { if (e.key === 'Enter') $('#setupSave').click(); });
 $('#setupSave').onclick = async () => {
   const key = $('#setupKey').value.trim(), msg = $('#setupMsg');
@@ -2501,10 +2598,17 @@ function syncProviderFields() {
   form.querySelector('[data-for="gemini"]').hidden = form.provider.value !== 'gemini';
   form.model.placeholder = DEFAULT_MODELS[form.provider.value] || t('autoModel');
 }
-function openSettings() {
+function showSettingsPane(name) {
+  document.querySelectorAll('#settings .set-tabs button').forEach(b => { b.classList.toggle('on', b.dataset.pane === name); b.setAttribute('aria-selected', b.dataset.pane === name); });
+  document.querySelectorAll('#settings .set-pane').forEach(p => p.hidden = p.dataset.pane !== name);
+}
+document.querySelectorAll('#settings .set-tabs button').forEach(b => b.onclick = () => showSettingsPane(b.dataset.pane));
+
+function openSettings(pane = 'general') {
+  showSettingsPane(pane);
   for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
   form.mcp.checked = !!settings.mcp;
-  $('#mcpBox').hidden = !tauri || /Android|iPhone|iPad/.test(navigator.userAgent); // AI desktop apps only
+  $('#mcpBox').hidden = $('#connectTab').hidden = !tauri || /Android|iPhone|iPad/.test(navigator.userAgent); // AI desktop apps only
   $('#mcpMsg').hidden = true;
   syncProviderFields();
   $('#settings').showModal();
@@ -2522,7 +2626,7 @@ $('#settings').addEventListener('close', () => {
     if (lastLookup) lookup(lastLookup.word, lastLookup.sentence); // redraw the open word's labels
   }
 });
-$('#settingsBtn').onclick = openSettings;
+$('#settingsBtn').onclick = () => openSettings();
 $('#setupFromSettings').onclick = () => { $('#settings').close('cancel'); openSetup(); };
 
 // ---------- Appearance ----------
