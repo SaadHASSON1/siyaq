@@ -66,9 +66,9 @@
 |---|---|
 | **macOS** (Apple Silicon وIntel) | `Siyaq_x.y.z_universal.dmg` |
 | **Windows** | `Siyaq_x.y.z_x64-setup.exe` |
-| **Linux** | `.AppImage` أو `.deb` أو `.rpm` |
+| **Linux** | `Siyaq_x.y.z_amd64.AppImage` |
 
-حمّلها من **[آخر إصدار](https://github.com/SaadHASSON1/siyaq/releases/latest)**.
+افتح **[آخر إصدار](https://github.com/SaadHASSON1/siyaq/releases/latest)** وحمّل ملفاً واحداً فقط يناسب جهازك من الجدول في أعلى الصفحة.
 
 > [!NOTE]
 > سياق غير موقّع بشهادة مطوّر مدفوعة حتى الآن، لذلك يظهر تحذير عند أول تشغيل.

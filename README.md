@@ -62,9 +62,9 @@ When you read a book in a language you're still learning, every unknown word mea
 |---|---|
 | **macOS** (Apple Silicon and Intel) | `Siyaq_x.y.z_universal.dmg` |
 | **Windows** | `Siyaq_x.y.z_x64-setup.exe` |
-| **Linux** | `.AppImage`, `.deb` or `.rpm` |
+| **Linux** | `Siyaq_x.y.z_amd64.AppImage` |
 
-Get them from the **[latest release](https://github.com/SaadHASSON1/siyaq/releases/latest)**.
+Open the **[latest release](https://github.com/SaadHASSON1/siyaq/releases/latest)** and download just the one file for your device from the table at the top.
 
 > [!NOTE]
 > Siyaq isn't signed with a paid developer certificate yet, so the first launch shows a warning.

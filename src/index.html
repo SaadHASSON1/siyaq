@@ -962,11 +962,16 @@ function caretAt(x, y) {
 
 // Joins the page's text spans and cuts out the sentence around the clicked spot.
 function sentenceAround(span, offset) {
-  let text = '', at = 0;
+  let text = '', at = 0, lineStart = 0;
   for (const el of span.parentElement.children) {
     if (el.tagName === 'BR') {
+      const line = text.slice(lineStart).trim();
       // "contin-" at a line end + "ue" on the next line → "continue"
-      if (/\p{L}-$/u.test(text)) text = text.slice(0, -1); else text += ' ';
+      if (/\p{L}-$/u.test(text)) text = text.slice(0, -1);
+      // A short line that doesn't carry on (a heading like "Down the Rabbit-Hole") ends a sentence.
+      else if (line.length < 45 && !/[,;:\-–—]$/.test(line)) text += '\n';
+      else text += ' ';
+      lineStart = text.length;
       continue;
     }
     if (el === span) at = text.length + offset;
@@ -978,8 +983,8 @@ function sentenceAround(span, offset) {
 // The sentence around position `at`: back and forward to the nearest sentence end, at most 200 characters each way.
 function cutSentence(text, at) {
   let start = at, end = at;
-  while (start > 0 && !/[.!?؟]/.test(text[start - 1]) && at - start < 200) start--;
-  while (end < text.length && !/[.!?؟]/.test(text[end]) && end - at < 200) end++;
+  while (start > 0 && !/[.!?؟\n]/.test(text[start - 1]) && at - start < 200) start--;
+  while (end < text.length && !/[.!?؟\n]/.test(text[end]) && end - at < 200) end++;
   return text.slice(start, end + 1).replace(/\s+/g, ' ').trim();
 }
 
