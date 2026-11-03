@@ -240,7 +240,27 @@ mark.hl { color: inherit; border-radius: 2px; }
   font-size: 13px; white-space: nowrap; /* four tabs stay on one line in a narrow panel */
 }
 .seg button > span:first-child { overflow: hidden; text-overflow: ellipsis; }
-.seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg button.on { color: var(--text); }
+/* The pill that slides under the chosen tab (panel and settings) */
+.seg, .set-tabs { position: relative; isolation: isolate; }
+.seg .pill, .set-tabs .pill { position: absolute; left: 0; top: 0; z-index: -1; border-radius: 8px; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 1px 6px rgba(0,0,0,.04); pointer-events: none; }
+.pill.ready { transition: transform .38s cubic-bezier(.3, .8, .3, 1), width .38s cubic-bezier(.3, .8, .3, 1); }
+.pane-in { animation: pane-in .32s cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes pane-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+/* A far page jump fades out and back in */
+#viewer { transition: opacity .16s ease; }
+#viewer.dip { opacity: 0; }
+/* Light and dark crossfade (view transitions), or ease the colours where those don't exist */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .45s; animation-timing-function: cubic-bezier(.3, .7, .3, 1); }
+.theme-ease, .theme-ease * { transition: background-color .4s ease, color .4s ease, border-color .4s ease, fill .4s ease, filter .4s ease !important; }
+/* A page drawn in the other colours, inverted until it is drawn again (see recolorPages) */
+.page canvas.stand-in { filter: invert(1) hue-rotate(180deg); }
+/* Dialogs rise in like a sheet */
+dialog[open] { animation: sheet-in .28s cubic-bezier(.2, .8, .3, 1); }
+dialog[open]::backdrop { animation: backdrop-in .28s ease; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes backdrop-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pill.ready, #viewer { transition: none; } .pane-in, dialog[open], dialog[open]::backdrop { animation: none; } }
 .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-text); font-size: 11px; font-weight: 600; display: inline-grid; place-items: center; }
 .badge:empty { display: none; }
 .pane { flex: 1; overflow: auto; padding: 16px 20px 24px; }
@@ -286,6 +306,15 @@ mark.hl { color: inherit; border-radius: 2px; }
 .chip { padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; }
 
 .skeleton { display: grid; gap: 10px; margin: 14px 0 6px; }
+/* The answer flowing in: words sharpen from a soft blur; sections and chips glide up */
+.flow { animation: flow-in .55s cubic-bezier(.2, .65, .25, 1) both; }
+@keyframes flow-in { from { opacity: 0; filter: blur(6px); } 60% { filter: blur(0); } to { opacity: 1; filter: blur(0); } }
+.glide { animation: glide .45s cubic-bezier(.2, .65, .25, 1) both; }
+@keyframes glide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: glide .4s cubic-bezier(.2, .65, .25, 1) both; }
+.flow-view .tr:empty, .flow-view .explain:empty, .flow-view .meta:empty { display: none; }
+.flow-view [data-wait] { transition: opacity .2s; }
+@media (prefers-reduced-motion: reduce) { .flow, .glide, .rise { animation: none; } }
 .skeleton span { height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
 .skeleton span:first-child { height: 22px; width: 45%; }
 .skeleton span.short { width: 70%; }
@@ -348,7 +377,7 @@ dialog#settings { width: min(480px, calc(100vw - 32px)); }
 .set-tabs button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px; white-space: nowrap; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
 .set-tabs button svg { width: 16px; height: 16px; }
 .set-tabs button:hover { color: var(--text); }
-.set-tabs button.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.set-tabs button.on { color: var(--text); font-weight: 600; }
 .set-tabs button.on svg { color: var(--accent-text); }
 .set-pane { min-height: 290px; }
 .set-pane[hidden] { display: none; }
@@ -479,11 +508,16 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
 .tour-note svg { width: 15px; height: 15px; flex: none; margin-top: 2px; color: var(--accent-text); }
 .setup-head { text-align: center; }
 .setup-head p { margin: 6px 0 0; color: var(--muted); }
-.tour-foot { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.tour-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
 .dots { display: flex; gap: 6px; margin-inline-end: auto; }
 .dots span { width: 7px; height: 7px; border-radius: 99px; background: var(--border); transition: width .25s, background .25s; }
 .dots span.on { width: 20px; background: var(--accent); }
-.tour-btns { display: flex; gap: 8px; }
+.tour-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-inline-start: auto; min-width: 0; }
+.tour-btns .btn { white-space: nowrap; margin: 0; }
+.dots { flex: none; }
+.tour-other { margin: 6px 0 0; text-align: center; }
+.tour-other .link-btn { margin: 0; font-weight: 500; color: var(--muted); }
+.tour-other .link-btn:hover { color: var(--accent-text); }
 .tour-btns[hidden] { display: none; }
 
 /* The little pictures in the tour */

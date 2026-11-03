@@ -132,11 +132,13 @@ async function geminiStream(model, prompt, onText) {
 
 // The string fields an unfinished JSON reply already has: {"translation": "…", "explanation": "half a sen…
 function partialFields(text) {
-  const out = {};
+  const out = {}, closed = new Set();
   for (const m of text.matchAll(/"(\w+)"\s*:\s*"((?:[^"\\]|\\.)*)("?)/g)) {
     const raw = m[2].replace(/\\(u[0-9a-fA-F]{0,3})?$/, ''); // an escape cut off at the end
     try { out[m[1]] = JSON.parse(`"${raw}"`); } catch { out[m[1]] = raw; }
+    if (m[3]) closed.add(m[1]);
   }
+  Object.defineProperty(out, '_closed', { value: closed }); // which fields are complete
   return out;
 }
 
@@ -293,17 +295,25 @@ async function ask(question) {
   $('#askInput').value = '';
   try {
     const d = `dir="${LANGS[settings.lang].dir}"`;
-    const paragraphs = answer => String(answer || '').split(/\n\s*\n/).filter(p => p.trim()).map(p => `<p class="explain" ${d}>${esc(p.trim())}</p>`).join('');
     const body = document.createElement('div');
     box.querySelector('.skeleton').before(body);
-    // The answer fills in as it is written; the skeleton stays until it is complete.
+    // The answer flows in paragraph by paragraph, word by word; the skeleton stays until it is complete.
+    const flowAnswer = (answer, done) => {
+      const parts = String(answer || '').split(/\n\s*\n/);
+      parts.forEach((text, i) => {
+        if (!text.trim()) return;
+        let p = body.children[i];
+        if (!p) { p = document.createElement('p'); p.className = 'explain glide'; p.setAttribute('dir', LANGS[settings.lang].dir); body.append(p); }
+        flowText(p, text.trim(), done || i < parts.length - 1);
+      });
+    };
     const r = await askModel(buildAskPrompt(askPassage, question), 1500, text => {
       const p = partialFields(text);
-      if (p.answer) body.innerHTML = paragraphs(p.answer);
+      if (p.answer) flowAnswer(p.answer, p._closed.has('answer'));
     });
     countUse('asks');
     if (!box.isConnected) return;
-    body.innerHTML = paragraphs(r.answer);
+    flowAnswer(r.answer, true);
     box.querySelector('.skeleton')?.remove();
   } catch (err) {
     box.querySelector('.skeleton').outerHTML = stateCard('alert', esc(err.message), '', 'error');

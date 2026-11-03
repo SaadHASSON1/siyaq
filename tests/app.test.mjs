@@ -144,6 +144,22 @@ test('search finds words in the book', async () => {
   await page.eval('closeSearch()');
 });
 
+test('motion: the tab pill follows the chosen tab, page jumps glide, dark mode crossfades', async () => {
+  const pillUnder = bar => page.eval(`(() => { const p = document.querySelector('${bar} .pill').getBoundingClientRect(), b = document.querySelector('${bar} button.on').getBoundingClientRect();
+    return Math.abs(p.left - b.left) < 1.5 && Math.abs(p.width - b.width) < 1.5; })()`);
+  await page.eval(`showTab('vocab')`); await page.sleep(450);
+  assert.ok(await pillUnder('.seg'), 'pill under My words');
+  await page.eval(`showTab('lookup')`); await page.sleep(450);
+  assert.ok(await pillUnder('.seg'), 'pill under Meaning');
+  await page.eval('goToPage(2)');
+  await page.waitFor('currentPage() === 2', 3000);
+  const dark = await page.eval('isDark()');
+  await page.eval(`document.querySelector('#themeBtn').click()`);
+  await page.waitFor(`isDark() === ${!dark} && !document.querySelector('.page canvas.stand-in')`, 5000);
+  await page.eval(`document.querySelector('#themeBtn').click()`);
+  await page.waitFor(`isDark() === ${dark} && !document.querySelector('.page canvas.stand-in')`, 5000);
+});
+
 test('the logo goes back to the start screen', async () => {
   await page.eval(`document.querySelector('#homeBtn').click()`);
   assert.ok(await page.eval(`!pdfDoc && !!document.querySelector('#viewer #empty') && document.querySelector('#tools').hidden`));

@@ -69,35 +69,85 @@ async function lookup(word, sentence, fresh = false) {
   }
 }
 
-function renderResult(word, sentence, r) {
+// ---------- The answer, flowing in ----------
+// One layout, filled as the answer arrives: each new word fades in from a soft blur, a section glides in when it
+// first has something, and nothing already on screen moves or is drawn again. Words appear only once whole, so
+// Arabic letters always join.
+function startFlow(word, sentence) {
   const d = `dir="${LANGS[settings.lang].dir}"`;
-  const pos = r.part_of_speech ? `<span class="pos" ${d}>${esc(r.part_of_speech)}</span>` : '';
-  const base = r.base_form && r.base_form.toLowerCase() !== word.toLowerCase() ? `<span dir="auto">${esc(r.base_form)}</span>` : '';
-  const others = (r.other_meanings || []).map(m => `<span class="chip">${esc(m)}</span>`).join('');
   $('#lookup').innerHTML = `
-    <article class="result">
-      ${wordHead(word, pos || base ? `<div class="meta">${pos}${base}</div>` : '')}
-      <p class="tr" ${d}>${esc(r.translation)}</p>
-      <p class="explain" ${d}>${esc(r.explanation)}</p>
+    <article class="result streaming flow-view">
+      ${wordHead(word, '<div class="meta" data-slot="meta"></div>')}
+      <p class="tr" ${d} data-slot="translation"></p>
+      <p class="explain" ${d} data-slot="explanation"></p>
+      <div class="skeleton" data-wait><span></span><span class="short"></span></div>
       ${sentenceBlock(word, sentence)}
       <button class="link-btn" type="button" data-ask-sentence>${icon('sparkle')}${t('askSentence')}</button>
-      ${r.sentence_translation ? section(t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr'), `<p ${d}>${esc(r.sentence_translation)}</p>`) : ''}
-      ${others ? section(t('others'), `<div class="chips" ${d}>${others}</div>`) : ''}
-      ${r._took ? `<p class="took" dir="ltr">${esc(r._took.model.replace(/^models\//, ''))} · ${(r._took.ms / 1000).toFixed(1)}s</p>` : ''}
+      <section data-wrap="sentence_translation" hidden><h3 class="label">${t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr')}</h3><p ${d} data-slot="sentence_translation"></p></section>
+      <section data-wrap="other_meanings" hidden><h3 class="label">${t('others')}</h3><div class="chips" ${d} data-slot="other_meanings"></div></section>
     </article>`;
 }
 
-// An answer still arriving: what is there so far, and a skeleton for the rest.
+// Shows `text` in `el`, adding only what is new, a word at a time. Until `done`, a last word still being written
+// waits for the space after it.
+function flowText(el, text, done) {
+  if (!el || text == null) return;
+  text = String(text);
+  const ready = done ? text : text.slice(0, text.search(/\s\S*$/) + 1);
+  let shown = el.dataset.shown || '';
+  if (!ready.startsWith(shown)) { el.textContent = ''; shown = ''; } // the answer changed course: start over
+  const add = ready.slice(shown.length);
+  if (!add) return;
+  let delay = 0;
+  for (const part of add.split(/(\s+)/)) {
+    if (!part) continue;
+    if (/^\s+$/.test(part)) { el.append(part); continue; }
+    const w = document.createElement('span');
+    w.className = 'flow';
+    w.style.animationDelay = delay + 'ms';
+    delay = Math.min(delay + 32, 480);
+    w.textContent = part;
+    el.append(w);
+  }
+  el.dataset.shown = ready;
+  const wrap = el.closest('[data-wrap]');
+  if (wrap?.hidden) { wrap.hidden = false; wrap.classList.add('glide'); }
+}
+
+// Fills the layout with what the answer has so far (`closed`: the fields that are complete; none means all).
+function fillFlow(word, r, closed, final = false) {
+  const pane = $('#lookup'), slot = name => pane.querySelector(`[data-slot="${name}"]`);
+  const done = name => final || !closed || closed.has(name);
+  for (const name of ['translation', 'explanation', 'sentence_translation']) flowText(slot(name), r[name], done(name));
+  const meta = slot('meta');
+  if (meta && !meta.childElementCount && (done('part_of_speech') && r.part_of_speech || final)) {
+    const d = `dir="${LANGS[settings.lang].dir}"`;
+    const base = r.base_form && r.base_form.toLowerCase() !== word.toLowerCase() ? `<span dir="auto">${esc(r.base_form)}</span>` : '';
+    meta.innerHTML = `${r.part_of_speech ? `<span class="pos" ${d}>${esc(r.part_of_speech)}</span>` : ''}${base}`;
+    meta.classList.add('glide');
+  }
+  if (!final) return;
+  const chips = slot('other_meanings');
+  if (chips && r.other_meanings?.length && !chips.childElementCount) {
+    chips.innerHTML = r.other_meanings.map((m, i) => `<span class="chip rise" style="animation-delay:${120 + i * 70}ms">${esc(m)}</span>`).join('');
+    chips.closest('[data-wrap]').hidden = false;
+    chips.closest('[data-wrap]').classList.add('glide');
+  }
+  pane.querySelector('[data-wait]')?.remove();
+  pane.querySelector('.result')?.classList.remove('streaming');
+  if (r._took) pane.querySelector('.result').insertAdjacentHTML('beforeend', `<p class="took glide" dir="ltr">${esc(r._took.model.replace(/^models\//, ''))} · ${(r._took.ms / 1000).toFixed(1)}s</p>`);
+}
+
+// The whole answer at once (saved, from the demo, or from a provider that doesn't stream), flowing in the same way.
+function renderResult(word, sentence, r) {
+  if (!$('#lookup .flow-view.streaming')) startFlow(word, sentence);
+  fillFlow(word, r, null, true);
+}
+
+// Part of an answer while it streams.
 function renderPartial(word, sentence, p) {
-  const d = `dir="${LANGS[settings.lang].dir}"`;
-  $('#lookup').innerHTML = `
-    <article class="result streaming">
-      ${wordHead(word, p.part_of_speech ? `<div class="meta"><span class="pos" ${d}>${esc(p.part_of_speech)}</span></div>` : '')}
-      <p class="tr" ${d}>${esc(p.translation)}</p>
-      ${p.explanation ? `<p class="explain" ${d}>${esc(p.explanation)}</p>` : ''}
-      ${sentenceBlock(word, sentence)}
-      ${p.sentence_translation ? section(t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr'), `<p ${d}>${esc(p.sentence_translation)}</p>`) : '<div class="skeleton"><span class="short"></span></div>'}
-    </article>`;
+  if (!$('#lookup .flow-view.streaming')) startFlow(word, sentence);
+  fillFlow(word, p, p._closed);
 }
 
 function renderSaved(word, sentence, v) {

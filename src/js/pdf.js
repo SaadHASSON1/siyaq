@@ -70,6 +70,7 @@ async function finishOpening(doc, name) {
   ocrCache.clear();
   pageTexts.clear();
   closeSearch();
+  easeIn(viewer);
   loadToc(doc);
   queueBookShare();
   $('#notesCount').textContent = bookHighlights().length || '';
@@ -170,6 +171,28 @@ async function goToDest(dest, remember = true) {
 
 // ---------- Dark pages ----------
 // Dark mode inverts the page so text is light on dark, then paints the pictures back in their real colours.
+// After a switch between light and dark: pages already drawn get an instant stand-in (inverted with CSS), then
+// are drawn again in the new colours behind it, each swapped in when ready, so a page is never blank.
+// Pages further away are simply drawn again when they come into view.
+async function recolorPages() {
+  if (!pdfDoc || bookType === 'epub') return;
+  const doc = pdfDoc, s = scale, dpr = window.devicePixelRatio || 1;
+  const drawn = [...viewer.querySelectorAll('.page[data-rendered]')];
+  drawn.forEach(div => div.querySelector('canvas')?.classList.toggle('stand-in'));
+  for (const div of drawn) {
+    const old = div.querySelector('canvas');
+    if (!old) continue;
+    const page = await doc.getPage(+div.dataset.page);
+    if (doc !== pdfDoc || s !== scale) return; // another book, or zoomed: those redraw everything anyway
+    const vp = page.getViewport({ scale: s }), canvas = document.createElement('canvas');
+    canvas.width = old.width; canvas.height = old.height;
+    canvas.style.width = old.style.width; canvas.style.height = old.style.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+    if (isDark()) await darkenPage(canvas, page, vp, dpr);
+    if (old.isConnected) old.replaceWith(canvas);
+  }
+}
+
 async function darkenPage(canvas, page, vp, dpr) {
   const boxes = await imageBoxes(page, vp, dpr);
   const original = document.createElement('canvas');
@@ -235,9 +258,16 @@ function updatePageLabel() {
   queueShare();
 }
 
-function goToPage(n) {
+// Glides to a page close by; a far one fades out and back in rather than racing past hundreds of pages.
+// (Restoring where you were, and zooming, still jump straight there.)
+function goToPage(n, smooth = true) {
   const page = viewer.querySelector(`.page[data-page="${Math.min(Math.max(1, n | 0), pdfDoc.numPages)}"]`);
-  if (page) viewer.scrollTop = page.offsetTop - 24;
+  if (!page) return;
+  const top = page.offsetTop - 24, far = Math.abs(top - viewer.scrollTop) > viewer.clientHeight * 6;
+  if (!smooth || matchMedia('(prefers-reduced-motion: reduce)').matches) { viewer.scrollTop = top; return; }
+  if (!far) { viewer.scrollTo({ top, behavior: 'smooth' }); return; }
+  viewer.classList.add('dip');
+  setTimeout(() => { viewer.scrollTop = top; viewer.classList.remove('dip'); }, 160);
 }
 
 let scrollQueued = false;
@@ -274,7 +304,7 @@ function setZoom(z, keepFit = false) {
     observer.unobserve(div);
     observer.observe(div); // re-observing re-renders the pages in view
   }
-  goToPage(page);
+  goToPage(page, false);
   updateZoomLabel();
 }
 

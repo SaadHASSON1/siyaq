@@ -34,6 +34,7 @@ function goHome() {
   pdfDoc = null; bookPath = null; bookName = ''; bookKey = ''; bookLang = null; tocItems = []; lastLookup = null;
   viewer.replaceChildren(welcomeScreen);
   viewer.scrollTop = 0;
+  easeIn(viewer);
   welcomeScreen.classList.remove('drag');
   $('#tools').hidden = true;
   $('#backBtn').hidden = true;

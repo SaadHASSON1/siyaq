@@ -1,8 +1,24 @@
 // The panel tabs, settings dialog, appearance, and starting the app (runs last).
 
 // ---------- UI ----------
+// A pill slides under the chosen tab (panel and settings alike), and the new content eases in.
+function movePill(bar) {
+  const on = bar.querySelector('button.on'), pill = bar.querySelector('.pill') || bar.appendChild(Object.assign(document.createElement('span'), { className: 'pill' }));
+  if (!on || !on.offsetWidth) return;
+  pill.style.width = on.offsetWidth + 'px';
+  pill.style.height = on.offsetHeight + 'px';
+  pill.style.transform = `translate(${on.offsetLeft}px, ${on.offsetTop}px)`;
+  requestAnimationFrame(() => pill.classList.add('ready')); // no slide on the very first placement
+}
+const easeIn = el => { el.classList.remove('pane-in'); void el.offsetWidth; el.classList.add('pane-in'); };
+// Tabs change width with the language and the counts on them: keep the pill under the chosen one.
+const pillWatch = new ResizeObserver(entries => new Set(entries.map(e => e.target.closest('.seg, .set-tabs'))).forEach(movePill));
+document.querySelectorAll('.seg button, .set-tabs button').forEach(b => pillWatch.observe(b));
+
 function showTab(name) {
+  const before = document.querySelector('.seg button.on')?.dataset.tab;
   document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  movePill(document.querySelector('.seg'));
   $('#lookup').hidden = name !== 'lookup';
   $('#vocab').hidden = name !== 'vocab';
   $('#toc').hidden = name !== 'toc';
@@ -10,6 +26,7 @@ function showTab(name) {
   if (name === 'toc') markTocCurrent(true);
   if (name === 'notes') renderNotes();
   if (name === 'vocab' && !reviewQueue) renderVocab();
+  if (before && before !== name) easeIn($('#' + name));
 }
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
 
@@ -22,6 +39,8 @@ function syncProviderFields() {
 function showSettingsPane(name) {
   document.querySelectorAll('#settings .set-tabs button').forEach(b => { b.classList.toggle('on', b.dataset.pane === name); b.setAttribute('aria-selected', b.dataset.pane === name); });
   document.querySelectorAll('#settings .set-pane').forEach(p => p.hidden = p.dataset.pane !== name);
+  movePill(document.querySelector('#settings .set-tabs'));
+  easeIn(document.querySelector(`#settings .set-pane[data-pane="${name}"]`));
 }
 document.querySelectorAll('#settings .set-tabs button').forEach(b => b.onclick = () => showSettingsPane(b.dataset.pane));
 
@@ -35,6 +54,7 @@ function openSettings(pane = 'general') {
   $('#mcpMsg').hidden = true;
   syncProviderFields();
   $('#settings').showModal();
+  movePill(document.querySelector('#settings .set-tabs'));
 }
 form.provider.onchange = () => { form.model.value = ''; syncProviderFields(); };
 $('#settings').addEventListener('close', () => {
@@ -62,14 +82,25 @@ function applyTheme() {
   if (settings.theme === 'system') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = settings.theme;
   $('#themeBtn').innerHTML = icon(isDark() ? 'sun' : 'moon');
-  if (pagesDark !== null && pagesDark !== isDark()) setZoom(zoom, true); // redraw pages in the new colours
+  if (pagesDark !== null && pagesDark !== isDark()) recolorPages(); // the pages in the new colours
   pagesDark = isDark();
 }
 // The quick toggle picks the opposite of what's on screen and keeps it, whatever the system does later.
+// Light and dark: the whole window crossfades. Engines without view transitions ease the colours instead.
 $('#themeBtn').onclick = () => {
   settings.theme = isDark() ? 'light' : 'dark';
   store.set('settings', settings);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { applyTheme(); return; }
+  // The update itself is instant (pages look right at once through recolorPages' stand-in), so the
+  // crossfade never waits on drawing, which browsers pause while it runs.
+  if (document.startViewTransition) {
+    const vt = document.startViewTransition(applyTheme);
+    vt.ready.catch(() => {}); // a quick second click skips the first crossfade; that's fine
+    return;
+  }
+  document.documentElement.classList.add('theme-ease');
   applyTheme();
+  setTimeout(() => document.documentElement.classList.remove('theme-ease'), 450);
 };
 systemDark.addEventListener('change', applyTheme);
 
@@ -130,3 +161,4 @@ if (tauri) {
   tauri.event.listen('open-file', () => tauri.core.invoke('take_pending_file').then(openFromOS));
   tauri.core.invoke('take_pending_file').then(openFromOS);
 }
+movePill(document.querySelector('.seg'));
