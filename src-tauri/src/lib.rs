@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use tauri::{ipc::Response, Emitter, Manager};
 
-/// A PDF the OS asked us to open before the page was ready to receive it.
+/// A book the OS asked us to open before the page was ready to receive it.
 #[derive(Default)]
 struct PendingFile(Mutex<Option<PathBuf>>);
 
@@ -84,7 +84,7 @@ async fn install_update() -> Result<(), String> {
 }
 
 #[tauri::command]
-fn read_pdf(path: String) -> Result<Response, String> {
+fn read_book(path: String) -> Result<Response, String> {
     std::fs::read(&path).map(Response::new).map_err(|e| e.to_string())
 }
 
@@ -108,7 +108,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             ai_request,
-            read_pdf,
+            read_book,
             take_pending_file,
             open_link,
             check_update,
@@ -119,7 +119,10 @@ pub fn run() {
             app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
 
             // Windows and Linux pass the double-clicked file as an argument.
-            if let Some(arg) = std::env::args().skip(1).find(|a| a.to_lowercase().ends_with(".pdf")) {
+            if let Some(arg) = std::env::args().skip(1).find(|a| {
+                let a = a.to_lowercase();
+                a.ends_with(".pdf") || a.ends_with(".epub")
+            }) {
                 open_file(app.handle(), PathBuf::from(arg));
             }
             Ok(())

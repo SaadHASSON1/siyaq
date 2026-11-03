@@ -1,64 +1,106 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="src/logo-dark.svg">
-    <img src="src/logo.svg" width="150" alt="سياق Siyaq">
+    <img src="src/logo.svg" width="140" alt="Siyaq logo">
   </picture>
 </p>
 
-# سياق · Siyaq
+<h1 align="center">Siyaq · سياق</h1>
 
-قارئ PDF مجاني ومفتوح المصدر: اضغط على أي كلمة في كتاب بلغة أجنبية، وبتطلعلك معناها **حسب الجملة اللي هي فيها**، بدون ما تنسخ وتلصق بمترجم.
+<p align="center">
+  <b>Read books in another language without ever leaving the page.</b><br>
+  Click any word in a PDF or EPUB and see what it means <i>in that sentence</i>.
+</p>
 
-A free, open-source PDF reader: click any word in a foreign-language book and get its meaning **in the context of its sentence**, without leaving the page.
+<p align="center">
+  <a href="https://github.com/SaadHASSON1/siyaq/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/SaadHASSON1/siyaq?label=download&color=1fb08c"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-0c1e33">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/SaadHASSON1/siyaq?color=c9a45a"></a>
+</p>
 
-## المميزات
-- معنى الكلمة حسب السياق، مع شرح، وترجمة الجملة، والمعاني التانية، ونطق الكلمة 🔊
-- ترجمة للعربية أو الإنجليزية أو التركية، واكتشاف لغة الكتاب تلقائياً
-- واجهة بالعربية والإنجليزية والتركية
-- **بيقرأ الكتب الممسوحة ضوئياً (OCR)** بالعربي والإنجليزي والتركي، على جهازك وبدون إنترنت
-- ظلّل عبارة كاملة (لحد 10 كلمات) لتعرف معناها، مثل "give up" أو "on the other hand"
-- الكلمات اللي بحثت عنها قبل بتنعلّم بخط تحتها، وضغطة عليها بتعطيك معناها المحفوظ فوراً
-- **مراجعة الكلمات بالبطاقات** (تكرار متباعد)، أو تصديرها لـ Anki
-- بيتذكّر وين وقفت بكل كتاب
-- فهرس جانبي، وبحث جوّا الكتاب (`⌘F` / `Ctrl+F`)، وروابط الفهرس بتنقلك لمكانها
-- وضع داكن للقراءة الليلية، والصور بتضل بألوانها
-- بيتحدّث تلقائياً لما تنزل نسخة جديدة
-- الـ PDF ما بيطلع من جهازك أبداً. بس الجملة اللي بتسأل عنها بتنبعت للذكاء الاصطناعي
+<p align="center"><b>English</b> · <a href="README.ar.md">العربية</a></p>
 
-## التحميل
-نزّل آخر نسخة لجهازك (Mac أو Windows أو Linux) من صفحة **Releases** بالمستودع.
+<p align="center">
+  <img src="docs/screenshot-en-dark.png" alt="Siyaq showing the meaning of “bank” in a sentence from Alice in Wonderland, translated to Turkish" width="900">
+</p>
 
-- **Mac:** إذا ظهر تحذير إنه التطبيق من مطوّر غير معروف، كليك يمين على Siyaq واختار **Open**.
-- **Windows:** إذا ظهر SmartScreen، اختار **More info** وبعدها **Run anyway**.
+---
 
-أول ما تفتح التطبيق بتطلعلك خطوات بسيطة لتاخد مفتاح Gemini مجاني من https://aistudio.google.com وتجرّبه.
+## Why Siyaq?
 
-## التشغيل والبناء
-بتحتاج [Node.js](https://nodejs.org) و[Rust](https://rustup.rs).
+When you read a book in a language you're still learning, every unknown word means copying it, switching to a translator, and coming back. Worse, the translator doesn't see the sentence, so it often gives the wrong meaning: *bank* the river edge becomes *bank* the place for money.
+
+**Siyaq** (Arabic for *context*) fixes both. Click a word and the meaning appears beside the page, chosen for the sentence it's in, with a short explanation of why.
+
+## Features
+
+**Understanding**
+- 🎯 **Meaning in context**: the translation that fits *this* sentence, why, the whole sentence translated, and other meanings
+- 🗣️ **Hear it**: pronunciation for any word
+- ✍️ **Whole phrases**: select up to ten words, like *give up*
+- 🌍 **Arabic, English and Turkish**: translate into any of them; the book's language is detected automatically
+
+**Reading**
+- 📚 **PDF and EPUB**, opened by double-clicking like any reader
+- 🔍 **Scanned books too**: picture-only pages are read on your device (OCR), in all three languages
+- 📍 **Picks up where you left off** in every book
+- 🧭 **Contents sidebar, search** (`⌘F` / `Ctrl+F`) and working links
+- 🌙 **Dark mode** that darkens pages but keeps pictures in their real colours
+
+**Remembering**
+- 📝 **Every word you look up is saved** and underlined wherever it appears again
+- 🃏 **Flashcards** with spaced repetition, or export to Anki
+
+**Respect**
+- 🔒 **Your books never leave your device.** Only the sentence you ask about is sent to the AI.
+- 💸 **Free and open source.** No account, no subscription, no tracking.
+- 🔄 **Updates itself** when a new version comes out
+
+## Download
+
+| Platform | File |
+|---|---|
+| **macOS** (Apple Silicon and Intel) | `Siyaq_x.y.z_universal.dmg` |
+| **Windows** | `Siyaq_x.y.z_x64-setup.exe` |
+| **Linux** | `.AppImage`, `.deb` or `.rpm` |
+
+Get them from the **[latest release](https://github.com/SaadHASSON1/siyaq/releases/latest)**.
+
+> [!NOTE]
+> Siyaq isn't signed with a paid developer certificate yet, so the first launch shows a warning.
+> **macOS:** right-click Siyaq → **Open**. **Windows:** **More info** → **Run anyway**.
+
+## Getting started
+
+1. Open Siyaq. A short setup walks you through getting a **free Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey) and tests it.
+2. Open a PDF or EPUB, or drop it on the window.
+3. Click any word.
+
+You can also use [Ollama](https://ollama.com), any OpenAI-compatible service, or Anthropic, from **Settings**.
+
+## Build from source
+
+You need [Node.js](https://nodejs.org) and [Rust](https://rustup.rs).
 
 ```bash
+git clone https://github.com/SaadHASSON1/siyaq.git
+cd siyaq
 npm install
-npm run dev     # يشغّل التطبيق للتطوير
-npm run build   # يبني التطبيق النهائي
+npm run dev     # run the app while developing
+npm run build   # build installers for your system
 ```
 
-لتجربة الواجهة بالمتصفح بس: `npm run web` وبعدها افتح http://localhost:8765
+Pushing a tag such as `v0.5.0` builds signed installers and update files for every platform with GitHub Actions.
 
-كل دفعة على `main` بتنبني تلقائياً على GitHub Actions لـ Mac وWindows وLinux. لنشر نسخة جديدة، اعمل tag متل `v0.2.0` وادفعه، فبتنعمل مسودة Release فيها ملفات التثبيت.
+**Built with** [Tauri](https://tauri.app), [PDF.js](https://mozilla.github.io/pdf.js/), [Tesseract.js](https://tesseract.projectnaptha.com) and [fflate](https://github.com/101arrowz/fflate).
 
-## اختيار نموذج الذكاء الاصطناعي (من الإعدادات)
-| المزوّد | التكلفة | ملاحظات |
-|---|---|---|
-| Google Gemini | فيه خطة مجانية | خذ مفتاح من https://aistudio.google.com. التطبيق بيختار Flash-Lite تلقائياً لأنه حصته المجانية أكبر |
-| Ollama | مجاني بالكامل، على جهازك | `ollama pull llama3.1` |
-| أي خدمة متوافقة مع OpenAI | حسب الخدمة | OpenRouter، Groq، OpenAI… |
-| Anthropic Claude | مدفوع | |
+## Roadmap
 
-مفتاح الـ API بيتخزن على جهازك فقط.
+- [x] PDF and EPUB, scanned pages, dark mode
+- [x] Arabic, English and Turkish interface and translations
+- [x] Flashcards, saved words, automatic updates
+- [ ] Android, with *Siyaq* in the text-selection menu of every app
 
-## أفكار للتطوير
-- نسخة Android للتلفون والتابلت
-- دعم EPUB
+## License
 
-## الرخصة
-MIT
+[MIT](LICENSE) © Saad HASSON

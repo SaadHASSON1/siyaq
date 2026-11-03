@@ -6,6 +6,7 @@
 <title>سياق</title>
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
+<script src="vendor/fflate.min.js"></script>
 <style>
   :root {
     --canvas: #e9e7e2;      /* behind the pages */
@@ -142,6 +143,23 @@
   .textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: pointer; transform-origin: 0% 0%; }
   .textLayer ::selection { background: rgba(47, 111, 94, .3); }
 
+  /* ---------- EPUB chapters: flowing text in the reader's own colours ---------- */
+  .page.epub-chapter {
+    max-width: 760px; padding: 56px 64px; color: var(--text); text-align: start;
+    font: calc(19px * var(--epub-zoom, 1)) / 1.75 Georgia, "Times New Roman", "Geeza Pro", "Noto Naskh Arabic", serif;
+    overflow-wrap: break-word;
+  }
+  .epub-chapter img { display: block; max-width: 100%; height: auto; margin: 1em auto; }
+  .epub-chapter p { margin: 0 0 .8em; }
+  .epub-chapter h1, .epub-chapter h2, .epub-chapter h3 { line-height: 1.3; }
+  .epub-chapter a[data-href], .epub-chapter a[data-url] { color: var(--accent-text); cursor: pointer; }
+  .epub-chapter table { border-collapse: collapse; max-width: 100%; }
+  .epub-chapter td, .epub-chapter th { border: 1px solid var(--border); padding: 4px 8px; }
+  .epub-chapter pre { white-space: pre-wrap; }
+  .epub-chapter .hit { background: rgba(242, 201, 76, .35); border-radius: 3px; }
+  .epub-chapter mark.known { background: none; color: inherit; border-bottom: 2px solid var(--accent); }
+  .epub-chapter ::selection { background: rgba(47, 111, 94, .3); }
+
   /* ---------- Side panel ---------- */
   .panel { width: 380px; flex: none; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
   .seg { display: flex; gap: 2px; margin: 12px 12px 4px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
@@ -209,6 +227,7 @@
   }
   dialog input:focus, dialog select:focus { outline: none; border-color: var(--accent); }
   dialog small { display: block; margin-top: 6px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  #setupFromSettings { margin-top: 12px; }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
 
   /* ---------- Search ---------- */
@@ -291,6 +310,7 @@
     .brand + .tools { margin-inline-start: auto; }
   }
   @media (max-width: 760px) {
+    .page.epub-chapter { padding: 28px 22px; }
     .bar { flex-wrap: wrap; height: auto; padding: 8px 12px; row-gap: 8px; }
     [dir="rtl"] .bar { padding: 8px 12px; }
     .tools { order: 5; width: 100%; justify-content: center; }
@@ -327,7 +347,7 @@
     </select>
   </div>
   <div class="actions">
-    <label class="icon-btn" data-i18n-title="open"><i data-icon="folder"></i><input class="file-input" type="file" accept="application/pdf" hidden></label>
+    <label class="icon-btn" data-i18n-title="open"><i data-icon="folder"></i><input class="file-input" type="file" accept=".pdf,.epub,application/pdf,application/epub+zip" hidden></label>
     <button class="icon-btn" id="themeBtn" data-i18n-title="toggleTheme"></button>
     <button class="icon-btn" id="settingsBtn" data-i18n-title="settings"><i data-icon="sliders"></i></button>
   </div>
@@ -365,7 +385,7 @@
         <i data-logo class="welcome-icon"></i>
         <h2 data-i18n="emptyTitle"></h2>
         <p data-i18n="emptyText"></p>
-        <label class="btn primary lg"><i data-icon="folder"></i><span data-i18n="open"></span><input class="file-input" type="file" accept="application/pdf" hidden></label>
+        <label class="btn primary lg"><i data-icon="folder"></i><span data-i18n="open"></span><input class="file-input" type="file" accept=".pdf,.epub,application/pdf,application/epub+zip" hidden></label>
         <p class="drop-hint" data-i18n="dropHint"></p>
         <p class="privacy"><i data-icon="lock"></i><span data-i18n="privacy"></span></p>
       </div>
@@ -405,6 +425,7 @@
       <input name="apiKey" type="password" dir="ltr" autocomplete="off">
       <small data-i18n="keyHelp"></small>
     </label>
+    <button class="btn small" id="setupFromSettings" type="button" data-for="gemini"><i data-icon="key"></i><span data-i18n="setupHelp"></span></button>
     <label><span data-i18n="model"></span>
       <input name="model" dir="ltr">
     </label>
@@ -495,14 +516,14 @@ const LANGS = {
 // Interface text, in the app language chosen in settings (separate from the translation language).
 const STRINGS = {
   ar: {
-    brand: 'سياق', title: 'سياق — قارئ PDF', open: 'افتح PDF', settings: 'الإعدادات', uiLang: 'لغة التطبيق', theme: 'المظهر', themeSystem: 'حسب الجهاز', themeLight: 'فاتح', themeDark: 'داكن', toggleTheme: 'الوضع الداكن', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
+    brand: 'سياق', title: 'سياق — قارئ كتب', open: 'افتح كتاب', settings: 'الإعدادات', uiLang: 'لغة التطبيق', theme: 'المظهر', themeSystem: 'حسب الجهاز', themeLight: 'فاتح', themeDark: 'داكن', toggleTheme: 'الوضع الداكن', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
     langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
     panelTitle: 'اضغط على أي كلمة',
     hint: 'بيطلعلك معناها <b>حسب الجملة</b> اللي هي فيها. لعبارة كاملة، ظلّلها بالماوس.',
     emptyTitle: 'افتح كتاب وابدأ القراءة',
     emptyText: 'اضغط على أي كلمة وبيطلعلك معناها حسب سياقها، بدون ما تترك الصفحة.',
-    dropHint: 'أو اسحب ملف PDF إلى هنا',
+    dropHint: 'أو اسحب ملف PDF أو EPUB إلى هنا',
     privacy: 'الكتاب بيضل على جهازك. بس الجملة اللي بتسأل عنها بتنبعت للذكاء الاصطناعي.',
     provider: 'مزوّد الذكاء الاصطناعي', optGemini: 'Google Gemini (فيه خطة مجانية)', optOpenai: 'Ollama / متوافق مع OpenAI (محلي ومجاني)',
     serverUrl: 'عنوان الخادم', serverHelp: 'لـ Ollama على جهازك، أو أي خدمة متوافقة مع OpenAI (OpenRouter، Groq، OpenAI…).',
@@ -513,7 +534,7 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
@@ -527,14 +548,14 @@ const STRINGS = {
     updateAvail: v => `في نسخة جديدة من سياق (${v})`, updateNow: 'حدّث هلق', updating: 'عم يتحدّث… سياق رح يفتح من جديد', updateFailed: 'ما زبط التحديث: ',
   },
   en: {
-    brand: 'Siyaq', title: 'Siyaq — PDF reader', open: 'Open PDF', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
+    brand: 'Siyaq', title: 'Siyaq — book reader', open: 'Open a book', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
     langPair: 'Book language → translation language', auto: 'Auto',
     tabMeaning: 'Meaning', tabWords: 'My words',
     panelTitle: 'Click any word',
     hint: 'You’ll see what it means <b>in its sentence</b>. For a whole phrase, select it.',
     emptyTitle: 'Open a book to start reading',
     emptyText: 'Click any word to see what it means in context, without leaving the page.',
-    dropHint: 'or drop a PDF here',
+    dropHint: 'or drop a PDF or EPUB here',
     privacy: 'Your book stays on your device. Only the sentence you ask about is sent to the AI.',
     provider: 'AI provider', optGemini: 'Google Gemini (free plan available)', optOpenai: 'Ollama / OpenAI-compatible (local, free)',
     serverUrl: 'Server URL', serverHelp: 'For Ollama on your computer, or any OpenAI-compatible service (OpenRouter, Groq, OpenAI…).',
@@ -545,7 +566,7 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
+    setupHelp: 'Help me set up a Gemini key', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
@@ -559,14 +580,14 @@ const STRINGS = {
     updateAvail: v => `A new version of Siyaq is available (${v})`, updateNow: 'Update now', updating: 'Updating… Siyaq will reopen', updateFailed: 'Update failed: ',
   },
   tr: {
-    brand: 'Siyaq', title: 'Siyaq — PDF okuyucu', open: 'PDF aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
+    brand: 'Siyaq', title: 'Siyaq — kitap okuyucu', open: 'Kitap aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
     langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',
     panelTitle: 'Herhangi bir kelimeye tıklayın',
     hint: '<b>Cümledeki</b> anlamını göreceksiniz. Bir ifadenin tamamı için onu seçin.',
     emptyTitle: 'Okumaya başlamak için bir kitap açın',
     emptyText: 'Herhangi bir kelimeye tıklayın, sayfadan ayrılmadan bağlamdaki anlamını görün.',
-    dropHint: 'ya da PDF dosyasını buraya sürükleyin',
+    dropHint: 'ya da PDF veya EPUB dosyasını buraya sürükleyin',
     privacy: 'Kitabınız cihazınızda kalır. Yalnızca sorduğunuz cümle yapay zekâya gönderilir.',
     provider: 'Yapay zekâ sağlayıcısı', optGemini: 'Google Gemini (ücretsiz plan var)', optOpenai: 'Ollama / OpenAI uyumlu (yerel, ücretsiz)',
     serverUrl: 'Sunucu adresi', serverHelp: 'Bilgisayarınızdaki Ollama ya da OpenAI uyumlu herhangi bir hizmet için (OpenRouter, Groq, OpenAI…).',
@@ -577,7 +598,7 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
+    setupHelp: 'Gemini anahtarı kurulumu', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
@@ -601,7 +622,8 @@ const t = key => STRINGS[settings.uiLang][key] ?? STRINGS.en[key];
 // Earlier versions saved these as the model; they have tiny free quotas, so go back to automatic.
 if (/^gemini-(2\.5|3\.8)-flash$/.test(settings.model)) { settings.model = ''; store.set('settings', settings); }
 let vocab = store.get('vocab', []);
-let pdfDoc = null, scale = 1, bookName = '';
+let pdfDoc = null, scale = 1, bookName = ''; // pdfDoc: the open book (a PDF.js document, or an EPUB that looks like one)
+let bookType = 'pdf';
 let fitScale = 1, zoom = 1, pageSize = null; // scale = fitScale × zoom; pageSize is page 1 at scale 1
 let bookLang = null; // 'ar' | 'en' | 'tr' | 'other', or null when unknown
 let lastLookup = null;
@@ -615,9 +637,17 @@ const observer = new IntersectionObserver(entries => {
   for (const e of entries) if (e.isIntersecting) renderPage(e.target);
 }, { root: viewer, rootMargin: '600px 0px' });
 
+const isZip = data => data[0] === 0x50 && data[1] === 0x4b; // EPUB files are zip archives
+
+function openBook(data, name) {
+  return isZip(data) ? openEpub(data, name) : openPdf(data, name);
+}
+
 async function openPdf(data, name) {
   const doc = await pdfjsLib.getDocument({ data }).promise;
   pdfDoc = doc;
+  bookType = 'pdf';
+  viewer.style.removeProperty('--epub-zoom');
   bookName = name;
   $('#bookTitle').textContent = name.replace(/\.pdf$/i, '');
   $('#bookTitle').title = name;
@@ -636,6 +666,11 @@ async function openPdf(data, name) {
     viewer.appendChild(div);
     observer.observe(div);
   }
+  await finishOpening(doc, name);
+}
+
+// Everything that's the same for PDFs and EPUBs once the pages are in place.
+async function finishOpening(doc, name) {
   viewer.scrollTop = 0;
   bookKey = name + '|' + doc.numPages;
   ocrCache.clear();
@@ -709,6 +744,7 @@ function linkAt(pageDiv, clientX, clientY) {
 
 let backTo = null; // where to return after following a link
 async function goToDest(dest, remember = true) {
+  if (dest?.epub) { epubGoTo(dest.epub, remember); return; }
   const explicit = typeof dest === 'string' ? await pdfDoc.getDestination(dest) : dest;
   if (!Array.isArray(explicit)) return;
   const index = typeof explicit[0] === 'object' ? await pdfDoc.getPageIndex(explicit[0]) : explicit[0];
@@ -815,6 +851,7 @@ const zoomStep = dir => setZoom(dir > 0 ? ZOOM_STEPS.find(z => z > zoom + 0.001)
 
 function setZoom(z, keepFit = false) {
   if (!pdfDoc) return;
+  if (bookType === 'epub') { zoomEpub(z); return; }
   const page = currentPage();
   if (!keepFit) zoom = z;
   scale = fitScale * zoom;
@@ -846,7 +883,7 @@ let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (!pdfDoc) return;
+    if (!pdfDoc || bookType === 'epub') return; // EPUB text reflows by itself
     const fit = fitWidthScale();
     if (Math.abs(fit - fitScale) > 0.01) { fitScale = fit; setZoom(zoom, true); }
   }, 200);
@@ -855,14 +892,14 @@ window.addEventListener('resize', () => {
 // ---------- Opening files ----------
 document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async e => {
   const f = e.target.files[0];
-  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
+  if (f) openBook(new Uint8Array(await f.arrayBuffer()), f.name);
   e.target.value = '';
 }));
-// PDFs double-clicked in Finder / Explorer, or opened with "Open with Siyaq".
+// Books double-clicked in Finder / Explorer, or opened with "Open with Siyaq".
 async function openFromOS(path) {
   if (!path) return;
-  const bytes = await tauri.core.invoke('read_pdf', { path });
-  openPdf(new Uint8Array(bytes), path.split(/[\\/]/).pop());
+  const bytes = await tauri.core.invoke('read_book', { path });
+  openBook(new Uint8Array(bytes), path.split(/[\\/]/).pop());
 }
 if (tauri) {
   tauri.event.listen('open-file', () => tauri.core.invoke('take_pending_file').then(openFromOS));
@@ -873,8 +910,8 @@ viewer.addEventListener('dragover', e => { e.preventDefault(); $('#empty')?.clas
 viewer.addEventListener('dragleave', () => $('#empty')?.classList.remove('drag'));
 viewer.addEventListener('drop', async e => {
   e.preventDefault();
-  const f = [...e.dataTransfer.files].find(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
-  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
+  const f = [...e.dataTransfer.files].find(f => /\.(pdf|epub)$/i.test(f.name) || /pdf|epub/.test(f.type));
+  if (f) openBook(new Uint8Array(await f.arrayBuffer()), f.name);
 });
 
 // ---------- Book language ----------
@@ -935,6 +972,11 @@ function sentenceAround(span, offset) {
     if (el === span) at = text.length + offset;
     text += el.textContent;
   }
+  return cutSentence(text, at);
+}
+
+// The sentence around position `at`: back and forward to the nearest sentence end, at most 200 characters each way.
+function cutSentence(text, at) {
   let start = at, end = at;
   while (start > 0 && !/[.!?؟]/.test(text[start - 1]) && at - start < 200) start--;
   while (end < text.length && !/[.!?؟]/.test(text[end]) && end - at < 200) end++;
@@ -952,6 +994,8 @@ function offsetIn(span, node, offset) {
 viewer.addEventListener('click', e => {
   const sel = window.getSelection();
   const selected = sel.toString().replace(/\s+/g, ' ').trim();
+  const chapter = e.target.closest('.epub-chapter');
+  if (chapter) { clickEpub(e, sel, selected); return; }
   if (selected) {
     const node = sel.anchorNode;
     const span = (node?.nodeType === 3 ? node.parentElement : node)?.closest('.textLayer > span');
@@ -1242,6 +1286,246 @@ function exportCsv() {
   URL.revokeObjectURL(a.href);
 }
 
+// ---------- EPUB ----------
+// An EPUB is a zip of XHTML chapters. Each chapter becomes one long "page" of real text, and a small
+// adapter makes the book look like a PDF.js document to the rest of the app (pages, text, outline).
+const EPUB_BLOCKS = 'p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th,dd,dt,figcaption,pre,div,section';
+const IMAGE_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', svg: 'image/svg+xml', webp: 'image/webp' };
+// Books are untrusted: only plain reading elements survive, never scripts, styles, forms or embeds.
+const EPUB_ALLOWED = new Set(('p br hr h1 h2 h3 h4 h5 h6 blockquote ul ol li dl dt dd em i strong b u s sub sup small span a img '
+  + 'figure figcaption table thead tbody tfoot tr td th pre code div section article aside header footer cite q abbr ruby rt rp').split(' '));
+const EPUB_DROP = new Set(['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'select', 'textarea', 'link',
+  'meta', 'title', 'head', 'audio', 'video', 'canvas', 'math', 'template', 'noscript']);
+let epubUrls = []; // picture URLs, freed when another book opens
+
+// 'OEBPS/text/ch1.xhtml' + '../images/a.png' → 'OEBPS/images/a.png'
+function resolvePath(base, rel) {
+  const parts = base.split('/').slice(0, -1);
+  for (const seg of rel.split('/')) {
+    if (seg === '..') parts.pop();
+    else if (seg && seg !== '.') parts.push(seg);
+  }
+  return parts.join('/');
+}
+
+const epubTarget = (base, href) => {
+  const [path, frag] = href.split('#');
+  return (path ? resolvePath(base, decodeURIComponent(path)) : base) + (frag ? '#' + frag : '');
+};
+
+function parseMarkup(text, type) {
+  const doc = new DOMParser().parseFromString(text, type);
+  // Some books ship slightly broken XHTML; the forgiving HTML parser still reads them.
+  return doc.querySelector('parsererror') ? new DOMParser().parseFromString(text, 'text/html') : doc;
+}
+
+async function openEpub(data, name) {
+  const files = fflate.unzipSync(data);
+  const read = path => files[path] ? new TextDecoder().decode(files[path]) : '';
+  const opfPath = parseMarkup(read('META-INF/container.xml'), 'application/xml').querySelector('rootfile').getAttribute('full-path');
+  const opf = parseMarkup(read(opfPath), 'application/xml');
+  const manifest = {};
+  for (const item of opf.querySelectorAll('manifest > item')) {
+    manifest[item.getAttribute('id')] = {
+      href: resolvePath(opfPath, decodeURIComponent(item.getAttribute('href'))),
+      type: item.getAttribute('media-type') || '',
+      props: item.getAttribute('properties') || '',
+    };
+  }
+  const spine = [...opf.querySelectorAll('spine > itemref')].map(r => manifest[r.getAttribute('idref')]).filter(m => m && /html/.test(m.type));
+
+  epubUrls.forEach(URL.revokeObjectURL);
+  epubUrls = [];
+  const urls = {};
+  const urlFor = path => {
+    if (!urls[path] && files[path]) {
+      const type = IMAGE_TYPES[path.split('.').pop().toLowerCase()] || 'application/octet-stream';
+      epubUrls.push(urls[path] = URL.createObjectURL(new Blob([files[path]], { type })));
+    }
+    return urls[path] || '';
+  };
+
+  const chapters = spine.map((item, i) => {
+    const doc = parseMarkup(read(item.href), item.type === 'text/html' ? 'text/html' : 'application/xhtml+xml');
+    const section = document.createElement('section');
+    section.className = 'page epub-chapter';
+    section.dataset.page = i + 1;
+    section.dataset.path = item.href;
+    section.dir = 'auto';
+    const lang = doc.documentElement.getAttribute('lang') || doc.documentElement.getAttribute('xml:lang');
+    if (lang) section.lang = lang;
+    cleanInto(doc.body || doc.documentElement, section, item.href, urlFor);
+    return section;
+  });
+
+  const doc = {
+    numPages: chapters.length,
+    getPage: async n => ({ getTextContent: async () => ({ items: [{ str: chapters[n - 1].textContent }] }) }),
+    getOutline: async () => epubOutline(read, manifest, opf),
+  };
+  pdfDoc = doc;
+  bookType = 'epub';
+  bookName = name;
+  const title = opf.getElementsByTagNameNS('*', 'title')[0]?.textContent.trim();
+  $('#bookTitle').textContent = title || name.replace(/\.epub$/i, '');
+  $('#bookTitle').title = name;
+  zoom = 1;
+  viewer.style.setProperty('--epub-zoom', 1);
+  viewer.replaceChildren(...chapters);
+  chapters.forEach(markKnownInEpub);
+  await finishOpening(doc, name);
+}
+
+// Copies only safe reading elements and attributes. Pictures become local blob URLs; links become
+// in-book jumps (data-href) or web links (data-url) that the click handler decides what to do with.
+function cleanInto(src, dest, base, urlFor) {
+  for (const node of src.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) { dest.append(node.textContent); continue; }
+    if (node.nodeType !== Node.ELEMENT_NODE) continue;
+    const tag = node.localName.toLowerCase();
+    if (EPUB_DROP.has(tag)) continue;
+    if (tag === 'svg') {
+      // Covers are often an <image> inside an <svg>: keep just the picture.
+      const image = node.querySelector('image');
+      const href = image && (image.getAttribute('href') || image.getAttributeNS('http://www.w3.org/1999/xlink', 'href'));
+      if (href && !/^[a-z]+:/i.test(href)) {
+        const img = document.createElement('img');
+        img.src = urlFor(resolvePath(base, decodeURIComponent(href)));
+        dest.append(img);
+      }
+      continue;
+    }
+    if (!EPUB_ALLOWED.has(tag)) { cleanInto(node, dest, base, urlFor); continue; } // unknown wrapper: keep its text
+    const el = document.createElement(tag);
+    if (node.getAttribute('id')) el.id = 'e-' + node.getAttribute('id'); // prefixed so a book can't clash with the app's own ids
+    for (const a of ['lang', 'dir', 'colspan', 'rowspan', 'alt', 'title']) {
+      if (node.getAttribute(a)) el.setAttribute(a, node.getAttribute(a));
+    }
+    if (tag === 'img') {
+      const imgSrc = node.getAttribute('src');
+      if (!imgSrc || /^[a-z]+:/i.test(imgSrc)) continue; // nothing loads from the internet
+      el.src = urlFor(resolvePath(base, decodeURIComponent(imgSrc)));
+    }
+    if (tag === 'a') {
+      const href = node.getAttribute('href') || '';
+      if (/^https?:\/\//i.test(href)) el.dataset.url = href;
+      else if (href && !/^[a-z]+:/i.test(href)) el.dataset.href = epubTarget(base, href);
+    }
+    cleanInto(node, el, base, urlFor);
+    dest.append(el);
+  }
+}
+
+// The book's contents: the EPUB 3 navigation document, or the older EPUB 2 NCX file.
+function epubOutline(read, manifest, opf) {
+  const kids = (el, name) => [...el.children].filter(c => c.localName === name);
+  const label = el => el.textContent.trim().replace(/\s+/g, ' ');
+  const nav = Object.values(manifest).find(m => m.props.split(/\s+/).includes('nav'));
+  if (nav) {
+    const doc = parseMarkup(read(nav.href), 'application/xhtml+xml');
+    const navs = [...doc.getElementsByTagName('nav')];
+    const toc = navs.find(n => /toc/.test(n.getAttribute('epub:type') || n.getAttributeNS('http://www.idpf.org/2007/ops', 'type') || '')) || navs[0];
+    const walk = ol => kids(ol, 'li').map(li => {
+      const a = kids(li, 'a')[0] || kids(li, 'span')[0];
+      const href = a?.getAttribute('href');
+      const sub = kids(li, 'ol')[0];
+      return { title: a ? label(a) : '', dest: href ? { epub: epubTarget(nav.href, href) } : null, items: sub ? walk(sub) : [] };
+    });
+    const list = toc && kids(toc, 'ol')[0];
+    if (list) return walk(list);
+  }
+  const ncxId = opf.querySelector('spine')?.getAttribute('toc');
+  const ncx = (ncxId && manifest[ncxId]) || Object.values(manifest).find(m => m.type === 'application/x-dtbncx+xml');
+  if (ncx) {
+    const doc = parseMarkup(read(ncx.href), 'application/xml');
+    const walk = parent => kids(parent, 'navPoint').map(np => {
+      const src = kids(np, 'content')[0]?.getAttribute('src');
+      return { title: label(kids(np, 'navLabel')[0] || np), dest: src ? { epub: epubTarget(ncx.href, src) } : null, items: walk(np) };
+    });
+    const map = doc.getElementsByTagName('navMap')[0];
+    if (map) return walk(map);
+  }
+  return [];
+}
+
+function epubGoTo(target, remember = true) {
+  const [path, frag] = target.split('#');
+  const section = [...viewer.children].find(c => c.dataset.path === path);
+  if (!section) return;
+  const el = (frag && section.querySelector(`[id="e-${CSS.escape(frag)}"]`)) || section;
+  if (remember) {
+    backTo = viewer.scrollTop;
+    $('#backBtn').hidden = false;
+  }
+  viewer.scrollTop += el.getBoundingClientRect().top - viewer.getBoundingClientRect().top - 24;
+}
+
+function zoomEpub(z) {
+  const n = currentPage(), div = viewer.querySelector(`.page[data-page="${n}"]`);
+  const frac = (viewer.scrollTop + 24 - div.offsetTop) / div.offsetHeight;
+  zoom = z;
+  viewer.style.setProperty('--epub-zoom', zoom);
+  viewer.scrollTop = div.offsetTop - 24 + frac * div.offsetHeight; // stay at the same place in the chapter
+  updateZoomLabel();
+}
+
+// Same rules as on PDF pages: links are followed, a selection is translated, a click translates the word.
+function clickEpub(e, sel, selected) {
+  if (selected) {
+    const node = sel.anchorNode, block = (node?.nodeType === 3 ? node.parentElement : node)?.closest(EPUB_BLOCKS);
+    if (block && selected.split(' ').length <= 10) lookup(selected, cutSentence(block.textContent, offsetIn(block, node, sel.anchorOffset)));
+    return;
+  }
+  const a = e.target.closest('a[data-href], a[data-url]');
+  if (a) {
+    if (a.dataset.href) epubGoTo(a.dataset.href);
+    else openLink(a.dataset.url);
+    return;
+  }
+  const pos = caretAt(e.clientX, e.clientY);
+  if (!pos || pos.node.nodeType !== 3) return;
+  const block = pos.node.parentElement.closest(EPUB_BLOCKS);
+  if (!block) return;
+  const text = block.textContent, at = offsetIn(block, pos.node, pos.offset);
+  let start = at, end = at;
+  while (start > 0 && isWordChar(text[start - 1])) start--;
+  while (end < text.length && isWordChar(text[end])) end++;
+  const word = text.slice(start, end).replace(/^['’-]+|['’-]+$/g, '');
+  if (word && /\p{L}/u.test(word)) lookup(word, cutSentence(text, start));
+}
+
+function markKnownInEpub(section) {
+  for (const m of section.querySelectorAll('mark.known')) m.replaceWith(m.textContent);
+  section.normalize();
+  if (!knownRe) return;
+  const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT), nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const text = node.textContent, matches = [...text.matchAll(knownRe)];
+    if (!matches.length) continue;
+    const parts = [];
+    let last = 0;
+    for (const m of matches) {
+      parts.push(text.slice(last, m.index));
+      const mark = document.createElement('mark');
+      mark.className = 'known';
+      mark.textContent = m[0];
+      parts.push(mark);
+      last = m.index + m[0].length;
+    }
+    parts.push(text.slice(last));
+    node.replaceWith(...parts);
+  }
+}
+
+function highlightEpub(section) {
+  for (const b of section.querySelectorAll('.hit')) b.classList.remove('hit');
+  if (!search.query) return;
+  for (const b of section.querySelectorAll('p,li,h1,h2,h3,h4,h5,h6,blockquote,td,dd,pre,figcaption')) {
+    if (normText(b.textContent).includes(search.query)) b.classList.add('hit');
+  }
+}
+
 // ---------- Reading position ----------
 function restorePosition() {
   const p = store.get('positions', {})[bookKey];
@@ -1340,6 +1624,9 @@ function showSearchResult(n) {
   search.shown = n;
   goToPage(n);
   viewer.querySelectorAll('.page').forEach(highlightSearch);
+  // A chapter is long: bring the first matching paragraph into view.
+  const hit = bookType === 'epub' && viewer.querySelector(`.page[data-page="${n}"] .hit`);
+  if (hit) viewer.scrollTop += hit.getBoundingClientRect().top - viewer.getBoundingClientRect().top - 80;
 }
 
 function stepSearch(dir) {
@@ -1355,6 +1642,7 @@ function updateSearchCount(busy) {
 }
 
 function highlightSearch(div) {
+  if (div.classList.contains('epub-chapter')) { highlightEpub(div); return; }
   for (const span of div.querySelectorAll('.textLayer > span')) {
     span.classList.toggle('hit', !!search.query && normText(span.textContent).includes(search.query));
   }
@@ -1382,6 +1670,7 @@ function refreshKnown() {
     ? new RegExp(`(?<![\\p{L}\\p{M}])(?:${words.sort((a, b) => b.length - a.length).map(escRe).join('|')})(?![\\p{L}\\p{M}])`, 'giu')
     : null;
   viewer.querySelectorAll('.textLayer').forEach(markKnownWords);
+  viewer.querySelectorAll('.epub-chapter').forEach(markKnownInEpub);
 }
 
 function markKnownWords(layer) {
@@ -1628,6 +1917,7 @@ document.querySelectorAll('.seg button').forEach(b => b.onclick = () => showTab(
 const form = $('#settingsForm');
 function syncProviderFields() {
   form.querySelector('[data-for="openai"]').hidden = form.provider.value !== 'openai';
+  form.querySelector('[data-for="gemini"]').hidden = form.provider.value !== 'gemini';
   form.model.placeholder = DEFAULT_MODELS[form.provider.value] || t('autoModel');
 }
 function openSettings() {
@@ -1648,6 +1938,7 @@ $('#settings').addEventListener('close', () => {
   }
 });
 $('#settingsBtn').onclick = openSettings;
+$('#setupFromSettings').onclick = () => { $('#settings').close('cancel'); openSetup(); };
 
 // ---------- Appearance ----------
 const systemDark = matchMedia('(prefers-color-scheme: dark)');

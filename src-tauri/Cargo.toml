@@ -1,6 +1,6 @@
 [package]
 name = "siyaq"
-version = "0.3.0"
+version = "0.4.0"
 description = "Context-aware word lookup for any PDF"
 license = "MIT"
 edition = "2021"

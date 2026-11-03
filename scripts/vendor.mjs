@@ -7,6 +7,7 @@ const copy = (from, to, files) => {
 };
 
 copy('node_modules/pdfjs-dist/build/', 'src/vendor/', ['pdf.min.js', 'pdf.worker.min.js']);
+copyFileSync('node_modules/fflate/umd/index.js', 'src/vendor/fflate.min.js'); // unzips EPUB books
 
 // OCR for scanned pages: Tesseract, its WebAssembly core, and compact Arabic, English and Turkish models.
 copy('node_modules/tesseract.js/dist/', 'src/vendor/tesseract/', ['tesseract.min.js', 'worker.min.js']);
