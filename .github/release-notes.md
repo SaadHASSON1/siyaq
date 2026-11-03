@@ -4,9 +4,9 @@
 
 | | |
 |---|---|
-| 🍎 **Mac** (Apple Silicon + Intel) | [**Siyaq_{{VERSION}}_universal.dmg**](https://github.com/SaadHASSON1/siyaq/releases/download/{{TAG}}/Siyaq_{{VERSION}}_universal.dmg) |
-| 🪟 **Windows** | [**Siyaq_{{VERSION}}_x64-setup.exe**](https://github.com/SaadHASSON1/siyaq/releases/download/{{TAG}}/Siyaq_{{VERSION}}_x64-setup.exe) |
-| 🐧 **Linux** | [**Siyaq_{{VERSION}}_amd64.AppImage**](https://github.com/SaadHASSON1/siyaq/releases/download/{{TAG}}/Siyaq_{{VERSION}}_amd64.AppImage) |
+| 🍎 **Mac** (Apple Silicon + Intel) | [**Siyaq-Mac.dmg**](https://github.com/SaadHASSON1/siyaq/releases/download/{{TAG}}/Siyaq-Mac.dmg) |
+| 🪟 **Windows** | [**Siyaq-Windows-Setup.exe**](https://github.com/SaadHASSON1/siyaq/releases/download/{{TAG}}/Siyaq-Windows-Setup.exe) |
+| 🐧 **Linux** | [**Siyaq-Linux.AppImage**](https://github.com/SaadHASSON1/siyaq/releases/download/{{TAG}}/Siyaq-Linux.AppImage) |
 
 > باقي الملفات (`.sig` و`latest.json` و`.tar.gz`) للتحديث التلقائي، ما بتحتاجها.
 > The other files (`.sig`, `latest.json`, `.tar.gz`) are for automatic updates; you don't need them.

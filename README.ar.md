@@ -69,9 +69,9 @@
 
 | النظام | الملف |
 |---|---|
-| **macOS** (Apple Silicon وIntel) | `Siyaq_x.y.z_universal.dmg` |
-| **Windows** | `Siyaq_x.y.z_x64-setup.exe` |
-| **Linux** | `Siyaq_x.y.z_amd64.AppImage` |
+| **macOS** (Apple Silicon وIntel) | `Siyaq-Mac.dmg` |
+| **Windows** | `Siyaq-Windows-Setup.exe` |
+| **Linux** | `Siyaq-Linux.AppImage` |
 
 الطريقة الأسهل: **[موقع سياق](https://saadhasson1.github.io/siyaq/?lang=ar)** يختار الملف المناسب لجهازك تلقائياً. أو افتح **[آخر إصدار](https://github.com/SaadHASSON1/siyaq/releases/latest)** وحمّل ملفاً واحداً فقط يناسب جهازك من الجدول في أعلى الصفحة.
 

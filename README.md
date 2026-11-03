@@ -65,9 +65,9 @@ When you read a book in a language you're still learning, every unknown word mea
 
 | Platform | File |
 |---|---|
-| **macOS** (Apple Silicon and Intel) | `Siyaq_x.y.z_universal.dmg` |
-| **Windows** | `Siyaq_x.y.z_x64-setup.exe` |
-| **Linux** | `Siyaq_x.y.z_amd64.AppImage` |
+| **macOS** (Apple Silicon and Intel) | `Siyaq-Mac.dmg` |
+| **Windows** | `Siyaq-Windows-Setup.exe` |
+| **Linux** | `Siyaq-Linux.AppImage` |
 
 The easiest way: **[saadhasson1.github.io/siyaq](https://saadhasson1.github.io/siyaq/)** picks the right file for your device. Or open the **[latest release](https://github.com/SaadHASSON1/siyaq/releases/latest)** and download the one file for your device from the table at the top.
 

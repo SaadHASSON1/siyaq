@@ -532,7 +532,8 @@ const t = key => T[lang][key];
 // ---------- Platform and download links ----------
 const ua = navigator.userAgent, platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
 const os = /android|iphone|ipad/i.test(ua) ? 'other' : /mac/.test(platform) || /Mac OS/.test(ua) ? 'mac' : /win/.test(platform) ? 'windows' : /linux/.test(platform) ? 'linux' : 'other';
-const ASSET = { mac: /_universal\.dmg$/, windows: /_x64-setup\.exe$/, linux: /\.AppImage$/ };
+// New releases use Siyaq-Mac.dmg and so on; older ones had the version and architecture in the name.
+const ASSET = { mac: /(-Mac|_universal)\.dmg$/, windows: /(-Windows-Setup|_x64-setup)\.exe$/, linux: /\.AppImage$/ };
 const links = { mac: null, windows: null, linux: null };
 let version = '';
 
