@@ -80,7 +80,8 @@
     background: var(--surface); border-bottom: 1px solid var(--border); flex: none;
   }
   [dir="rtl"] .bar { padding: 0 16px 0 12px; }
-  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; padding: 4px 6px; margin: -4px -6px; border: 0; border-radius: 8px; background: none; color: inherit; font-family: inherit; cursor: pointer; }
+  .brand:hover { background: var(--surface-2); }
   .logo { width: 36px; height: 28px; display: block; }
   .book-title {
     flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -175,10 +176,41 @@
   .privacy .i { width: 14px; height: 14px; }
 
   /* ---------- Pages ---------- */
-  .page { position: relative; margin: 0 auto 20px; background: var(--page-bg); box-shadow: var(--shadow-page); border-radius: 2px; }
+  .page { zoom: var(--live-zoom, 1); position: relative; margin: 0 auto 20px; background: var(--page-bg); box-shadow: var(--shadow-page); border-radius: 2px; }
   .page canvas { display: block; border-radius: 2px; }
   .page.loading::after { content: ''; position: absolute; top: 40px; left: 50%; width: 26px; height: 26px; margin-left: -13px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  /* Highlights: colour boxes over the page (PDF) or marks in the text (EPUB) */
+  :root { --hl-yellow: rgba(250, 204, 21, .38); --hl-green: rgba(34, 197, 94, .3); --hl-blue: rgba(59, 130, 246, .28); --hl-pink: rgba(236, 72, 153, .26); }
+  .hl-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+  .hl-layer .hl-box { position: absolute; border-radius: 2px; mix-blend-mode: multiply; }
+  .hl-yellow { background: var(--hl-yellow); } .hl-green { background: var(--hl-green); } .hl-blue { background: var(--hl-blue); } .hl-pink { background: var(--hl-pink); }
+  mark.hl { color: inherit; border-radius: 2px; }
+  .hl-pin { position: absolute; z-index: 3; width: 18px; height: 18px; margin: -9px 0 0 -9px; padding: 0; border: 2px solid var(--surface); border-radius: 50%; cursor: pointer; pointer-events: auto; box-shadow: 0 1px 3px rgba(0,0,0,.25); display: grid; place-items: center; }
+  .hl-pin svg { width: 10px; height: 10px; color: #fff; }
+  .hl-pin.c-yellow { background: #e0b000; } .hl-pin.c-green { background: #16a34a; } .hl-pin.c-blue { background: #2563eb; } .hl-pin.c-pink { background: #db2777; }
+  .epub-chapter .hl-pin { position: relative; display: inline-grid; vertical-align: middle; margin: 0 2px; top: -1px; }
+  .sel-bar { position: fixed; z-index: 45; display: flex; align-items: center; gap: 2px; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); }
+  .sel-bar button:not(.dot) { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+  .sel-bar button:not(.dot):hover { background: var(--surface-2); }
+  .sel-bar button svg { width: 15px; height: 15px; color: var(--accent-text); }
+  .sel-bar .sep { width: 1px; height: 20px; margin: 0 4px; background: var(--border); }
+  .dot { width: 20px; height: 20px; margin: 0 3px; padding: 0; border: 2px solid var(--surface); border-radius: 50%; cursor: pointer; box-shadow: 0 0 0 1px var(--border); }
+  .dot.on { box-shadow: 0 0 0 2px var(--accent); }
+  .dot.c-yellow { background: #facc15; } .dot.c-green { background: #4ade80; } .dot.c-blue { background: #60a5fa; } .dot.c-pink { background: #f472b6; }
+  .hl-pop { position: fixed; z-index: 46; width: 320px; padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop); }
+  .hl-pop .sentence { margin: 0 0 10px; max-height: 96px; overflow: auto; font-size: 13px; }
+  .hl-colors { display: flex; margin-bottom: 10px; }
+  .hl-pop textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 13.5px; resize: vertical; }
+  .hl-pop textarea:focus { outline: none; border-color: var(--accent); }
+  .hl-pop .row { display: flex; gap: 8px; margin-top: 10px; }
+  .note-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .note-item { position: relative; padding: 10px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); cursor: pointer; }
+  .note-item:hover { border-color: var(--accent); }
+  .note-item .q { padding-inline-start: 10px; border-inline-start: 3px solid; font-size: 13px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .note-item .q.c-yellow { border-color: #facc15; } .note-item .q.c-green { border-color: #4ade80; } .note-item .q.c-blue { border-color: #60a5fa; } .note-item .q.c-pink { border-color: #f472b6; }
+  .note-item .n { margin-top: 8px; font-size: 13.5px; white-space: pre-wrap; }
+  .note-item .m { margin-top: 6px; font-size: 11.5px; color: var(--muted); }
   .page-error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 32px; text-align: center; color: var(--muted); }
   .page-error > svg { width: 28px; height: 28px; color: var(--danger); }
   .page-error p { margin: 0; color: var(--text); font-weight: 600; }
@@ -264,6 +296,10 @@
   .vocab-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--muted); font-size: 13px; }
   .vocab-filter { width: 100%; height: 34px; margin: 0 0 14px; padding: 0 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; }
   .vocab-filter:focus { outline: none; border-color: var(--accent); }
+  .v-pairs { display: flex; gap: 6px; margin: 0 0 12px; overflow-x: auto; padding-bottom: 2px; }
+  .v-pairs button { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+  .v-pairs button span { font-size: 11px; opacity: .8; font-variant-numeric: tabular-nums; }
+  .v-pairs button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
   .v-group + .v-group { margin-top: 18px; }
   .v-group-head { display: flex; align-items: center; gap: 8px; margin: 0 2px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
   .v-group-head svg { width: 14px; height: 14px; flex: none; }
@@ -405,6 +441,14 @@
   .card .word { font-size: 30px; }
   .card .sentence { margin-top: 14px; background: var(--surface); }
   .card .answer { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .rcard { perspective: 1200px; cursor: pointer; }
+  .rcard.on { cursor: default; }
+  .rcard-in { display: grid; transition: transform .6s cubic-bezier(.3, .7, .3, 1); transform-style: preserve-3d; }
+  .rcard-in > .face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .rcard-in > .back { transform: rotateY(180deg); display: flex; flex-direction: column; justify-content: center; }
+  .rcard-in > .back .answer { border-top: 0; margin-top: 8px; padding-top: 0; }
+  .rcard.on .rcard-in { transform: rotateY(180deg); }
+  @media (prefers-reduced-motion: reduce) { .rcard-in { transition: none; } }
   .review-actions { display: flex; gap: 8px; }
   .review-actions .btn { flex: 1; height: 42px; }
   .btn.again { color: var(--danger); }
@@ -506,10 +550,10 @@
 </head>
 <body>
 <header class="bar">
-  <div class="brand">
+  <button class="brand" id="homeBtn" type="button" data-i18n-title="home">
     <i data-logo class="logo"></i>
     <span data-i18n="brand"></span>
-  </div>
+  </button>
   <div class="book-title" id="bookTitle"></div>
   <div class="tools" id="tools" hidden>
     <button class="icon-btn" id="zoomOut" data-i18n-title="zoomOut"><i data-icon="minus"></i></button>
@@ -544,6 +588,7 @@
       <button class="on" data-tab="lookup" role="tab"><span data-i18n="tabMeaning"></span></button>
       <button data-tab="toc" role="tab"><span data-i18n="tabContents"></span></button>
       <button data-tab="vocab" role="tab"><span data-i18n="tabWords"></span><span class="badge" id="vocabCount"></span></button>
+      <button data-tab="notes" role="tab"><span data-i18n="tabNotes"></span><span class="badge" id="notesCount"></span></button>
     </div>
     <div class="pane" id="lookup">
       <div class="state">
@@ -554,6 +599,7 @@
     </div>
     <div class="pane" id="toc" hidden></div>
     <div class="pane" id="vocab" hidden></div>
+    <div class="pane" id="notes" hidden></div>
   </aside>
   <div class="searchbar" id="searchBar" hidden>
     <input id="searchInput" type="search" dir="auto">
@@ -564,6 +610,26 @@
   </div>
   <div class="toast" id="toast" hidden></div>
 <div class="open-menu" id="openMenu" hidden></div>
+<div class="sel-bar" id="selBar" hidden>
+  <button type="button" data-act="meaning"><i data-icon="book"></i><span data-i18n="tabMeaning"></span></button>
+  <button type="button" data-act="ask"><i data-icon="sparkle"></i><span data-i18n="askBtn"></span></button>
+  <span class="sep"></span>
+  <button type="button" class="dot c-yellow" data-act="hl" data-color="yellow" data-i18n-title="highlight"></button>
+  <button type="button" class="dot c-green" data-act="hl" data-color="green" data-i18n-title="highlight"></button>
+  <button type="button" class="dot c-blue" data-act="hl" data-color="blue" data-i18n-title="highlight"></button>
+  <button type="button" class="dot c-pink" data-act="hl" data-color="pink" data-i18n-title="highlight"></button>
+  <span class="sep"></span>
+  <button type="button" data-act="note"><i data-icon="note"></i><span data-i18n="addNote"></span></button>
+</div>
+<div class="hl-pop" id="hlPop" hidden>
+  <blockquote class="sentence" id="hlQuote" dir="auto"></blockquote>
+  <div class="hl-colors">
+    <button type="button" class="dot c-yellow" data-color="yellow"></button><button type="button" class="dot c-green" data-color="green"></button>
+    <button type="button" class="dot c-blue" data-color="blue"></button><button type="button" class="dot c-pink" data-color="pink"></button>
+  </div>
+  <textarea id="hlNote" rows="3" dir="auto" data-i18n-ph="notePh"></textarea>
+  <div class="row"><button class="btn small again" type="button" id="hlDelete"><i data-icon="x"></i><span data-i18n="remove"></span></button><span style="flex:1"></span><button class="btn small primary" type="button" id="hlDone" data-i18n="save"></button></div>
+</div>
   <button class="btn back" id="backBtn" hidden><i data-icon="arrow" class="flip-back"></i><span data-i18n="back"></span></button>
   <div id="viewer">
     <div class="welcome" id="empty">
@@ -785,6 +851,7 @@ const ICONS = {
   sparkle: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  note: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   plug: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
   copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
@@ -822,7 +889,7 @@ const STRINGS = {
     langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
     panelTitle: 'اضغط على أي كلمة',
-    hint: 'بيطلعلك معناها <b>حسب الجملة</b> اللي هي فيها. لعبارة كاملة، ظلّلها بالماوس. ولتسأل عن فقرة، ظلّلها كلها.',
+    hint: 'بيطلعلك معناها <b>حسب الجملة</b> اللي هي فيها. وظلّل أي نص لتشوف معناه، أو تسأل عنه، أو تلوّنه وتكتب عليه ملاحظة.',
     emptyTitle: 'افتح كتاب وابدأ القراءة',
     emptyText: 'اضغط على أي كلمة وبيطلعلك معناها حسب سياقها، بدون ما تترك الصفحة.',
     dropHint: 'أو اسحب ملف PDF أو EPUB إلى هنا',
@@ -836,7 +903,7 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', pageN: n => `صفحة ${n}`, progress: 'تقدّمك بالمراجعة', goToWord: 'روح على الصفحة', vocabFilterPh: 'دوّر بكلماتك…', noBookName: 'بدون كتاب', noMatches: 'ما في كلمات بتطابق.', openBookFirst: b => `افتح «${b}» أول لتروح على صفحة هالكلمة.`, export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askBtn: 'اسأل', askBtnTitle: 'اسأل عن جملة أو فقرة', askPick: 'ظلّل الجملة أو الفقرة اللي بدّك تسأل عنها، أو اكبس على أي جملة.', askSentence: 'اسأل عن هالجملة', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', recentBooks: 'آخر الكتب', books: 'كتب', pageOf: (p, n) => `صفحة ${p} من ${n}`, forgetBook: 'شيله من القائمة', openOther: 'افتح كتاب تاني…', bookMissing: 'ما لقيت ملف الكتاب. يمكن انتقل لمكان تاني أو انمسح، فشلته من القائمة.', backupTitle: 'نسخة احتياطية', backupHelp: 'كلماتك وتقدّمك بالمراجعة ووين وصلت بكل كتاب وإعداداتك، بملف واحد. مفتاح الـ API ما بينحفظ فيه.', backupSave: 'احفظ نسخة', backupLoad: 'استرجع نسخة', backupSaved: n => `انحفظت النسخة، وفيها ${n} كلمة.`, backupRestored: n => `رجعت النسخة. انضافت ${n} كلمة جديدة.`, backupBad: 'هالملف مش نسخة احتياطية من سياق.', usageTitle: 'استخدامك اليوم', usageToday: (w, a) => `${w} كلمة · ${a} سؤال`, usageNote: 'العدد محسوب على جهازك، لأنه المزوّدين ما بيقولوا قديش باقي من الحصة.', usageLimits: 'حدود خطة Gemini المجانية', quotaDay: p => `خلصت حصّتك لليوم عند ${p}. بترجع بكرا، أو فيك تحط مفتاح تاني أو تبدّل المزوّد من الإعدادات.`, quotaMinute: 'انبعت طلبات كتير بدقيقة وحدة. استنى دقيقة وجرّب كمان مرة.', noCredit: p => `رصيدك عند ${p} خلص. اشحن حسابك عندهم، أو بدّل المزوّد من الإعدادات.`, yourProvider: 'مزوّد الذكاء الاصطناعي', tourAgain: 'شوف جولة الترحيب من جديد', setTabGeneral: 'عام', setTabAi: 'الذكاء الاصطناعي', setTabConnect: 'الربط', setTabAbout: 'حول ومساعدة', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', pageError: 'ما قدرت اعرض هالصفحة.', openFailed: 'ما قدرت افتح هالملف: ', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', tocCount: n => n === 1 ? 'قسم واحد' : n === 2 ? 'قسمين' : n <= 10 ? `${n} أقسام` : `${n} قسم`, noBook: 'افتح كتاب لتشوف فهرسه.',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askBtn: 'اسأل', askBtnTitle: 'اسأل عن جملة أو فقرة', askPick: 'ظلّل الجملة أو الفقرة اللي بدّك تسأل عنها، أو اكبس على أي جملة.', askSentence: 'اسأل عن هالجملة', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', recentBooks: 'آخر الكتب', books: 'كتب', pageOf: (p, n) => `صفحة ${p} من ${n}`, forgetBook: 'شيله من القائمة', openOther: 'افتح كتاب تاني…', bookMissing: 'ما لقيت ملف الكتاب. يمكن انتقل لمكان تاني أو انمسح، فشلته من القائمة.', backupTitle: 'نسخة احتياطية', backupHelp: 'كلماتك وتقدّمك بالمراجعة ووين وصلت بكل كتاب وإعداداتك، بملف واحد. مفتاح الـ API ما بينحفظ فيه.', backupSave: 'احفظ نسخة', backupLoad: 'استرجع نسخة', backupSaved: n => `انحفظت النسخة، وفيها ${n} كلمة.`, backupRestored: n => `رجعت النسخة. انضافت ${n} كلمة جديدة.`, backupBad: 'هالملف مش نسخة احتياطية من سياق.', usageTitle: 'استخدامك اليوم', usageToday: (w, a) => `${w} كلمة · ${a} سؤال`, usageNote: 'العدد محسوب على جهازك، لأنه المزوّدين ما بيقولوا قديش باقي من الحصة.', usageLimits: 'حدود خطة Gemini المجانية', quotaDay: p => `خلصت حصّتك لليوم عند ${p}. بترجع بكرا، أو فيك تحط مفتاح تاني أو تبدّل المزوّد من الإعدادات.`, quotaMinute: 'انبعت طلبات كتير بدقيقة وحدة. استنى دقيقة وجرّب كمان مرة.', noCredit: p => `رصيدك عند ${p} خلص. اشحن حسابك عندهم، أو بدّل المزوّد من الإعدادات.`, yourProvider: 'مزوّد الذكاء الاصطناعي', tabNotes: 'ملاحظاتي', highlight: 'ظلّل', addNote: 'ملاحظة', notePh: 'اكتب ملاحظتك…', notesEmpty: 'ظلّل أي نص بالكتاب، واختار لون أو ملاحظة من الشريط اللي بيطلع فوقه.', notesNoBook: 'افتح كتاب لتشوف تظليلاتك وملاحظاتك فيه.', notesCount: n => `${n} تظليل وملاحظة`, chapterN: n => `الفصل ${n}`, home: 'الصفحة الرئيسية', pairLabel: (a, b) => `من ${a} إلى ${b}`, allWords: 'الكل', tourAgain: 'شوف جولة الترحيب من جديد', setTabGeneral: 'عام', setTabAi: 'الذكاء الاصطناعي', setTabConnect: 'الربط', setTabAbout: 'حول ومساعدة', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', pageError: 'ما قدرت اعرض هالصفحة.', openFailed: 'ما قدرت افتح هالملف: ', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', tocCount: n => n === 1 ? 'قسم واحد' : n === 2 ? 'قسمين' : n <= 10 ? `${n} أقسام` : `${n} قسم`, noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
@@ -854,7 +921,7 @@ const STRINGS = {
     langPair: 'Book language → translation language', auto: 'Auto',
     tabMeaning: 'Meaning', tabWords: 'My words',
     panelTitle: 'Click any word',
-    hint: 'You’ll see what it means <b>in its sentence</b>. For a whole phrase, select it. To ask about a paragraph, select all of it.',
+    hint: 'You’ll see what it means <b>in its sentence</b>. Select any text to see its meaning, ask about it, or highlight it and add a note.',
     emptyTitle: 'Open a book to start reading',
     emptyText: 'Click any word to see what it means in context, without leaving the page.',
     dropHint: 'or drop a PDF or EPUB here',
@@ -868,7 +935,7 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', pageN: n => `Page ${n}`, progress: 'Review progress', goToWord: 'Go to the page', vocabFilterPh: 'Search your words…', noBookName: 'No book', noMatches: 'No words match.', openBookFirst: b => `Open “${b}” first to go to this word’s page.`, export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    setupHelp: 'Help me set up a Gemini key', askBtn: 'Ask', askBtnTitle: 'Ask about a sentence or paragraph', askPick: 'Select the sentence or paragraph you want to ask about, or click any sentence.', askSentence: 'Ask about this sentence', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', recentBooks: 'Recent books', books: 'Books', pageOf: (p, n) => `Page ${p} of ${n}`, forgetBook: 'Remove from the list', openOther: 'Open another book…', bookMissing: 'Couldn’t find the book’s file. It may have moved or been deleted, so it was removed from the list.', backupTitle: 'Backup', backupHelp: 'Your words and review progress, where you are in each book, and your settings, in one file. Your API key isn’t included.', backupSave: 'Save a backup', backupLoad: 'Restore a backup', backupSaved: n => `Backup saved, with ${n} words.`, backupRestored: n => `Backup restored. ${n} new words added.`, backupBad: 'This file isn’t a Siyaq backup.', usageTitle: 'Today’s use', usageToday: (w, a) => `${w} words · ${a} questions`, usageNote: 'Counted on this device: providers don’t say how much quota is left.', usageLimits: 'Gemini free plan limits', quotaDay: p => `Your ${p} quota for today is used up. It resets tomorrow, or you can add another key or switch provider in Settings.`, quotaMinute: 'Too many requests in one minute. Wait a minute and try again.', noCredit: p => `Your credit with ${p} has run out. Top up your account with them, or switch provider in Settings.`, yourProvider: 'your AI provider', tourAgain: 'Show the welcome tour again', setTabGeneral: 'General', setTabAi: 'AI', setTabConnect: 'Connections', setTabAbout: 'About & help', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', pageError: 'This page couldn’t be shown.', openFailed: 'Couldn’t open this file: ', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', tocCount: n => n === 1 ? '1 section' : `${n} sections`, noBook: 'Open a book to see its contents.',
+    setupHelp: 'Help me set up a Gemini key', askBtn: 'Ask', askBtnTitle: 'Ask about a sentence or paragraph', askPick: 'Select the sentence or paragraph you want to ask about, or click any sentence.', askSentence: 'Ask about this sentence', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', recentBooks: 'Recent books', books: 'Books', pageOf: (p, n) => `Page ${p} of ${n}`, forgetBook: 'Remove from the list', openOther: 'Open another book…', bookMissing: 'Couldn’t find the book’s file. It may have moved or been deleted, so it was removed from the list.', backupTitle: 'Backup', backupHelp: 'Your words and review progress, where you are in each book, and your settings, in one file. Your API key isn’t included.', backupSave: 'Save a backup', backupLoad: 'Restore a backup', backupSaved: n => `Backup saved, with ${n} words.`, backupRestored: n => `Backup restored. ${n} new words added.`, backupBad: 'This file isn’t a Siyaq backup.', usageTitle: 'Today’s use', usageToday: (w, a) => `${w} words · ${a} questions`, usageNote: 'Counted on this device: providers don’t say how much quota is left.', usageLimits: 'Gemini free plan limits', quotaDay: p => `Your ${p} quota for today is used up. It resets tomorrow, or you can add another key or switch provider in Settings.`, quotaMinute: 'Too many requests in one minute. Wait a minute and try again.', noCredit: p => `Your credit with ${p} has run out. Top up your account with them, or switch provider in Settings.`, yourProvider: 'your AI provider', tabNotes: 'Notes', highlight: 'Highlight', addNote: 'Note', notePh: 'Write a note…', notesEmpty: 'Select any text in the book, then pick a colour or Note from the bar above it.', notesNoBook: 'Open a book to see its highlights and notes.', notesCount: n => n === 1 ? '1 highlight' : `${n} highlights`, chapterN: n => `Chapter ${n}`, home: 'Start screen', pairLabel: (a, b) => `${a} to ${b}`, allWords: 'All', tourAgain: 'Show the welcome tour again', setTabGeneral: 'General', setTabAi: 'AI', setTabConnect: 'Connections', setTabAbout: 'About & help', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', pageError: 'This page couldn’t be shown.', openFailed: 'Couldn’t open this file: ', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', tocCount: n => n === 1 ? '1 section' : `${n} sections`, noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
@@ -886,7 +953,7 @@ const STRINGS = {
     langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',
     panelTitle: 'Herhangi bir kelimeye tıklayın',
-    hint: '<b>Cümledeki</b> anlamını göreceksiniz. Bir ifadenin tamamı için onu seçin. Bir paragraf hakkında sormak için tamamını seçin.',
+    hint: '<b>Cümledeki</b> anlamını göreceksiniz. Anlamını görmek, sormak ya da vurgulayıp not eklemek için herhangi bir metni seçin.',
     emptyTitle: 'Okumaya başlamak için bir kitap açın',
     emptyText: 'Herhangi bir kelimeye tıklayın, sayfadan ayrılmadan bağlamdaki anlamını görün.',
     dropHint: 'ya da PDF veya EPUB dosyasını buraya sürükleyin',
@@ -900,7 +967,7 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', pageN: n => `Sayfa ${n}`, progress: 'Tekrar ilerlemesi', goToWord: 'Sayfaya git', vocabFilterPh: 'Kelimelerinizde arayın…', noBookName: 'Kitapsız', noMatches: 'Eşleşen kelime yok.', openBookFirst: b => `Bu kelimenin sayfasına gitmek için önce “${b}” kitabını açın.`, export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    setupHelp: 'Gemini anahtarı kurulumu', askBtn: 'Sor', askBtnTitle: 'Bir cümle ya da paragraf hakkında sor', askPick: 'Sormak istediğiniz cümleyi veya paragrafı seçin ya da herhangi bir cümleye tıklayın.', askSentence: 'Bu cümle hakkında sor', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', recentBooks: 'Son kitaplar', books: 'Kitaplar', pageOf: (p, n) => `Sayfa ${p} / ${n}`, forgetBook: 'Listeden kaldır', openOther: 'Başka bir kitap aç…', bookMissing: 'Kitabın dosyası bulunamadı. Taşınmış ya da silinmiş olabilir; listeden kaldırıldı.', backupTitle: 'Yedek', backupHelp: 'Kelimeleriniz ve tekrar ilerlemeniz, her kitapta kaldığınız yer ve ayarlarınız tek dosyada. API anahtarınız dahil edilmez.', backupSave: 'Yedek kaydet', backupLoad: 'Yedeği geri yükle', backupSaved: n => `Yedek kaydedildi, ${n} kelime.`, backupRestored: n => `Yedek geri yüklendi. ${n} yeni kelime eklendi.`, backupBad: 'Bu dosya bir Siyaq yedeği değil.', usageTitle: 'Bugünkü kullanım', usageToday: (w, a) => `${w} kelime · ${a} soru`, usageNote: 'Bu cihazda sayılır: sağlayıcılar ne kadar kota kaldığını söylemez.', usageLimits: 'Gemini ücretsiz plan sınırları', quotaDay: p => `${p} için bugünkü kotanız doldu. Yarın yenilenir ya da Ayarlar’dan başka bir anahtar ekleyebilir veya sağlayıcıyı değiştirebilirsiniz.`, quotaMinute: 'Bir dakikada çok fazla istek. Bir dakika bekleyip tekrar deneyin.', noCredit: p => `${p} kredisi bitti. Hesabınıza yükleme yapın ya da Ayarlar’dan sağlayıcıyı değiştirin.`, yourProvider: 'yapay zekâ sağlayıcınız', tourAgain: 'Karşılama turunu yeniden göster', setTabGeneral: 'Genel', setTabAi: 'Yapay zekâ', setTabConnect: 'Bağlantılar', setTabAbout: 'Hakkında', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', pageError: 'Bu sayfa gösterilemedi.', openFailed: 'Bu dosya açılamadı: ', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', tocCount: n => `${n} bölüm`, noBook: 'İçindekileri görmek için bir kitap açın.',
+    setupHelp: 'Gemini anahtarı kurulumu', askBtn: 'Sor', askBtnTitle: 'Bir cümle ya da paragraf hakkında sor', askPick: 'Sormak istediğiniz cümleyi veya paragrafı seçin ya da herhangi bir cümleye tıklayın.', askSentence: 'Bu cümle hakkında sor', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', recentBooks: 'Son kitaplar', books: 'Kitaplar', pageOf: (p, n) => `Sayfa ${p} / ${n}`, forgetBook: 'Listeden kaldır', openOther: 'Başka bir kitap aç…', bookMissing: 'Kitabın dosyası bulunamadı. Taşınmış ya da silinmiş olabilir; listeden kaldırıldı.', backupTitle: 'Yedek', backupHelp: 'Kelimeleriniz ve tekrar ilerlemeniz, her kitapta kaldığınız yer ve ayarlarınız tek dosyada. API anahtarınız dahil edilmez.', backupSave: 'Yedek kaydet', backupLoad: 'Yedeği geri yükle', backupSaved: n => `Yedek kaydedildi, ${n} kelime.`, backupRestored: n => `Yedek geri yüklendi. ${n} yeni kelime eklendi.`, backupBad: 'Bu dosya bir Siyaq yedeği değil.', usageTitle: 'Bugünkü kullanım', usageToday: (w, a) => `${w} kelime · ${a} soru`, usageNote: 'Bu cihazda sayılır: sağlayıcılar ne kadar kota kaldığını söylemez.', usageLimits: 'Gemini ücretsiz plan sınırları', quotaDay: p => `${p} için bugünkü kotanız doldu. Yarın yenilenir ya da Ayarlar’dan başka bir anahtar ekleyebilir veya sağlayıcıyı değiştirebilirsiniz.`, quotaMinute: 'Bir dakikada çok fazla istek. Bir dakika bekleyip tekrar deneyin.', noCredit: p => `${p} kredisi bitti. Hesabınıza yükleme yapın ya da Ayarlar’dan sağlayıcıyı değiştirin.`, yourProvider: 'yapay zekâ sağlayıcınız', tabNotes: 'Notlar', highlight: 'Vurgula', addNote: 'Not', notePh: 'Notunuzu yazın…', notesEmpty: 'Kitapta bir metin seçin, sonra üstünde çıkan çubuktan bir renk ya da Not seçin.', notesNoBook: 'Vurgularını ve notlarını görmek için bir kitap açın.', notesCount: n => `${n} vurgu`, chapterN: n => `Bölüm ${n}`, home: 'Başlangıç ekranı', pairLabel: (a, b) => `${a} → ${b}`, allWords: 'Tümü', tourAgain: 'Karşılama turunu yeniden göster', setTabGeneral: 'Genel', setTabAi: 'Yapay zekâ', setTabConnect: 'Bağlantılar', setTabAbout: 'Hakkında', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', pageError: 'Bu sayfa gösterilemedi.', openFailed: 'Bu dosya açılamadı: ', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', tocCount: n => `${n} bölüm`, noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
@@ -1005,6 +1072,8 @@ async function finishOpening(doc, name) {
   closeSearch();
   loadToc(doc);
   queueBookShare();
+  $('#notesCount').textContent = bookHighlights().length || '';
+  if (bookType === 'epub') setTimeout(drawHighlights);
   restorePosition();
   backTo = null;
   $('#backBtn').hidden = true;
@@ -1061,6 +1130,7 @@ async function renderPage(div) {
   if (s !== scale || !layer.isConnected) return;
   markKnownWords(layer);
   highlightSearch(div);
+  drawPageHighlights(div);
   // Scanned pages are pictures of text: almost no text, and an image covering most of the page.
   const chars = textContent.items.reduce((n, it) => n + it.str.replace(/\s/g, '').length, 0);
   // A page with plenty of text that drew nothing at all means the drawing failed quietly.
@@ -1222,19 +1292,25 @@ document.addEventListener('keydown', e => {
 // Keep "100%" meaning "fits the width" when the window is resized. While it is being resized, the pages
 // already drawn are stretched (CSS zoom, no redrawing) so they follow the window at once; once it stops
 // they are redrawn sharp at the new size.
-let resizeTimer;
+let resizeTimer, resizeFrame = 0;
 const keepScrollPlace = change => {
   const at = viewer.scrollTop / Math.max(viewer.scrollHeight, 1);
   change();
   viewer.scrollTop = at * viewer.scrollHeight;
 };
+// One CSS variable for every page, at most once a frame: touching each page of a long book on every resize
+// event kept the main thread too busy for the window to redraw while it was being dragged.
 window.addEventListener('resize', () => {
   if (!pdfDoc || bookType === 'epub') return; // EPUB text reflows by itself
-  const fit = fitWidthScale(), ratio = fit / fitScale;
-  keepScrollPlace(() => { for (const div of viewer.children) div.style.zoom = Math.abs(ratio - 1) > 0.01 ? ratio : ''; });
+  if (!resizeFrame) resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = 0;
+    const ratio = fitWidthScale() / fitScale;
+    keepScrollPlace(() => viewer.style.setProperty('--live-zoom', Math.abs(ratio - 1) > 0.01 ? ratio : 1));
+  });
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    keepScrollPlace(() => { for (const div of viewer.children) div.style.zoom = ''; });
+    const fit = fitWidthScale();
+    keepScrollPlace(() => viewer.style.removeProperty('--live-zoom'));
     if (Math.abs(fit - fitScale) > 0.01) { fitScale = fit; setZoom(zoom, true); }
   }, 200);
 });
@@ -1403,32 +1479,114 @@ function caretAt(x, y) {
 }
 
 // Joins the page's text spans and cuts out the sentence around the clicked spot.
-function sentenceAround(span, offset) {
-  const children = [...span.parentElement.children];
-  // "Short" is relative to this page: in large print every line is short, and only headings are much shorter.
-  const lengths = [];
-  let len = 0;
-  for (const el of children) {
-    if (el.tagName === 'BR') { if (len) lengths.push(len); len = 0; } else len += el.textContent.length;
+// ---------- Reading order ----------
+// PDF text comes piece by piece in the order it sits on the page, left to right. Arabic (and Hebrew) lines read
+// right to left, with English and numbers inside them still left to right: put each line's pieces in reading order.
+const RTL = '\\u0590-\\u08FF\\uFB1D-\\uFDFF\\uFE70-\\uFEFF', LTR = 'A-Za-z0-9\\u00C0-\\u024F';
+const isRtl = t => new RegExp(`[${RTL}]`).test(t), isLtr = t => new RegExp(`[${LTR}]`).test(t);
+const countOf = (texts, chars) => texts.reduce((n, t) => n + (t.match(new RegExp(`[${chars}]`, 'g')) || []).length, 0);
+function readingOrder(texts) {
+  const types = texts.map(t => isRtl(t) ? 'R' : isLtr(t) ? 'L' : 'N');
+  const order = texts.map((_, i) => i);
+  if (!types.includes('R')) return order;
+  // Turn every run of `kind` pieces (and the spaces between them) around.
+  const flipRuns = (list, kind) => {
+    for (let i = 0; i < list.length; i++) {
+      if (types[list[i]] !== kind) continue;
+      let end = i, j = i;
+      for (; j < list.length && types[list[j]] !== (kind === 'R' ? 'L' : 'R'); j++) if (types[list[j]] === kind) end = j;
+      // English at the end of a right-to-left line keeps its trailing punctuation with it ("Hello world!";).
+      if (kind === 'L' && j === list.length) end = list.length - 1;
+      list.splice(i, end - i + 1, ...list.slice(i, end + 1).reverse());
+      i = end;
+    }
+    return list;
+  };
+  return countOf(texts, RTL) >= countOf(texts, LTR) ? flipRuns(order.reverse(), 'L') : flipRuns(order, 'R');
+}
+
+// A text layer as lines: each with its pieces in reading order, the line's text, and where each piece starts in it.
+function textLines(layer) {
+  const lines = [];
+  let raw = [];
+  const finish = () => {
+    if (!raw.length) return;
+    const spans = readingOrder(raw.map(el => el.textContent)).map(i => raw[i]);
+    const starts = new Map();
+    let text = '';
+    for (const el of spans) { starts.set(el, text.length); text += el.textContent; }
+    lines.push({ spans, starts, text });
+    raw = [];
+  };
+  for (const el of layer.children) {
+    if (el.tagName === 'BR') finish();
+    else if (el.tagName === 'SPAN') raw.push(el);
   }
-  if (len) lengths.push(len);
-  const typical = lengths.sort((a, b) => a - b)[Math.floor(lengths.length / 2)] || 60;
+  finish();
+  return lines;
+}
+
+// The same for PDF.js text items (for the text shared with AI apps).
+function itemsToText(items) {
+  const out = [];
+  let line = [];
+  const finish = () => { if (line.length) out.push(readingOrder(line).map(i => line[i]).join('')); line = []; };
+  for (const it of items) { line.push(it.str); if (it.hasEOL) finish(); }
+  finish();
+  return out.join('\n');
+}
+
+// Where a point in a piece falls in its line (in reading order): the line and the position.
+function lineAt(span, offset) {
+  const line = textLines(span.parentElement).find(l => l.starts.has(span));
+  return line ? { line, at: line.starts.get(span) + offset } : null;
+}
+
+// The whole word around a point, read across pieces (some PDFs give every Arabic letter its own piece).
+function wordAt(span, offset) {
+  const hit = lineAt(span, offset);
+  if (!hit) return '';
+  const text = hit.line.text;
+  let s = hit.at, e = hit.at;
+  while (s > 0 && isWordChar(text[s - 1])) s--;
+  while (e < text.length && isWordChar(text[e])) e++;
+  return text.slice(s, e).replace(/^['’-]+|['’-]+$/g, '');
+}
+
+// Selected text in reading order. Only needed when it has right-to-left text; otherwise the browser's is right.
+function selectedText(sel) {
+  const plain = sel.toString().replace(/\s+/g, ' ').trim();
+  if (!isRtl(plain) || !sel.rangeCount) return plain;
+  const range = sel.getRangeAt(0), parts = [];
+  for (const layer of viewer.querySelectorAll('.textLayer')) {
+    if (!range.intersectsNode(layer)) continue;
+    for (const line of textLines(layer)) {
+      const hit = line.spans.filter(sp => range.intersectsNode(sp));
+      if (hit.length) parts.push(hit.map(sp => sp.textContent).join(''));
+    }
+  }
+  return parts.join(' ').replace(/\s+/g, ' ').trim() || plain;
+}
+
+function sentenceAround(span, offset) {
+  const lines = textLines(span.parentElement);
+  // "Short" is relative to this page: in large print every line is short, and only headings are much shorter.
+  const lengths = lines.map(l => l.text.length).filter(Boolean).sort((a, b) => a - b);
+  const typical = lengths[Math.floor(lengths.length / 2)] || 60;
   const short = Math.min(45, typical * 0.6);
-  let text = '', at = 0, lineStart = 0;
-  for (const el of children) {
-    if (el.tagName === 'BR') {
-      const line = text.slice(lineStart).trim();
+  let text = '', at = 0;
+  lines.forEach((l, i) => {
+    if (i) {
+      const prev = lines[i - 1].text.trim();
       // "contin-" at a line end + "ue" on the next line → "continue"
       if (/\p{L}-$/u.test(text)) text = text.slice(0, -1);
       // A short line that doesn't carry on (a heading like "Down the Rabbit-Hole") ends a sentence.
-      else if (line.length < short && !/[,;:\-–—]$/.test(line)) text += '\n';
+      else if (prev.length < short && !/[,;:\-–—،]$/.test(prev)) text += '\n';
       else text += ' ';
-      lineStart = text.length;
-      continue;
     }
-    if (el === span) at = text.length + offset;
-    text += el.textContent;
-  }
+    if (l.starts.has(span)) at = text.length + l.starts.get(span) + offset;
+    text += l.text;
+  });
   return cutSentence(text, at);
 }
 
@@ -1455,15 +1613,14 @@ let clickPage = null; // the page of the last word clicked, saved with it
 viewer.addEventListener('click', e => {
   clickPage = +e.target.closest('.page')?.dataset.page || null;
   const sel = window.getSelection();
-  const selected = sel.toString().replace(/\s+/g, ' ').trim();
   const chapter = e.target.closest('.epub-chapter');
+  const selected = chapter ? sel.toString().replace(/\s+/g, ' ').trim() : selectedText(sel);
   if (chapter) { clickEpub(e, sel, selected); return; }
   if (selected) {
     const node = sel.anchorNode;
     const span = (node?.nodeType === 3 ? node.parentElement : node)?.closest('.textLayer > span');
-    if (span && (askMode || selected.split(' ').length > 10)) openAsk(selected);
-    else if (span) lookup(selected, sentenceAround(span, offsetIn(span, node, sel.anchorOffset)));
-    return;
+    if (span && askMode) openAsk(selected);
+    return; // the selection bar offers meaning, ask, highlight and note
   }
   // A plain click on a link follows it; selecting the link's text still translates it (above).
   const pageDiv = e.target.closest('.page');
@@ -1473,13 +1630,10 @@ viewer.addEventListener('click', e => {
   if (!span) return;
   const pos = caretAt(e.clientX, e.clientY);
   if (!pos || pos.node.nodeType !== 3 || !span.contains(pos.node)) return;
-  const text = span.textContent, at = offsetIn(span, pos.node, pos.offset);
-  let s = at, en = at;
-  while (s > 0 && isWordChar(text[s - 1])) s--;
-  while (en < text.length && isWordChar(text[en])) en++;
-  const word = text.slice(s, en).replace(/^['’-]+|['’-]+$/g, '');
+  const at = offsetIn(span, pos.node, pos.offset);
+  const word = wordAt(span, at);
   if (!word || !/\p{L}/u.test(word)) return;
-  const sentence = sentenceAround(span, s);
+  const sentence = sentenceAround(span, at);
   if (askMode) openAsk(sentence); else lookup(word, sentence);
 });
 
@@ -1750,7 +1904,7 @@ async function lookup(word, sentence, fresh = false) {
   lastLookup = { word, sentence };
   const key = settings.lang + '|' + word.toLowerCase() + '|' + sentence;
   // A word looked up before in another sentence: show what we know right away, spending nothing.
-  const saved = !fresh && !cache.has(key) && !word.includes(' ') && vocab.find(v => v.word.toLowerCase() === word.toLowerCase());
+  const saved = !fresh && !cache.has(key) && !word.includes(' ') && vocab.find(v => v.word.toLowerCase() === word.toLowerCase() && wordTo(v) === settings.lang);
   if (saved) { renderSaved(word, sentence, saved); return; }
   if (!cache.has(key)) {
     pane.innerHTML = `<article class="result">${wordHead(word)}<div class="skeleton"><span></span><span></span><span class="short"></span></div>${sentenceBlock(word, sentence)}</article>`;
@@ -1819,9 +1973,15 @@ document.addEventListener('click', e => {
 });
 
 // ---------- Vocabulary ----------
+// Which language a saved word is from and into. Words saved before this was recorded are guessed from their letters.
+const guessLang = text => /[\u0600-\u06FF]/.test(text) ? 'ar' : /[çğıöşüİĞŞ]/.test(text) ? 'tr' : 'en';
+const wordTo = v => v.lang || guessLang(v.translation || '');
+const wordFrom = v => v.from || guessLang(v.word || '');
+
 function saveWord(word, sentence, r) {
-  vocab = vocab.filter(v => !(v.word.toLowerCase() === word.toLowerCase() && v.sentence === sentence));
-  vocab.unshift({ word, translation: r.translation, explanation: r.explanation, sentence, book: bookName, bookKey, page: clickPage, date: new Date().toISOString() });
+  vocab = vocab.filter(v => !(v.word.toLowerCase() === word.toLowerCase() && v.sentence === sentence && wordTo(v) === settings.lang));
+  vocab.unshift({ word, translation: r.translation, explanation: r.explanation, sentence, book: bookName, bookKey, page: clickPage,
+    lang: settings.lang, from: LANGS[bookLang] ? bookLang : guessLang(word), date: new Date().toISOString() });
   store.set('vocab', vocab);
   updateVocabCount();
   refreshKnown();
@@ -1831,13 +1991,20 @@ const updateVocabCount = () => { $('#vocabCount').textContent = vocab.length || 
 
 // My words, grouped by book (the open one first), each with its sentence, review progress, and an arrow
 // back to the page it was looked up on.
-let vocabFilter = '';
+let vocabFilter = '', vocabPair = 'all';
+const pairOf = v => wordFrom(v) + '>' + wordTo(v);
 function renderVocab() {
   updateVocabCount();
   const pane = $('#vocab');
   if (!vocab.length) { pane.innerHTML = stateCard('bookmark', t('vocabEmpty')); return; }
   const q = vocabFilter.toLowerCase();
-  const shown = vocab.map((v, i) => [v, i]).filter(([v]) => !q || [v.word, v.translation, v.book].some(x => String(x || '').toLowerCase().includes(q)));
+  // One tab per language pair, "from English to Arabic", when there is more than one.
+  const pairs = [...new Set(vocab.map(pairOf))];
+  if (!pairs.includes(vocabPair)) vocabPair = 'all';
+  const pairName = p => { const [a, b] = p.split('>'); return t('pairLabel')(LANG_NAMES[a] || a, LANG_NAMES[b] || b); };
+  const pairTabs = pairs.length > 1 ? `<nav class="v-pairs">${['all', ...pairs].map(p => `<button type="button" data-pair="${p}" class="${p === vocabPair ? 'on' : ''}">${p === 'all' ? t('allWords') : pairName(p)}<span>${p === 'all' ? vocab.length : vocab.filter(v => pairOf(v) === p).length}</span></button>`).join('')}</nav>` : '';
+  const shown = vocab.map((v, i) => [v, i]).filter(([v]) => (vocabPair === 'all' || pairOf(v) === vocabPair)
+    && (!q || [v.word, v.translation, v.book].some(x => String(x || '').toLowerCase().includes(q))));
   const groups = new Map();
   for (const [v, i] of shown) {
     const key = v.book || '';
@@ -1867,6 +2034,7 @@ function renderVocab() {
     <div class="vocab-head"><span>${t('count')(vocab.length)}</span><span class="btns">
       <button class="btn small primary" id="reviewBtn">${icon('repeat')}${t('review')}<span class="badge">${dueWords().length || ''}</span></button>
       <button class="btn small" id="exportBtn" title="${t('export')}">${icon('download')}</button></span></div>
+    ${pairTabs}
     ${vocab.length > 8 ? `<input class="vocab-filter" id="vocabFilter" type="search" dir="auto" placeholder="${t('vocabFilterPh')}" value="${esc(vocabFilter)}">` : ''}
     ${ordered.map(([book, list]) => `<section class="v-group">
       <h3 class="v-group-head${isOpen(book) ? ' open-book' : ''}" dir="auto">${icon('book')}<span>${esc(book.replace(/\.(pdf|epub)$/i, '') || t('noBookName'))}</span><span class="n">${list.length}</span></h3>
@@ -1876,8 +2044,9 @@ function renderVocab() {
   const filter = $('#vocabFilter');
   if (filter) filter.oninput = () => { vocabFilter = filter.value; const at = filter.selectionStart; renderVocab(); const f = $('#vocabFilter'); f.focus(); f.setSelectionRange(at, at); };
   pane.onclick = e => {
-    const x = e.target.closest('[data-x]'), go = e.target.closest('[data-go]'), open = e.target.closest('[data-open]');
-    if (x) { vocab.splice(+x.dataset.x, 1); store.set('vocab', vocab); refreshKnown(); renderVocab(); }
+    const x = e.target.closest('[data-x]'), go = e.target.closest('[data-go]'), open = e.target.closest('[data-open]'), pair = e.target.closest('[data-pair]');
+    if (pair) { vocabPair = pair.dataset.pair; renderVocab(); }
+    else if (x) { vocab.splice(+x.dataset.x, 1); store.set('vocab', vocab); refreshKnown(); renderVocab(); }
     else if (go) goToWord(vocab[+go.dataset.go]);
     else if (open) { const v = vocab[+open.dataset.open]; lastLookup = { word: v.word, sentence: v.sentence }; showTab('lookup'); renderSaved(v.word, v.sentence, v); }
   };
@@ -2091,9 +2260,8 @@ function zoomEpub(z) {
 function clickEpub(e, sel, selected) {
   if (selected) {
     const node = sel.anchorNode, block = (node?.nodeType === 3 ? node.parentElement : node)?.closest(EPUB_BLOCKS);
-    if (block && (askMode || selected.split(' ').length > 10)) openAsk(selected);
-    else if (block) lookup(selected, cutSentence(block.textContent, offsetIn(block, node, sel.anchorOffset)));
-    return;
+    if (block && askMode) openAsk(selected);
+    return; // the selection bar offers meaning, ask, highlight and note
   }
   const a = e.target.closest('a[data-href], a[data-url]');
   if (a) {
@@ -2155,9 +2323,9 @@ function restorePosition() {
 }
 
 let saveTimer;
-function savePosition() {
+function savePosition(now = false) {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
+  const write = () => {
     if (!pdfDoc) return;
     const n = currentPage(), div = viewer.querySelector(`.page[data-page="${n}"]`);
     const frac = div ? (viewer.scrollTop + 24 - div.offsetTop) / div.offsetHeight : 0;
@@ -2165,8 +2333,31 @@ function savePosition() {
     all[bookKey] = { page: n, frac: Math.min(1, Math.max(0, frac)), at: Date.now() };
     const recent = Object.keys(all).sort((a, b) => all[b].at - all[a].at).slice(0, 100); // the last 100 books
     store.set('positions', Object.fromEntries(recent.map(k => [k, all[k]])));
-  }, 600);
+  };
+  if (now) write(); else saveTimer = setTimeout(write, 600);
 }
+
+// Back to the start screen (the logo and name): the book closes, its place kept.
+const welcomeScreen = $('#empty');
+function goHome() {
+  if (!pdfDoc) return;
+  savePosition(true);
+  closeSearch();
+  if (askMode) setAskMode(false);
+  pdfDoc = null; bookPath = null; bookName = ''; bookKey = ''; bookLang = null; tocItems = []; lastLookup = null;
+  viewer.replaceChildren(welcomeScreen);
+  viewer.scrollTop = 0;
+  welcomeScreen.classList.remove('drag');
+  $('#tools').hidden = true;
+  $('#backBtn').hidden = true;
+  $('#bookTitle').textContent = '';
+  $('#toc').innerHTML = stateCard('list', t('noBook'));
+  $('#notesCount').textContent = '';
+  showBookLang();
+  renderRecent();
+  queueShare();
+}
+$('#homeBtn').onclick = goHome;
 
 // ---------- Contents ----------
 // The contents as a tree: levels, the page each entry starts on, and where the reader is now.
@@ -2366,7 +2557,7 @@ const dueWords = () => vocab.filter(v => (v.due || 0) <= Date.now());
 let reviewQueue = null;
 
 function startReview() {
-  reviewQueue = dueWords().sort((a, b) => (a.due || 0) - (b.due || 0));
+  reviewQueue = dueWords().filter(v => vocabPair === 'all' || pairOf(v) === vocabPair).sort((a, b) => (a.due || 0) - (b.due || 0));
   showCard(false);
 }
 
@@ -2381,22 +2572,32 @@ function showCard(revealed) {
   pane.innerHTML = `
     <div class="review">
       <div class="review-top"><span>${t('left')(reviewQueue.length)}</span><button class="btn small" id="listBtn">${t('backToList')}</button></div>
-      <div class="card">
-        ${wordHead(v.word)}
-        ${v.sentence ? `<blockquote class="sentence" dir="auto">${markWord(v.sentence, v.word)}</blockquote>` : ''}
-        ${revealed ? `<div class="answer"><p class="tr" ${d}>${esc(v.translation)}</p><p class="explain" ${d}>${esc(v.explanation || '')}</p></div>` : ''}
+      <div class="rcard${revealed ? ' on' : ''}" id="rcard">
+        <div class="rcard-in">
+          <div class="card face">
+            ${wordHead(v.word)}
+            ${v.sentence ? `<blockquote class="sentence" dir="auto">${markWord(v.sentence, v.word)}</blockquote>` : ''}
+          </div>
+          <div class="card face back">
+            ${wordHead(v.word)}
+            <div class="answer"><p class="tr" ${d}>${esc(v.translation)}</p><p class="explain" ${d}>${esc(v.explanation || '')}</p></div>
+          </div>
+        </div>
       </div>
-      ${revealed
-        ? `<div class="review-actions"><button class="btn again" id="againBtn">${t('again')}</button><button class="btn primary" id="goodBtn">${t('good')}</button></div>`
-        : `<button class="btn primary lg" id="revealBtn">${t('reveal')}</button>`}
+      <div id="reviewBtns"></div>
     </div>`;
   $('#listBtn').onclick = endReview;
-  if (revealed) {
-    $('#againBtn').onclick = () => grade(false);
-    $('#goodBtn').onclick = () => grade(true);
-  } else {
-    $('#revealBtn').onclick = () => showCard(true);
-  }
+  // The answer is on the back of the card: revealing turns it over.
+  const showButtons = on => {
+    $('#reviewBtns').innerHTML = on
+      ? `<div class="review-actions"><button class="btn again" id="againBtn">${t('again')}</button><button class="btn primary" id="goodBtn">${t('good')}</button></div>`
+      : `<button class="btn primary lg" id="revealBtn">${t('reveal')}</button>`;
+    if (on) { $('#againBtn').onclick = () => grade(false); $('#goodBtn').onclick = () => grade(true); }
+    else $('#revealBtn').onclick = reveal;
+  };
+  const reveal = () => { $('#rcard').classList.add('on'); showButtons(true); };
+  $('#rcard').onclick = e => { if (!e.target.closest('[data-say]') && !$('#rcard').classList.contains('on')) reveal(); };
+  showButtons(revealed);
 }
 
 function grade(knew) {
@@ -2529,8 +2730,7 @@ async function readablePageText(doc, n) {
   if (ocr) return ocr.map(line => line.map(w => w.text).join(' ')).join(' ');
   try {
     const items = (await (await doc.getPage(n)).getTextContent()).items;
-    return items.map(it => it.str + (it.hasEOL ? '\n' : '')).join('')
-      .replace(/-\n(?=\p{Ll})/gu, '').replace(/\s*\n\s*/g, ' ').replace(/ {2,}/g, ' ').trim();
+    return itemsToText(items).replace(/-\n(?=\p{Ll})/gu, '').replace(/\s*\n\s*/g, ' ').replace(/ {2,}/g, ' ').trim();
   } catch { return ''; }
 }
 
@@ -2644,6 +2844,222 @@ $('#mcpCopy').onclick = async () => {
   } catch (err) { mcpMessage(String(err), true); }
 };
 
+// ---------- Highlights and notes ----------
+// Kept per book. On a PDF a highlight is a set of boxes in page fractions, so it survives zooming; on an EPUB,
+// whose text reflows, it is a stretch of a chapter's text by character positions.
+let highlights = store.get('highlights', {}); // bookKey → [{ id, color, note, text, date, parts: [{ page, rects }] | chapter, start, end }]
+const bookHighlights = () => highlights[bookKey] || [];
+function saveHighlights(list) {
+  highlights[bookKey] = list;
+  if (!list.length) delete highlights[bookKey];
+  store.set('highlights', highlights);
+  $('#notesCount').textContent = list.length || '';
+  if (!$('#notes').hidden) renderNotes();
+}
+
+// The selection bar: meaning, ask, highlight, note.
+let barSelection = null; // { text, range } of the selection the bar is for
+function selectionInBook() {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return null;
+  const range = sel.getRangeAt(0), node = range.commonAncestorContainer;
+  const el = node.nodeType === 3 ? node.parentElement : node;
+  if (!el?.closest('#viewer') || !el.closest('.page, .textLayer, .epub-chapter') && !el.matches('#viewer')) return null;
+  const text = el.closest('.epub-chapter') ? sel.toString().replace(/\s+/g, ' ').trim() : selectedText(sel);
+  return text ? { text, range: range.cloneRange() } : null;
+}
+function showSelBar() {
+  const s = selectionInBook(), bar = $('#selBar');
+  if (!s || askMode) { bar.hidden = true; barSelection = null; return; }
+  barSelection = s;
+  const r = s.range.getBoundingClientRect();
+  bar.hidden = false;
+  const w = bar.offsetWidth, h = bar.offsetHeight;
+  bar.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  bar.style.top = (r.top - h - 10 > 60 ? r.top - h - 10 : r.bottom + 10) + 'px';
+}
+viewer.addEventListener('mouseup', () => setTimeout(showSelBar, 0));
+viewer.addEventListener('scroll', () => { $('#selBar').hidden = true; }, { passive: true });
+document.addEventListener('mousedown', e => { if (!e.target.closest('#selBar')) $('#selBar').hidden = true; });
+
+$('#selBar').addEventListener('mousedown', e => e.preventDefault()); // keep the selection while clicking the bar
+$('#selBar').onclick = e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || !barSelection) return;
+  const { text, range } = barSelection;
+  $('#selBar').hidden = true;
+  if (b.dataset.act === 'meaning') lookup(text, sentenceForRange(range) || text);
+  else if (b.dataset.act === 'ask') openAsk(text);
+  else {
+    const h = addHighlight(range, text, b.dataset.color || 'yellow');
+    if (h && b.dataset.act === 'note') openHighlight(h.id);
+  }
+  window.getSelection().removeAllRanges();
+};
+
+// The sentence around the start of a selection, as for a clicked word.
+function sentenceForRange(range) {
+  const node = range.startContainer, el = node.nodeType === 3 ? node.parentElement : node;
+  const span = el?.closest('.textLayer > span');
+  if (span) return sentenceAround(span, node.nodeType === 3 ? offsetIn(span, node, range.startOffset) : 0);
+  const block = el?.closest(EPUB_BLOCKS);
+  return block ? cutSentence(block.textContent, node.nodeType === 3 ? offsetIn(block, node, range.startOffset) : 0) : '';
+}
+
+function addHighlight(range, text, color) {
+  const h = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), color, note: '', text, date: new Date().toISOString() };
+  const startEl = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+  const chapter = startEl.closest('.epub-chapter');
+  if (chapter) {
+    h.chapter = +chapter.dataset.page;
+    h.start = offsetIn(chapter, range.startContainer, range.startOffset);
+    h.end = chapter.contains(range.endContainer) ? offsetIn(chapter, range.endContainer, range.endOffset) : chapter.textContent.length;
+  } else {
+    const byPage = new Map();
+    for (const rect of range.getClientRects()) {
+      if (rect.width < 1 || rect.height < 1) continue;
+      const page = document.elementsFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2).map(el => el.closest('.page')).find(Boolean);
+      if (!page) continue;
+      const pr = page.getBoundingClientRect(), n = +page.dataset.page;
+      if (!byPage.has(n)) byPage.set(n, []);
+      byPage.get(n).push([(rect.left - pr.left) / pr.width, (rect.top - pr.top) / pr.height, rect.width / pr.width, rect.height / pr.height].map(v => +v.toFixed(5)));
+    }
+    h.parts = [...byPage].map(([page, rects]) => ({ page, rects: mergeRects(rects) }));
+    if (!h.parts.length) return null;
+  }
+  saveHighlights([...bookHighlights(), h]);
+  drawHighlights();
+  return h;
+}
+
+// Text layers give a box per piece of text; join neighbours on the same line into one.
+function mergeRects(rects) {
+  rects.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+  const out = [];
+  for (const r of rects) {
+    const last = out[out.length - 1];
+    if (last && Math.abs(last[1] - r[1]) < last[3] * 0.5 && r[0] <= last[0] + last[2] + 0.01) {
+      const right = Math.max(last[0] + last[2], r[0] + r[2]);
+      last[0] = Math.min(last[0], r[0]); last[2] = right - last[0]; last[3] = Math.max(last[3], r[3]);
+    } else out.push([...r]);
+  }
+  return out;
+}
+
+const pin = h => `<button class="hl-pin c-${h.color}" data-hl="${h.id}" title="${esc(h.note || t('addNote'))}">${h.note ? icon('note') : ''}</button>`;
+
+// Draws the open book's highlights: on PDF pages that are drawn, and in EPUB chapters.
+function drawHighlights() {
+  if (!pdfDoc) return;
+  const list = bookHighlights();
+  if (bookType === 'epub') {
+    viewer.querySelectorAll('.epub-chapter mark.hl').forEach(m => m.replaceWith(...m.childNodes));
+    viewer.querySelectorAll('.epub-chapter .hl-pin').forEach(p => p.remove());
+    viewer.querySelectorAll('.epub-chapter').forEach(ch => ch.normalize());
+    for (const h of list) markEpubHighlight(h);
+    return;
+  }
+  viewer.querySelectorAll('.page[data-rendered]').forEach(div => drawPageHighlights(div, list));
+}
+
+function drawPageHighlights(div, list = bookHighlights()) {
+  div.querySelector('.hl-layer')?.remove();
+  const n = +div.dataset.page, here = list.flatMap(h => (h.parts || []).filter(p => p.page === n).map(p => [h, p]));
+  if (!here.length) return;
+  const layer = document.createElement('div');
+  layer.className = 'hl-layer';
+  const pct = v => (v * 100).toFixed(3) + '%';
+  layer.innerHTML = here.map(([h, p]) => p.rects.map(([x, y, w, ht]) => `<div class="hl-box hl-${h.color}" style="left:${pct(x)};top:${pct(y)};width:${pct(w)};height:${pct(ht)}"></div>`).join('')
+    + (h.parts[0] === p ? (() => { const [x, y, w] = p.rects[p.rects.length - 1]; return pin(h).replace('<button', `<button style="left:${pct(Math.min(x + w, 0.985))};top:${pct(y)}"`); })() : '')).join('');
+  div.appendChild(layer);
+}
+
+// Wraps a chapter's text from `start` to `end` in marks (one per text node it crosses), with a pin at the end.
+function markEpubHighlight(h) {
+  const chapter = viewer.querySelector(`.epub-chapter[data-page="${h.chapter}"]`);
+  if (!chapter) return;
+  const walker = document.createTreeWalker(chapter, NodeFilter.SHOW_TEXT), nodes = [];
+  let pos = 0;
+  while (walker.nextNode()) {
+    const node = walker.currentNode, len = node.textContent.length;
+    const a = Math.max(h.start, pos), b = Math.min(h.end, pos + len);
+    if (a < b) nodes.push([node, a - pos, b - pos]);
+    pos += len;
+  }
+  let last = null;
+  for (const [node, a, b] of nodes) {
+    const range = document.createRange();
+    range.setStart(node, a); range.setEnd(node, b);
+    const mark = document.createElement('mark');
+    mark.className = `hl hl-${h.color}`;
+    range.surroundContents(mark);
+    last = mark;
+  }
+  last?.insertAdjacentHTML('afterend', pin(h));
+}
+
+// The editor for one highlight: colour, note, delete.
+let openHl = null;
+function openHighlight(id, anchor) {
+  const h = bookHighlights().find(x => x.id === id);
+  if (!h) return;
+  openHl = id;
+  const pop = $('#hlPop');
+  $('#hlQuote').textContent = h.text;
+  $('#hlNote').value = h.note || '';
+  pop.querySelectorAll('[data-color]').forEach(d => d.classList.toggle('on', d.dataset.color === h.color));
+  pop.hidden = false;
+  const r = (anchor || viewer.querySelector(`[data-hl="${id}"]`) || viewer).getBoundingClientRect();
+  pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.left - pop.offsetWidth / 2)) + 'px';
+  pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.bottom + 8)) + 'px';
+  $('#hlNote').focus();
+}
+function updateHighlight(id, change) {
+  saveHighlights(bookHighlights().map(h => h.id === id ? { ...h, ...change } : h));
+  drawHighlights();
+}
+$('#hlPop').onclick = e => {
+  const c = e.target.closest('[data-color]');
+  if (c && openHl) { updateHighlight(openHl, { color: c.dataset.color }); $('#hlPop').querySelectorAll('[data-color]').forEach(d => d.classList.toggle('on', d === c)); }
+};
+const closeHighlight = () => {
+  if (openHl) updateHighlight(openHl, { note: $('#hlNote').value.trim() });
+  openHl = null;
+  $('#hlPop').hidden = true;
+};
+$('#hlDone').onclick = closeHighlight;
+$('#hlDelete').onclick = () => { saveHighlights(bookHighlights().filter(h => h.id !== openHl)); openHl = null; $('#hlPop').hidden = true; drawHighlights(); };
+document.addEventListener('mousedown', e => { if (!$('#hlPop').hidden && !e.target.closest('#hlPop, [data-hl]')) closeHighlight(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#hlPop').hidden) closeHighlight(); });
+document.addEventListener('click', e => {
+  const p = e.target.closest('[data-hl]');
+  if (p) { e.stopPropagation(); openHighlight(p.dataset.hl, p); }
+}, true);
+
+// The Notes tab: this book's highlights and notes in page order.
+function renderNotes() {
+  const pane = $('#notes'), list = bookHighlights();
+  $('#notesCount').textContent = list.length || '';
+  if (!pdfDoc) { pane.innerHTML = stateCard('note', t('notesNoBook')); return; }
+  if (!list.length) { pane.innerHTML = stateCard('note', t('notesEmpty')); return; }
+  const where = h => h.parts ? h.parts[0].page : h.chapter;
+  const sorted = [...list].sort((a, b) => where(a) - where(b) || (a.start || 0) - (b.start || 0));
+  pane.innerHTML = `<div class="vocab-head"><span>${t('notesCount')(list.length)}</span></div>
+    <ul class="note-list">${sorted.map(h => `<li class="note-item" data-goto="${h.id}">
+      <div class="q c-${h.color}" dir="auto">${esc(h.text)}</div>
+      ${h.note ? `<div class="n" dir="auto">${esc(h.note)}</div>` : ''}
+      <div class="m">${bookType === 'epub' ? t('chapterN')(h.chapter) : t('pageN')(where(h))}</div></li>`).join('')}</ul>`;
+  pane.onclick = e => {
+    const item = e.target.closest('[data-goto]');
+    if (!item) return;
+    const h = list.find(x => x.id === item.dataset.goto);
+    backTo = viewer.scrollTop; $('#backBtn').hidden = false;
+    if (h.parts) goToPage(h.parts[0].page);
+    else viewer.querySelector(`.epub-chapter[data-page="${h.chapter}"] [data-hl="${h.id}"]`)?.scrollIntoView({ block: 'center' });
+    setTimeout(() => openHighlight(h.id), 700);
+  };
+}
+
 // ---------- Backup ----------
 // One file with My words (and their review progress), reading positions, recent books and settings.
 // The API key is left out on purpose: it is a secret, and easy to paste again.
@@ -2661,7 +3077,7 @@ const backupMessage = (text, error = false) => { const el = $('#backupMsg'); el.
 $('#backupSave').onclick = async () => {
   const { apiKey, ...safeSettings } = settings;
   const data = { app: 'siyaq', format: 1, version: await appVersion(), exported: new Date().toISOString(),
-    settings: safeSettings, vocab, positions: store.get('positions', {}), library: library() };
+    settings: safeSettings, vocab, positions: store.get('positions', {}), library: library(), highlights };
   try {
     const where = await saveText(`siyaq-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 1), 'application/json');
     if (where) backupMessage(t('backupSaved')(vocab.length));
@@ -2686,6 +3102,11 @@ function restoreBackup(text) {
   const positions = store.get('positions', {});
   for (const [k, p] of Object.entries(data.positions || {})) if (!positions[k] || p.at > positions[k].at) positions[k] = p;
   store.set('positions', positions);
+  for (const [k, list] of Object.entries(data.highlights || {})) {
+    const ids = new Set((highlights[k] || []).map(h => h.id));
+    highlights[k] = [...(highlights[k] || []), ...list.filter(h => !ids.has(h.id))];
+  }
+  store.set('highlights', highlights);
   const paths = new Set(library().map(b => b.path));
   store.set('library', [...library(), ...(data.library || []).filter(b => !paths.has(b.path))].slice(0, 12));
   const { apiKey, ...restored } = data.settings || {};
@@ -2864,7 +3285,9 @@ function showTab(name) {
   $('#lookup').hidden = name !== 'lookup';
   $('#vocab').hidden = name !== 'vocab';
   $('#toc').hidden = name !== 'toc';
+  $('#notes').hidden = name !== 'notes';
   if (name === 'toc') markTocCurrent(true);
+  if (name === 'notes') renderNotes();
   if (name === 'vocab' && !reviewQueue) renderVocab();
 }
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
@@ -2934,6 +3357,7 @@ function applyUiLanguage() {
   document.documentElement.dir = LANGS[settings.uiLang].dir;
   document.title = t('title');
   document.querySelectorAll('[data-i18n]').forEach(el => el.innerHTML = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.dataset.i18nTitle);
     el.setAttribute('aria-label', el.title);

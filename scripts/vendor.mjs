@@ -1,5 +1,5 @@
 // Copies PDF.js and the OCR engine into src/vendor so the app works offline.
-import { copyFileSync, cpSync, mkdirSync, readdirSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const copy = (from, to, files) => {
   mkdirSync(to, { recursive: true });
@@ -8,6 +8,16 @@ const copy = (from, to, files) => {
 
 // The legacy build also runs on the older Safari engines of Macs that cannot update past macOS 12 or 13.
 copy('node_modules/pdfjs-dist/legacy/build/', 'src/vendor/', ['pdf.min.js', 'pdf.worker.min.js']);
+// PDF.js 3 reads right-to-left lines in page order and then reverses them, which also reverses glyphs that stand
+// for two letters (Arabic لا، لم...), giving "األساسيات" for "الأساسيات". Newer PDF.js pre-reverses such glyphs;
+// do the same here. Fails loudly if a PDF.js update changes this code, so the fix isn't silently lost.
+{
+  const file = 'src/vendor/pdf.worker.min.js', js = readFileSync(file, 'utf8');
+  const from = 'const d=s.unicode;saveLastChar(d)&&u.str.push(" ");u.str.push(d);';
+  const to = 'const d=s.unicode.length>1&&/[\\u0590-\\u08FF\\uFB1D-\\uFDFF\\uFE70-\\uFEFF]/.test(s.unicode)?[...s.unicode].reverse().join(""):s.unicode;saveLastChar(d)&&u.str.push(" ");u.str.push(d);';
+  if (!js.includes(from)) throw new Error('PDF.js changed: update the right-to-left ligature fix in scripts/vendor.mjs');
+  writeFileSync(file, js.replace(from, to));
+}
 // Character maps and the standard 14 fonts, for PDFs that use fonts they don't carry inside them.
 cpSync('node_modules/pdfjs-dist/cmaps/', 'src/vendor/cmaps/', { recursive: true });
 cpSync('node_modules/pdfjs-dist/standard_fonts/', 'src/vendor/standard_fonts/', { recursive: true });
