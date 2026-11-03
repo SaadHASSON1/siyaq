@@ -116,6 +116,7 @@ pub fn run() {
             check_update,
             install_update,
             mcp::mcp_share,
+            mcp::mcp_share_book,
             mcp::mcp_take_inbox,
             mcp::mcp_config,
             mcp::mcp_add_to_claude

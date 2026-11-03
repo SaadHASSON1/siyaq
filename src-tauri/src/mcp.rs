@@ -2,7 +2,8 @@
 //!
 //! `siyaq --mcp` runs a small MCP server over stdin/stdout instead of opening the window.
 //! The running app writes a snapshot (`state.json`) whenever the page or the saved words
-//! change, but only after the user turns this on in Settings. Words an AI app saves go to
+//! change, and the open book's full text and contents (`book.json`), but only after the user
+//! turns this on in Settings. Words an AI app saves go to
 //! `inbox.json`, which the app picks up and adds to My words.
 
 use std::io::{BufRead, Write};
@@ -21,6 +22,10 @@ fn state_path() -> PathBuf {
 
 fn inbox_path() -> PathBuf {
     data_dir().join("inbox.json")
+}
+
+fn book_path() -> PathBuf {
+    data_dir().join("book.json")
 }
 
 fn write_json(path: &PathBuf, value: &Value) -> Result<(), String> {
@@ -44,9 +49,16 @@ pub fn mcp_share(state: Option<Value>) -> Result<(), String> {
         None => {
             let _ = std::fs::remove_file(state_path());
             let _ = std::fs::remove_file(inbox_path());
+            let _ = std::fs::remove_file(book_path());
             Ok(())
         }
     }
+}
+
+/// The whole open book: title, contents with page numbers, and the text of every page.
+#[tauri::command]
+pub fn mcp_share_book(book: Value) -> Result<(), String> {
+    write_json(&book_path(), &book)
 }
 
 /// Words AI apps saved since the last call.
@@ -105,6 +117,47 @@ fn tools() -> Value {
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
+            "name": "get_book_contents",
+            "description": "The open book's title, language, number of pages and table of contents (each entry with the page it starts on), plus how many pages have text. Start here for questions about chapters or the whole book.",
+            "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+            "name": "read_pages",
+            "description": "The text of pages from the open book, up to 30 pages per call. To summarise a long part or the whole book, read it in consecutive calls (1-30, 31-60, ...) and summarise as you go.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "from": { "type": "integer", "description": "First page (1-based)" },
+                    "to": { "type": "integer", "description": "Last page, at most from + 29" }
+                },
+                "required": ["from"]
+            }
+        },
+        {
+            "name": "read_chapter",
+            "description": "The text of one chapter or section of the open book, found by its title (or part of it) or its number in get_book_contents. Long chapters come back in parts: pass part 2, 3, ... to continue.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string", "description": "The chapter's title or part of it" },
+                    "index": { "type": "integer", "description": "Position in the contents list (1-based), instead of a title" },
+                    "part": { "type": "integer", "description": "For long chapters: which part (default 1)" }
+                }
+            }
+        },
+        {
+            "name": "search_book",
+            "description": "Finds a word, name or phrase anywhere in the open book (ignoring case) and returns each page it is on with a short excerpt. Useful for tracking a character, a term or a quote.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string" },
+                    "limit": { "type": "integer", "description": "At most this many results (default 30)" }
+                },
+                "required": ["query"]
+            }
+        },
+        {
             "name": "get_saved_words",
             "description": "Words the reader looked up in Siyaq, newest first, each with its translation, why it means that, the sentence it came from, the book, the date, and spaced-repetition progress (box 0-5; due = time it should be reviewed). Translations are in the reader's chosen language.",
             "inputSchema": {
@@ -134,6 +187,51 @@ fn tools() -> Value {
     ])
 }
 
+const NO_BOOK: &str = "No book is shared yet. Open a book in Siyaq (with \"Connect to AI apps\" on in Settings) and try again.";
+const MAX_PAGES: i64 = 30;
+const PART_CHARS: usize = 60_000;
+
+fn book_pages(book: &Value) -> Vec<&str> {
+    book["text"].as_array().map(|a| a.iter().map(|t| t.as_str().unwrap_or("")).collect()).unwrap_or_default()
+}
+
+/// Pages from..=to (1-based, clamped), each with its number.
+fn pages_text(book: &Value, from: i64, to: i64) -> Vec<Value> {
+    let pages = book_pages(book);
+    let last = pages.len() as i64;
+    (from.max(1)..=to.min(last)).map(|n| json!({ "page": n, "text": pages[(n - 1) as usize] })).collect()
+}
+
+/// Case-insensitive matches of `query`, as (page, excerpt).
+fn search(book: &Value, query: &str, limit: usize) -> (usize, Vec<Value>) {
+    let lower = |s: &str| s.chars().map(|c| c.to_lowercase().next().unwrap_or(c)).collect::<Vec<char>>();
+    let q = lower(query.trim());
+    let (mut total, mut hits) = (0, Vec::new());
+    if q.is_empty() {
+        return (0, hits);
+    }
+    for (i, page) in book_pages(book).iter().enumerate() {
+        let chars: Vec<char> = page.chars().collect();
+        let lc = lower(page);
+        let mut at = 0;
+        while at + q.len() <= lc.len() {
+            if lc[at..at + q.len()] == q[..] {
+                total += 1;
+                if hits.len() < limit {
+                    let start = at.saturating_sub(120);
+                    let end = (at + q.len() + 120).min(chars.len());
+                    let excerpt: String = chars[start..end].iter().collect();
+                    hits.push(json!({ "page": i + 1, "excerpt": format!("…{}…", excerpt.trim()) }));
+                }
+                at += q.len();
+            } else {
+                at += 1;
+            }
+        }
+    }
+    (total, hits)
+}
+
 const NOT_SHARED: &str = "Siyaq isn't sharing anything yet. Open Siyaq, go to Settings and turn on \"Connect to AI apps\".";
 
 fn now_ms() -> i64 {
@@ -149,6 +247,73 @@ fn call_tool(name: &str, args: &Value) -> Result<String, String> {
                 Some(b) if !b.is_null() => Ok(serde_json::to_string_pretty(b).unwrap()),
                 _ => Ok("No book is open in Siyaq right now.".into()),
             }
+        }
+        "get_book_contents" => {
+            let book = read_json(&book_path()).ok_or(NO_BOOK)?;
+            let with_text = book_pages(&book).iter().filter(|t| !t.trim().is_empty()).count();
+            Ok(serde_json::to_string_pretty(&json!({
+                "title": book["title"], "language": book["language"], "format": book["format"],
+                "pages": book["pages"], "pages_with_text": with_text, "contents": book["contents"],
+                "note": if with_text == 0 { "This looks like a scanned book; pages get text as the reader views them in Siyaq." } else { "" }
+            })).unwrap())
+        }
+        "read_pages" => {
+            let book = read_json(&book_path()).ok_or(NO_BOOK)?;
+            let from = args.get("from").and_then(Value::as_i64).ok_or("from is required")?;
+            let to = args.get("to").and_then(Value::as_i64).unwrap_or(from + MAX_PAGES - 1).min(from + MAX_PAGES - 1);
+            let pages = pages_text(&book, from, to);
+            if pages.is_empty() {
+                return Err(format!("The book has {} pages.", book_pages(&book).len()));
+            }
+            Ok(json!({ "title": book["title"], "pages": pages, "total_pages": book_pages(&book).len() }).to_string())
+        }
+        "read_chapter" => {
+            let book = read_json(&book_path()).ok_or(NO_BOOK)?;
+            let contents: Vec<&Value> = book["contents"].as_array().map(|a| a.iter().collect()).unwrap_or_default();
+            if contents.is_empty() {
+                return Err("This book has no table of contents. Use search_book or read_pages instead.".into());
+            }
+            let found = match (args.get("index").and_then(Value::as_u64), args.get("title").and_then(Value::as_str)) {
+                (Some(i), _) => (i as usize).checked_sub(1).filter(|&i| i < contents.len()),
+                (None, Some(t)) => {
+                    let t = t.to_lowercase();
+                    contents.iter().position(|c| c["title"].as_str().unwrap_or("").to_lowercase().contains(&t))
+                }
+                _ => return Err("Give a title or an index from get_book_contents.".into()),
+            };
+            let i = found.ok_or("No chapter matches that. See get_book_contents for the list.")?;
+            let entry = contents[i];
+            let start = entry["page"].as_i64().ok_or("That entry has no page number.")?;
+            let depth = entry["depth"].as_i64().unwrap_or(0);
+            // It runs until the next entry at the same level or above.
+            let end = contents[i + 1..]
+                .iter()
+                .find(|c| c["depth"].as_i64().unwrap_or(0) <= depth && c["page"].as_i64().is_some())
+                .and_then(|c| c["page"].as_i64())
+                .map(|p| (p - 1).max(start))
+                .unwrap_or(book_pages(&book).len() as i64);
+            // Long chapters are split into parts of whole pages.
+            let mut parts: Vec<Vec<Value>> = vec![Vec::new()];
+            let mut size = 0;
+            for p in pages_text(&book, start, end) {
+                let len = p["text"].as_str().unwrap_or("").len();
+                if size + len > PART_CHARS && !parts.last().unwrap().is_empty() {
+                    parts.push(Vec::new());
+                    size = 0;
+                }
+                size += len;
+                parts.last_mut().unwrap().push(p);
+            }
+            let part = args.get("part").and_then(Value::as_u64).unwrap_or(1).max(1) as usize;
+            let pages = parts.get(part - 1).ok_or(format!("This chapter has {} parts.", parts.len()))?;
+            Ok(json!({ "chapter": entry["title"], "first_page": start, "last_page": end, "part": part, "parts": parts.len(), "pages": pages }).to_string())
+        }
+        "search_book" => {
+            let book = read_json(&book_path()).ok_or(NO_BOOK)?;
+            let query = args.get("query").and_then(Value::as_str).ok_or("query is required")?;
+            let limit = args.get("limit").and_then(Value::as_u64).unwrap_or(30) as usize;
+            let (total, hits) = search(&book, query, limit);
+            Ok(json!({ "query": query, "matches": total, "shown": hits.len(), "results": hits }).to_string())
         }
         "get_saved_words" => {
             let state = state.ok_or(NOT_SHARED)?;
@@ -192,7 +357,7 @@ fn handle(msg: &Value) -> Option<Value> {
             "protocolVersion": msg["params"]["protocolVersion"].as_str().unwrap_or("2025-06-18"),
             "capabilities": { "tools": {} },
             "serverInfo": { "name": "siyaq", "version": env!("CARGO_PKG_VERSION") },
-            "instructions": "Siyaq is the user's book reader. It knows the page they're reading and the words they looked up, with translations in their language."
+            "instructions": "Siyaq is the user's book reader. It can give you the page they're on, the whole open book (contents, any pages or chapter, search) and the words they looked up, with translations in their language."
         }),
         "ping" => json!({}),
         "tools/list" => json!({ "tools": tools() }),
