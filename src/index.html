@@ -133,15 +133,34 @@
     transition: border-color .15s, background .15s;
   }
   .welcome.drag .welcome-card { border-color: var(--accent); background: var(--accent-soft); }
+  .recent { grid-row: 3; width: min(460px, 100%); margin-top: 18px; }
+  .recent h3 { margin: 0 4px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .recent ul, .open-menu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .book-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); cursor: pointer; text-align: start; }
+  .book-item:hover { border-color: var(--accent); }
+  .book-item > svg { width: 18px; height: 18px; flex: none; color: var(--accent-text); }
+  .book-item .b-body { flex: 1; min-width: 0; }
+  .book-item .b-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .book-item .b-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 11.5px; color: var(--muted); }
+  .book-item .b-bar { flex: 1; max-width: 120px; height: 4px; border-radius: 4px; background: var(--border); overflow: hidden; }
+  .book-item .b-bar span { display: block; height: 100%; background: var(--accent); }
+  .book-item .x { width: 26px; height: 26px; flex: none; opacity: 0; }
+  .book-item:hover .x, .book-item .x:focus-visible { opacity: 1; }
+  .book-item .x .i { width: 14px; height: 14px; }
+  .open-menu { position: fixed; z-index: 40; width: 340px; max-height: 70vh; overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop); }
+  .open-menu h3 { margin: 2px 4px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .open-menu .btn { width: 100%; margin-top: 8px; justify-content: center; }
+  .open-menu .book-item.now { border-color: var(--accent); background: var(--accent-soft); cursor: default; }
+  .mcp-box.usage small a { color: var(--accent-text); }
   .welcome-icon { display: block; width: 92px; height: 72px; margin: 0 auto 16px; }
   .welcome h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.01em; }
   .welcome p { margin: 0 auto; color: var(--muted); max-width: 340px; }
   .welcome .btn.lg { margin: 24px 0 10px; }
   .welcome .drop-hint { font-size: 13px; }
-  .welcome { grid-template-rows: 1fr auto auto auto 1fr; }
+  .welcome { grid-template-rows: 1fr auto auto auto auto 1fr; }
   .welcome-card { grid-row: 2; }
-  .welcome > .lang-pick { grid-row: 3; justify-self: center; margin-top: 18px; }
-  .welcome-ver { grid-row: 4; justify-self: center; margin: 12px 0 0; font-size: 12px; color: var(--muted); opacity: .8; }
+  .welcome > .lang-pick { grid-row: 4; justify-self: center; margin-top: 18px; }
+  .welcome-ver { grid-row: 5; justify-self: center; margin: 12px 0 0; font-size: 12px; color: var(--muted); opacity: .8; }
   /* App language, offered where a new user first looks: each name is written in its own language. */
   .lang-pick { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 13px; }
   .lang-pick svg { width: 15px; height: 15px; margin-inline: 8px 4px; }
@@ -507,7 +526,7 @@
     </select>
   </div>
   <div class="actions">
-    <label class="icon-btn" data-i18n-title="open"><i data-icon="folder"></i><input class="file-input" type="file" accept=".pdf,.epub,application/pdf,application/epub+zip" hidden></label>
+    <label class="icon-btn" id="openBtn" data-i18n-title="open"><i data-icon="folder"></i><input class="file-input" type="file" accept=".pdf,.epub,application/pdf,application/epub+zip" hidden></label>
     <button class="icon-btn" id="themeBtn" data-i18n-title="toggleTheme"></button>
     <button class="icon-btn" id="settingsBtn" data-i18n-title="settings"><i data-icon="sliders"></i></button>
   </div>
@@ -538,6 +557,7 @@
     <button class="icon-btn" id="searchClose" data-i18n-title="close"><i data-icon="x"></i></button>
   </div>
   <div class="toast" id="toast" hidden></div>
+<div class="open-menu" id="openMenu" hidden></div>
   <button class="btn back" id="backBtn" hidden><i data-icon="arrow" class="flip-back"></i><span data-i18n="back"></span></button>
   <div id="viewer">
     <div class="welcome" id="empty">
@@ -549,6 +569,7 @@
         <p class="drop-hint" data-i18n="dropHint"></p>
         <p class="privacy"><i data-icon="lock"></i><span data-i18n="privacy"></span></p>
       </div>
+      <section class="recent" id="recent" hidden></section>
       <div class="lang-pick" data-lang-pick></div>
       <p class="welcome-ver" data-version></p>
     </div>
@@ -579,6 +600,16 @@
         <option value="dark" data-i18n="themeDark"></option>
       </select>
     </label>
+    <div class="mcp-box">
+      <b data-i18n="backupTitle"></b>
+      <small data-i18n="backupHelp"></small>
+      <div class="mcp-actions">
+        <button class="btn small" type="button" id="backupSave"><i data-icon="download"></i><span data-i18n="backupSave"></span></button>
+        <button class="btn small" type="button" id="backupLoad"><i data-icon="refresh"></i><span data-i18n="backupLoad"></span></button>
+      </div>
+      <small class="mcp-msg" id="backupMsg" hidden></small>
+      <input type="file" id="backupFile" accept=".json,application/json" hidden>
+    </div>
     </section>
     <section class="set-pane" data-pane="ai">
     <label><span data-i18n="provider"></span>
@@ -600,6 +631,11 @@
     <label><span data-i18n="model"></span>
       <input name="model" dir="ltr">
     </label>
+    <div class="mcp-box usage">
+      <b data-i18n="usageTitle"></b>
+      <small id="usageLine"></small>
+      <small><span data-i18n="usageNote"></span> <a href="#" id="limitsLink" data-i18n="usageLimits"></a></small>
+    </div>
     </section>
     <section class="set-pane" data-pane="connect">
     <div class="mcp-box" id="mcpBox">
@@ -794,7 +830,7 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', pageN: n => `صفحة ${n}`, progress: 'تقدّمك بالمراجعة', goToWord: 'روح على الصفحة', vocabFilterPh: 'دوّر بكلماتك…', noBookName: 'بدون كتاب', noMatches: 'ما في كلمات بتطابق.', openBookFirst: b => `افتح «${b}» أول لتروح على صفحة هالكلمة.`, export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askBtn: 'اسأل', askBtnTitle: 'اسأل عن جملة أو فقرة', askPick: 'ظلّل الجملة أو الفقرة اللي بدّك تسأل عنها، أو اكبس على أي جملة.', askSentence: 'اسأل عن هالجملة', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', tourAgain: 'شوف جولة الترحيب من جديد', setTabGeneral: 'عام', setTabAi: 'الذكاء الاصطناعي', setTabConnect: 'الربط', setTabAbout: 'حول ومساعدة', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', tocCount: n => n === 1 ? 'قسم واحد' : n === 2 ? 'قسمين' : n <= 10 ? `${n} أقسام` : `${n} قسم`, noBook: 'افتح كتاب لتشوف فهرسه.',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askBtn: 'اسأل', askBtnTitle: 'اسأل عن جملة أو فقرة', askPick: 'ظلّل الجملة أو الفقرة اللي بدّك تسأل عنها، أو اكبس على أي جملة.', askSentence: 'اسأل عن هالجملة', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', recentBooks: 'آخر الكتب', books: 'كتب', pageOf: (p, n) => `صفحة ${p} من ${n}`, forgetBook: 'شيله من القائمة', openOther: 'افتح كتاب تاني…', bookMissing: 'ما لقيت ملف الكتاب. يمكن انتقل لمكان تاني أو انمسح، فشلته من القائمة.', backupTitle: 'نسخة احتياطية', backupHelp: 'كلماتك وتقدّمك بالمراجعة ووين وصلت بكل كتاب وإعداداتك، بملف واحد. مفتاح الـ API ما بينحفظ فيه.', backupSave: 'احفظ نسخة', backupLoad: 'استرجع نسخة', backupSaved: n => `انحفظت النسخة، وفيها ${n} كلمة.`, backupRestored: n => `رجعت النسخة. انضافت ${n} كلمة جديدة.`, backupBad: 'هالملف مش نسخة احتياطية من سياق.', usageTitle: 'استخدامك اليوم', usageToday: (w, a) => `${w} كلمة · ${a} سؤال`, usageNote: 'العدد محسوب على جهازك، لأنه المزوّدين ما بيقولوا قديش باقي من الحصة.', usageLimits: 'حدود خطة Gemini المجانية', quotaDay: 'خلصت حصّتك المجانية من Gemini لليوم. بترجع بكرا، أو فيك تحط مفتاح تاني من الإعدادات.', quotaMinute: 'انبعت طلبات كتير بدقيقة وحدة. استنى دقيقة وجرّب كمان مرة.', noCredit: 'رصيدك عند مزوّد الذكاء الاصطناعي خلص. اشحن حسابك عندهم، أو بدّل المزوّد من الإعدادات.', tourAgain: 'شوف جولة الترحيب من جديد', setTabGeneral: 'عام', setTabAi: 'الذكاء الاصطناعي', setTabConnect: 'الربط', setTabAbout: 'حول ومساعدة', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', tocCount: n => n === 1 ? 'قسم واحد' : n === 2 ? 'قسمين' : n <= 10 ? `${n} أقسام` : `${n} قسم`, noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
@@ -826,7 +862,7 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', pageN: n => `Page ${n}`, progress: 'Review progress', goToWord: 'Go to the page', vocabFilterPh: 'Search your words…', noBookName: 'No book', noMatches: 'No words match.', openBookFirst: b => `Open “${b}” first to go to this word’s page.`, export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    setupHelp: 'Help me set up a Gemini key', askBtn: 'Ask', askBtnTitle: 'Ask about a sentence or paragraph', askPick: 'Select the sentence or paragraph you want to ask about, or click any sentence.', askSentence: 'Ask about this sentence', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', tourAgain: 'Show the welcome tour again', setTabGeneral: 'General', setTabAi: 'AI', setTabConnect: 'Connections', setTabAbout: 'About & help', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', tocCount: n => n === 1 ? '1 section' : `${n} sections`, noBook: 'Open a book to see its contents.',
+    setupHelp: 'Help me set up a Gemini key', askBtn: 'Ask', askBtnTitle: 'Ask about a sentence or paragraph', askPick: 'Select the sentence or paragraph you want to ask about, or click any sentence.', askSentence: 'Ask about this sentence', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', recentBooks: 'Recent books', books: 'Books', pageOf: (p, n) => `Page ${p} of ${n}`, forgetBook: 'Remove from the list', openOther: 'Open another book…', bookMissing: 'Couldn’t find the book’s file. It may have moved or been deleted, so it was removed from the list.', backupTitle: 'Backup', backupHelp: 'Your words and review progress, where you are in each book, and your settings, in one file. Your API key isn’t included.', backupSave: 'Save a backup', backupLoad: 'Restore a backup', backupSaved: n => `Backup saved, with ${n} words.`, backupRestored: n => `Backup restored. ${n} new words added.`, backupBad: 'This file isn’t a Siyaq backup.', usageTitle: 'Today’s use', usageToday: (w, a) => `${w} words · ${a} questions`, usageNote: 'Counted on this device: providers don’t say how much quota is left.', usageLimits: 'Gemini free plan limits', quotaDay: 'Your free Gemini quota for today is used up. It resets tomorrow, or you can add another key in Settings.', quotaMinute: 'Too many requests in one minute. Wait a minute and try again.', noCredit: 'Your AI provider credit has run out. Top up your account with them, or switch provider in Settings.', tourAgain: 'Show the welcome tour again', setTabGeneral: 'General', setTabAi: 'AI', setTabConnect: 'Connections', setTabAbout: 'About & help', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', tocCount: n => n === 1 ? '1 section' : `${n} sections`, noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
@@ -858,7 +894,7 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', pageN: n => `Sayfa ${n}`, progress: 'Tekrar ilerlemesi', goToWord: 'Sayfaya git', vocabFilterPh: 'Kelimelerinizde arayın…', noBookName: 'Kitapsız', noMatches: 'Eşleşen kelime yok.', openBookFirst: b => `Bu kelimenin sayfasına gitmek için önce “${b}” kitabını açın.`, export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    setupHelp: 'Gemini anahtarı kurulumu', askBtn: 'Sor', askBtnTitle: 'Bir cümle ya da paragraf hakkında sor', askPick: 'Sormak istediğiniz cümleyi veya paragrafı seçin ya da herhangi bir cümleye tıklayın.', askSentence: 'Bu cümle hakkında sor', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', tourAgain: 'Karşılama turunu yeniden göster', setTabGeneral: 'Genel', setTabAi: 'Yapay zekâ', setTabConnect: 'Bağlantılar', setTabAbout: 'Hakkında', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', tocCount: n => `${n} bölüm`, noBook: 'İçindekileri görmek için bir kitap açın.',
+    setupHelp: 'Gemini anahtarı kurulumu', askBtn: 'Sor', askBtnTitle: 'Bir cümle ya da paragraf hakkında sor', askPick: 'Sormak istediğiniz cümleyi veya paragrafı seçin ya da herhangi bir cümleye tıklayın.', askSentence: 'Bu cümle hakkında sor', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', recentBooks: 'Son kitaplar', books: 'Kitaplar', pageOf: (p, n) => `Sayfa ${p} / ${n}`, forgetBook: 'Listeden kaldır', openOther: 'Başka bir kitap aç…', bookMissing: 'Kitabın dosyası bulunamadı. Taşınmış ya da silinmiş olabilir; listeden kaldırıldı.', backupTitle: 'Yedek', backupHelp: 'Kelimeleriniz ve tekrar ilerlemeniz, her kitapta kaldığınız yer ve ayarlarınız tek dosyada. API anahtarınız dahil edilmez.', backupSave: 'Yedek kaydet', backupLoad: 'Yedeği geri yükle', backupSaved: n => `Yedek kaydedildi, ${n} kelime.`, backupRestored: n => `Yedek geri yüklendi. ${n} yeni kelime eklendi.`, backupBad: 'Bu dosya bir Siyaq yedeği değil.', usageTitle: 'Bugünkü kullanım', usageToday: (w, a) => `${w} kelime · ${a} soru`, usageNote: 'Bu cihazda sayılır: sağlayıcılar ne kadar kota kaldığını söylemez.', usageLimits: 'Gemini ücretsiz plan sınırları', quotaDay: 'Bugünkü ücretsiz Gemini kotanız doldu. Yarın yenilenir ya da Ayarlar’dan başka bir anahtar ekleyebilirsiniz.', quotaMinute: 'Bir dakikada çok fazla istek. Bir dakika bekleyip tekrar deneyin.', noCredit: 'Yapay zekâ sağlayıcınızdaki krediniz bitti. Hesabınıza yükleme yapın ya da Ayarlar’dan sağlayıcıyı değiştirin.', tourAgain: 'Karşılama turunu yeniden göster', setTabGeneral: 'Genel', setTabAi: 'Yapay zekâ', setTabConnect: 'Bağlantılar', setTabAbout: 'Hakkında', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', tocCount: n => `${n} bölüm`, noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
@@ -933,6 +969,7 @@ async function openPdf(data, name) {
 async function finishOpening(doc, name) {
   viewer.scrollTop = 0;
   bookKey = name + '|' + doc.numPages;
+  rememberBook(doc);
   ocrCache.clear();
   pageTexts.clear();
   closeSearch();
@@ -1164,13 +1201,21 @@ window.addEventListener('resize', () => {
 // ---------- Opening files ----------
 document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async e => {
   const f = e.target.files[0];
+  bookPath = null; // a browser-picked file has no place on disk we can open again
   if (f) openBook(new Uint8Array(await f.arrayBuffer()), f.name);
   e.target.value = '';
 }));
 // Books double-clicked in Finder / Explorer, or opened with "Open with Siyaq".
 async function openFromOS(path) {
   if (!path) return;
-  const bytes = await tauri.core.invoke('read_book', { path });
+  let bytes;
+  try { bytes = await tauri.core.invoke('read_book', { path }); }
+  catch {
+    forgetBook(path);
+    showToast(t('bookMissing'));
+    return;
+  }
+  bookPath = path;
   openBook(new Uint8Array(bytes), path.split(/[\\/]/).pop());
 }
 if (tauri) {
@@ -1183,8 +1228,92 @@ viewer.addEventListener('dragleave', () => $('#empty')?.classList.remove('drag')
 viewer.addEventListener('drop', async e => {
   e.preventDefault();
   const f = [...e.dataTransfer.files].find(f => /\.(pdf|epub)$/i.test(f.name) || /pdf|epub/.test(f.type));
+  bookPath = null;
   if (f) openBook(new Uint8Array(await f.arrayBuffer()), f.name);
 });
+
+// ---------- Recent books (installed app) ----------
+// The app opens books with the system's picker or by dropping them on the window, so it knows where each
+// one is and can list the last ones on the start screen and under the folder button.
+const desktopApp = tauri && !/Android|iPhone|iPad/.test(navigator.userAgent);
+let bookPath = null; // where the open book is on disk, when known
+const library = () => store.get('library', []);
+
+function rememberBook(doc) {
+  if (!bookPath) return;
+  const entry = { path: bookPath, name: bookName, key: bookKey, pages: doc.numPages, type: bookType, at: Date.now() };
+  store.set('library', [entry, ...library().filter(b => b.path !== bookPath)].slice(0, 12));
+}
+function forgetBook(path) {
+  store.set('library', library().filter(b => b.path !== path));
+  renderRecent();
+}
+
+function bookItem(b, current = false) {
+  const pos = store.get('positions', {})[b.key];
+  const page = pos?.page || 1, share = Math.round((page / (b.pages || 1)) * 100);
+  const days = Math.round((b.at - Date.now()) / 864e5);
+  return `<li class="book-item${current ? ' now' : ''}" data-path="${esc(b.path)}">
+    ${icon('book')}
+    <div class="b-body">
+      <div class="b-name" dir="auto">${esc(b.name.replace(/\.(pdf|epub)$/i, ''))}</div>
+      <div class="b-meta"><span>${t('pageOf')(page, b.pages)}</span><span class="b-bar"><span style="width:${share}%"></span></span><span>${new Intl.RelativeTimeFormat(settings.uiLang, { numeric: 'auto' }).format(days, 'day')}</span></div>
+    </div>
+    ${current ? '' : `<button class="icon-btn x" data-forget="${esc(b.path)}" title="${t('forgetBook')}" aria-label="${t('forgetBook')}">${icon('x')}</button>`}
+  </li>`;
+}
+
+function renderRecent() {
+  const box = $('#recent');
+  if (!box) return; // the start screen is gone once a book is open
+  const books = desktopApp ? library().slice(0, 5) : [];
+  box.hidden = !books.length;
+  box.innerHTML = books.length ? `<h3>${t('recentBooks')}</h3><ul>${books.map(b => bookItem(b)).join('')}</ul>` : '';
+}
+
+async function pickBook() {
+  const path = await tauri.core.invoke('pick_file', { label: t('books'), extensions: ['pdf', 'epub'] }).catch(() => null);
+  if (path) { if ($('#setup').open) $('#setup').close(); openFromOS(path); }
+}
+
+function showOpenMenu() {
+  const books = library();
+  if (!books.length) { pickBook(); return; }
+  const menu = $('#openMenu'), r = $('#openBtn').getBoundingClientRect();
+  menu.innerHTML = `<h3>${t('recentBooks')}</h3><ul>${books.slice(0, 8).map(b => bookItem(b, b.path === bookPath)).join('')}</ul>
+    <button class="btn primary" id="openOther">${icon('folder')}${t('openOther')}</button>`;
+  menu.hidden = false;
+  const w = menu.offsetWidth;
+  menu.style.top = r.bottom + 8 + 'px';
+  menu.style.left = Math.max(12, Math.min(innerWidth - w - 12, document.dir === 'rtl' ? r.left : r.right - w)) + 'px';
+  $('#openOther').onclick = () => { menu.hidden = true; pickBook(); };
+}
+
+document.addEventListener('click', e => {
+  const forget = e.target.closest('[data-forget]');
+  if (forget) { e.stopPropagation(); forgetBook(forget.dataset.forget); if (!$('#openMenu').hidden) showOpenMenu(); return; }
+  const item = e.target.closest('.book-item[data-path]');
+  if (item && !item.classList.contains('now')) { $('#openMenu').hidden = true; openFromOS(item.dataset.path); return; }
+  if (!e.target.closest('#openMenu, #openBtn')) $('#openMenu').hidden = true;
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#openMenu').hidden = true; });
+
+if (desktopApp) {
+  // The folder buttons use the system's picker; the toolbar one also lists recent books.
+  document.querySelectorAll('.file-input').forEach(input => input.closest('label').addEventListener('click', e => {
+    e.preventDefault();
+    if (input.closest('#openBtn')) { $('#openMenu').hidden ? showOpenMenu() : ($('#openMenu').hidden = true); }
+    else pickBook();
+  }));
+  // Dropped files come through the app, with their paths.
+  tauri.event.listen('tauri://drag-enter', () => $('#empty')?.classList.add('drag'));
+  tauri.event.listen('tauri://drag-leave', () => $('#empty')?.classList.remove('drag'));
+  tauri.event.listen('tauri://drag-drop', e => {
+    $('#empty')?.classList.remove('drag');
+    const path = (e.payload?.paths || []).find(p => /\.(pdf|epub)$/i.test(p));
+    if (path) openFromOS(path);
+  });
+}
 
 // ---------- Book language ----------
 const STOPWORDS = {
@@ -1338,6 +1467,16 @@ Reply with JSON only, no markdown fences, in exactly this shape:
 
 const BUSY = [429, 503, 529]; // rate limited, high demand, overloaded
 
+// Turns "out of quota" and "out of credit" replies into a plain sentence saying what to do.
+function quotaMessage(status, json) {
+  const e = json?.error || {}, text = `${e.message || ''} ${e.status || ''} ${e.type || ''} ${e.code || ''}`;
+  if (/credit balance|insufficient_quota|billing/i.test(text)) return t('noCredit');
+  if (status === 429 && /quota|RESOURCE_EXHAUSTED/i.test(text)) {
+    return /PerDay|per day|daily/i.test(JSON.stringify(e.details || '') + text) ? t('quotaDay') : t('quotaMinute');
+  }
+  return null;
+}
+
 // In the app, requests go through Rust so AI servers needn't allow browser (CORS) calls.
 async function requestJson(method, url, headers, body) {
   if (tauri) {
@@ -1355,7 +1494,7 @@ async function postJson(url, headers, body) {
     await new Promise(res => setTimeout(res, 800));
     r = await requestJson('POST', url, headers, body);
   }
-  if (BUSY.includes(r.status)) throw new Error(t('busy'));
+  if (BUSY.includes(r.status)) throw new Error(quotaMessage(r.status, r.json) || t('busy'));
   return r;
 }
 
@@ -1417,7 +1556,7 @@ async function askGemini(prompt) {
     if (suggested) queue.unshift(suggested);
     // A wrong key is worth stopping for; a model we can't use just means trying the next one.
     else if (!BUSY.includes(r.status) && r.status !== 404 && !/model/i.test(msg)) throw new Error(msg);
-    lastError = BUSY.includes(r.status) ? t('busy') : msg;
+    lastError = quotaMessage(r.status, r.json) || (BUSY.includes(r.status) ? t('busy') : msg);
   }
   throw new Error(lastError);
 }
@@ -1436,13 +1575,13 @@ async function askModel(prompt, maxTokens = 800) {
     r = await postJson('https://api.anthropic.com/v1/messages',
       { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
       { model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] });
-    if (!r.ok) throw new Error(r.json?.error?.message || r.status);
+    if (!r.ok) throw new Error(quotaMessage(r.status, r.json) || r.json?.error?.message || r.status);
     text = (r.json.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
   } else {
     const headers = settings.apiKey ? { authorization: 'Bearer ' + settings.apiKey } : {};
     r = await postJson(settings.baseUrl.replace(/\/+$/, '') + '/chat/completions', headers,
       { model, temperature: 0.2, messages: [{ role: 'user', content: prompt }] });
-    if (!r.ok) throw new Error(r.json?.error?.message || r.status);
+    if (!r.ok) throw new Error(quotaMessage(r.status, r.json) || r.json?.error?.message || r.status);
     text = r.json.choices?.[0]?.message?.content || '';
   }
   const m = text.match(/\{[\s\S]*\}/);
@@ -1526,6 +1665,7 @@ async function ask(question) {
   $('#askInput').value = '';
   try {
     const r = await askModel(buildAskPrompt(askPassage, question), 1500);
+    countUse('asks');
     if (id !== askId && !box.isConnected) return;
     const d = `dir="${LANGS[settings.lang].dir}"`;
     box.querySelector('.skeleton').outerHTML = String(r.answer || '').split(/\n\s*\n/).map(p => `<p class="explain" ${d}>${esc(p.trim())}</p>`).join('');
@@ -1567,7 +1707,9 @@ async function lookup(word, sentence, fresh = false) {
     pane.innerHTML = `<article class="result">${wordHead(word)}<div class="skeleton"><span></span><span></span><span class="short"></span></div>${sentenceBlock(word, sentence)}</article>`;
   }
   try {
+    const fromCache = cache.has(key);
     const r = cache.get(key) || await askAI(word, sentence);
+    if (!fromCache) countUse('words');
     cache.set(key, r);
     store.set('cache', [...cache].slice(-500));
     if (id !== lookupId) return;
@@ -1710,12 +1852,7 @@ function goToWord(v) {
 function exportCsv() {
   const q = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
   const rows = vocab.map(v => [v.word, `${v.translation} — ${v.explanation}`, v.sentence, v.book].map(q).join(','));
-  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'siyaq-vocab.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  saveText('siyaq-vocab.csv', '﻿' + rows.join('\n'), 'text/csv;charset=utf-8').catch(err => showToast(String(err)));
 }
 
 // ---------- EPUB ----------
@@ -2458,6 +2595,91 @@ $('#mcpCopy').onclick = async () => {
   } catch (err) { mcpMessage(String(err), true); }
 };
 
+// ---------- Backup ----------
+// One file with My words (and their review progress), reading positions, recent books and settings.
+// The API key is left out on purpose: it is a secret, and easy to paste again.
+async function saveText(name, text, type) {
+  if (desktopApp) return tauri.core.invoke('save_file', { name, contents: text });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  return name;
+}
+const backupMessage = (text, error = false) => { const el = $('#backupMsg'); el.textContent = text; el.classList.toggle('error', error); el.hidden = false; };
+
+$('#backupSave').onclick = async () => {
+  const { apiKey, ...safeSettings } = settings;
+  const data = { app: 'siyaq', format: 1, version: await appVersion(), exported: new Date().toISOString(),
+    settings: safeSettings, vocab, positions: store.get('positions', {}), library: library() };
+  try {
+    const where = await saveText(`siyaq-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 1), 'application/json');
+    if (where) backupMessage(t('backupSaved')(vocab.length));
+  } catch (err) { backupMessage(String(err), true); }
+};
+
+function restoreBackup(text) {
+  let data;
+  try { data = JSON.parse(text); } catch { data = null; }
+  if (data?.app !== 'siyaq' || !Array.isArray(data.vocab)) { backupMessage(t('backupBad'), true); return; }
+  // Words: keep both sides; for the same word in the same sentence, keep the one further along in review.
+  const key = v => v.word.toLowerCase() + '|' + v.sentence;
+  const merged = new Map(vocab.map(v => [key(v), v]));
+  let added = 0;
+  for (const v of data.vocab.filter(v => v?.word)) {
+    const had = merged.get(key(v));
+    if (!had) added++;
+    if (!had || (v.box || 0) > (had.box || 0)) merged.set(key(v), v);
+  }
+  vocab = [...merged.values()].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+  store.set('vocab', vocab);
+  const positions = store.get('positions', {});
+  for (const [k, p] of Object.entries(data.positions || {})) if (!positions[k] || p.at > positions[k].at) positions[k] = p;
+  store.set('positions', positions);
+  const paths = new Set(library().map(b => b.path));
+  store.set('library', [...library(), ...(data.library || []).filter(b => !paths.has(b.path))].slice(0, 12));
+  const { apiKey, ...restored } = data.settings || {};
+  Object.assign(settings, restored);
+  store.set('settings', settings);
+  for (const k of ['uiLang', 'theme']) form[k].value = settings[k];
+  applyTheme();
+  applyUiLanguage();
+  target.value = settings.lang;
+  updateVocabCount();
+  refreshKnown();
+  renderRecent();
+  backupMessage(t('backupRestored')(added));
+}
+
+$('#backupLoad').onclick = async () => {
+  if (!desktopApp) { $('#backupFile').click(); return; }
+  const path = await tauri.core.invoke('pick_file', { label: t('backupTitle'), extensions: ['json'] }).catch(() => null);
+  if (!path) return;
+  try { restoreBackup(new TextDecoder().decode(new Uint8Array(await tauri.core.invoke('read_book', { path })))); }
+  catch (err) { backupMessage(String(err), true); }
+};
+$('#backupFile').onchange = async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (f) restoreBackup(await f.text());
+};
+
+// ---------- Today's AI use ----------
+// Counted on this device: providers don't tell apps how much free quota is left.
+function countUse(kind) {
+  const day = new Date().toISOString().slice(0, 10);
+  const u = store.get('usage', {});
+  const today = u.day === day ? u : { day, words: 0, asks: 0 };
+  today[kind]++;
+  store.set('usage', today);
+}
+function showUsage() {
+  const u = store.get('usage', {}), today = u.day === new Date().toISOString().slice(0, 10) ? u : { words: 0, asks: 0 };
+  $('#usageLine').textContent = t('usageToday')(today.words, today.asks);
+}
+$('#limitsLink').onclick = e => { e.preventDefault(); openLink('https://ai.google.dev/gemini-api/docs/rate-limits'); };
+
 // ---------- Feedback ----------
 // Problems and ideas go to GitHub Issues (forms in .github/ISSUE_TEMPLATE), or by email for people without GitHub.
 const REPO = 'https://github.com/SaadHASSON1/siyaq', CONTACT = 'contact@x13labs.com';
@@ -2611,6 +2833,8 @@ function openSettings(pane = 'general') {
   showSettingsPane(pane);
   for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
   form.mcp.checked = !!settings.mcp;
+  showUsage();
+  $('#backupMsg').hidden = true;
   $('#mcpBox').hidden = $('#connectTab').hidden = !tauri || /Android|iPhone|iPad/.test(navigator.userAgent); // AI desktop apps only
   $('#mcpMsg').hidden = true;
   syncProviderFields();
@@ -2668,6 +2892,7 @@ function applyUiLanguage() {
   $('#searchInput').placeholder = t('searchPh');
   renderLangPicks();
   showVersion();
+  renderRecent();
 }
 
 function showVersion() {

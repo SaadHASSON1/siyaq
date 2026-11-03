@@ -86,6 +86,46 @@ async fn install_update() -> Result<(), String> {
     Ok(())
 }
 
+/// Asks for a file with the system's own picker, so the app knows where it is (for Recent books).
+#[cfg(desktop)]
+#[tauri::command]
+async fn pick_file(app: tauri::AppHandle, label: String, extensions: Vec<String>) -> Option<String> {
+    use tauri_plugin_dialog::DialogExt;
+    let exts: Vec<&str> = extensions.iter().map(String::as_str).collect();
+    app.dialog()
+        .file()
+        .add_filter(label, &exts)
+        .blocking_pick_file()
+        .and_then(|p| p.into_path().ok())
+        .map(|p| p.display().to_string())
+}
+
+/// Saves text to a file the user chooses (backups, the Anki export): where it went, or None if cancelled.
+#[cfg(desktop)]
+#[tauri::command]
+async fn save_file(app: tauri::AppHandle, name: String, contents: String) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let Some(path) = app.dialog().file().set_file_name(&name).blocking_save_file() else {
+        return Ok(None);
+    };
+    let path = path.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, contents).map_err(|e| e.to_string())?;
+    Ok(Some(path.display().to_string()))
+}
+
+// Phones open books through the system's share and file apps instead.
+#[cfg(mobile)]
+#[tauri::command]
+async fn pick_file() -> Option<String> {
+    None
+}
+
+#[cfg(mobile)]
+#[tauri::command]
+async fn save_file() -> Result<Option<String>, String> {
+    Ok(None)
+}
+
 #[tauri::command]
 fn read_book(path: String) -> Result<Response, String> {
     std::fs::read(&path).map(Response::new).map_err(|e| e.to_string())
@@ -116,6 +156,8 @@ pub fn run() {
             open_link,
             check_update,
             install_update,
+            pick_file,
+            save_file,
             mcp::mcp_share,
             mcp::mcp_share_book,
             mcp::mcp_take_inbox,
@@ -124,7 +166,10 @@ pub fn run() {
         ])
         .setup(|app| {
             #[cfg(desktop)]
-            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+            {
+                app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+                app.handle().plugin(tauri_plugin_dialog::init())?;
+            }
 
             // Windows and Linux pass the double-clicked file as an argument.
             if let Some(arg) = std::env::args().skip(1).find(|a| {
