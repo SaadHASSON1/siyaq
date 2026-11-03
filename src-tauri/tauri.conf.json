@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Siyaq",
+  "productName": "Glint",
   "version": "0.1.0",
-  "identifier": "app.siyaq.reader",
+  "identifier": "app.glint.reader",
   "build": {
     "frontendDist": "../src"
   },
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "سياق",
+        "title": "Glint",
         "width": 1200,
         "height": 850,
         "minWidth": 400,

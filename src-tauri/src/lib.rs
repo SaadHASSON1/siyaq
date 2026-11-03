@@ -64,7 +64,7 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("error while building Siyaq")
+        .expect("error while building Glint")
         .run(|_app, _event| {
             // macOS sends double-clicked files as an event instead.
             #[cfg(any(target_os = "macos", target_os = "ios"))]
