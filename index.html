@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سياق — قارئ PDF</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f2ee; --surface: #ffffff; --text: #1d1b18; --muted: #6b665e;
+    --border: #e2ddd4; --accent: #2f6f5e; --accent-soft: #e3efeb; --danger: #b3412f;
+    --page-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161513; --surface: #201f1c; --text: #ece8e1; --muted: #a39d93;
+      --border: #34312c; --accent: #6fbfa8; --accent-soft: #23352f; --danger: #e07a66;
+      --page-shadow: 0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0 0 0 auto; color: var(--accent); }
+  header .file { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
+  button, .btn { font: inherit; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  button.primary, .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button:hover, .btn:hover { filter: brightness(.96); }
+  main { flex: 1; display: flex; min-height: 0; }
+  #viewer { flex: 1; overflow: auto; padding: 16px; direction: ltr; }
+  #empty { max-width: 520px; margin: 10vh auto; text-align: center; color: var(--muted); direction: rtl; border: 2px dashed var(--border); border-radius: 16px; padding: 40px 16px; }
+  #empty.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .page { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: var(--page-shadow); }
+  .page canvas { display: block; }
+  .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 2; }
+  .textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: pointer; transform-origin: 0% 0%; }
+  .textLayer ::selection { background: rgba(47,111,94,.35); }
+  .textLayer .hit { background: rgba(255, 200, 0, .35); border-radius: 2px; }
+
+  aside { width: 360px; max-width: 100%; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .tabs button { flex: 1; border: 0; border-radius: 0; padding: 10px; background: none; color: var(--muted); }
+  .tabs button.on { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+  .pane { flex: 1; overflow: auto; padding: 16px; }
+  .hint { color: var(--muted); }
+  .word { font-size: 24px; font-weight: 700; direction: ltr; text-align: left; }
+  .tr { font-size: 22px; color: var(--accent); font-weight: 700; margin: 4px 0 12px; }
+  .label { font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .sentence { direction: ltr; text-align: left; background: var(--bg); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+  .sentence mark { background: rgba(255,200,0,.45); color: inherit; border-radius: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chip { background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+  .error { color: var(--danger); }
+  .spinner { width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .vocab-item { border-bottom: 1px solid var(--border); padding: 8px 0; display: flex; gap: 8px; }
+  .vocab-item .w { font-weight: 700; direction: ltr; }
+  .vocab-item .x { margin-inline-start: auto; border: 0; background: none; color: var(--muted); padding: 0 4px; }
+  dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); width: min(460px, calc(100vw - 32px)); padding: 20px; }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog label { display: block; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  dialog input, dialog select { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); margin-top: 4px; }
+  dialog .row { display: flex; gap: 8px; justify-content: flex-start; margin-top: 18px; }
+  dialog small { color: var(--muted); display: block; margin-top: 4px; }
+
+  @media (max-width: 760px) {
+    main { flex-direction: column-reverse; }
+    aside { width: 100%; height: 42vh; border-inline-end: 0; border-top: 1px solid var(--border); }
+    #viewer { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>سياق</h1>
+  <label class="btn primary">افتح PDF<input id="file" type="file" accept="application/pdf" hidden></label>
+  <button id="settingsBtn">الإعدادات</button>
+  <span class="file" id="fileName"></span>
+</header>
+
+<main>
+  <aside>
+    <div class="tabs">
+      <button class="on" data-tab="lookup">المعنى</button>
+      <button data-tab="vocab">كلماتي</button>
+    </div>
+    <div class="pane" id="lookup">
+      <p class="hint">افتح ملف PDF واضغط على أي كلمة لتعرف معناها <b>حسب الجملة</b> اللي هي فيها. لعبارة كاملة، ظلّلها بالماوس.</p>
+    </div>
+    <div class="pane" id="vocab" hidden></div>
+  </aside>
+  <div id="viewer">
+    <div id="empty">
+      <p style="font-size:18px;color:var(--text)">اسحب ملف PDF إلى هنا</p>
+      <p>أو استخدم زر «افتح PDF». الملف ما بيطلع من جهازك، فقط الجملة اللي بتسأل عنها بتنبعت لنموذج الذكاء الاصطناعي اللي اخترته.</p>
+    </div>
+  </div>
+</main>
+
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <h3 style="margin-top:0">الإعدادات</h3>
+    <label>لغتك (لغة الشرح)
+      <input name="lang" placeholder="العربية">
+    </label>
+    <label>مزوّد الذكاء الاصطناعي
+      <select name="provider">
+        <option value="gemini">Google Gemini (فيه خطة مجانية)</option>
+        <option value="openai">Ollama / متوافق مع OpenAI (محلي ومجاني)</option>
+        <option value="anthropic">Anthropic Claude</option>
+      </select>
+    </label>
+    <label data-for="openai">عنوان الخادم
+      <input name="baseUrl" dir="ltr" placeholder="http://localhost:11434/v1">
+      <small>لـ Ollama على جهازك، أو أي خدمة متوافقة مع OpenAI (OpenRouter، Groq، OpenAI…).</small>
+    </label>
+    <label>مفتاح API
+      <input name="apiKey" type="password" dir="ltr" autocomplete="off">
+      <small>بيتخزن بمتصفحك فقط. لـ Gemini خذ مفتاح مجاني من aistudio.google.com. لـ Ollama اتركه فاضي.</small>
+    </label>
+    <label>اسم النموذج (اختياري)
+      <input name="model" dir="ltr">
+    </label>
+    <div class="row">
+      <button class="primary" value="save">حفظ</button>
+      <button value="cancel" formnovalidate>إلغاء</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('siyaq:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('siyaq:' + k, JSON.stringify(v)); } catch {} }
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const DEFAULT_MODELS = { gemini: 'gemini-2.5-flash', anthropic: 'claude-haiku-5-5', openai: 'llama3.1' };
+let settings = Object.assign({ provider: 'gemini', apiKey: '', model: '', baseUrl: 'http://localhost:11434/v1', lang: 'العربية' }, store.get('settings', {}));
+let vocab = store.get('vocab', []);
+let pdfDoc = null, scale = 1, bookName = '';
+const cache = new Map();
+let lookupId = 0;
+
+// ---------- PDF ----------
+const viewer = $('#viewer');
+const observer = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) renderPage(e.target);
+}, { root: viewer, rootMargin: '600px 0px' });
+
+async function openPdf(data, name) {
+  pdfDoc = await pdfjsLib.getDocument({ data }).promise;
+  bookName = name;
+  $('#fileName').textContent = name;
+  viewer.innerHTML = '';
+  const first = await pdfDoc.getPage(1);
+  const base = first.getViewport({ scale: 1 });
+  scale = Math.max(Math.min((viewer.clientWidth - 32) / base.width, 1.8), 0.5);
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    const div = document.createElement('div');
+    div.className = 'page';
+    div.dataset.page = i;
+    div.style.width = base.width * scale + 'px';
+    div.style.height = base.height * scale + 'px';
+    viewer.appendChild(div);
+    observer.observe(div);
+  }
+}
+
+async function renderPage(div) {
+  if (div.dataset.rendered) return;
+  div.dataset.rendered = '1';
+  const page = await pdfDoc.getPage(+div.dataset.page);
+  const vp = page.getViewport({ scale });
+  const dpr = window.devicePixelRatio || 1;
+  div.style.width = vp.width + 'px';
+  div.style.height = vp.height + 'px';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.floor(vp.width * dpr);
+  canvas.height = Math.floor(vp.height * dpr);
+  canvas.style.width = vp.width + 'px';
+  canvas.style.height = vp.height + 'px';
+  div.appendChild(canvas);
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+
+  const layer = document.createElement('div');
+  layer.className = 'textLayer';
+  layer.style.setProperty('--scale-factor', scale);
+  div.appendChild(layer);
+  const textContent = await page.getTextContent();
+  await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: layer, viewport: vp, textDivs: [] }).promise;
+}
+
+$('#file').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
+});
+viewer.addEventListener('dragover', e => { e.preventDefault(); $('#empty')?.classList.add('drag'); });
+viewer.addEventListener('dragleave', () => $('#empty')?.classList.remove('drag'));
+viewer.addEventListener('drop', async e => {
+  e.preventDefault();
+  const f = [...e.dataTransfer.files].find(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
+});
+
+// ---------- Word picking ----------
+const isWordChar = c => /[\p{L}\p{M}\p{N}'’-]/u.test(c);
+
+function caretAt(x, y) {
+  if (document.caretPositionFromPoint) {
+    const p = document.caretPositionFromPoint(x, y);
+    return p && { node: p.offsetNode, offset: p.offset };
+  }
+  if (document.caretRangeFromPoint) {
+    const r = document.caretRangeFromPoint(x, y);
+    return r && { node: r.startContainer, offset: r.startOffset };
+  }
+}
+
+// Joins the page's text spans and cuts out the sentence around the clicked spot.
+function sentenceAround(span, offset) {
+  let text = '', at = 0;
+  for (const el of span.parentElement.children) {
+    if (el.tagName === 'BR') {
+      // "contin-" at a line end + "ue" on the next line → "continue"
+      if (/\p{L}-$/u.test(text)) text = text.slice(0, -1); else text += ' ';
+      continue;
+    }
+    if (el === span) at = text.length + offset;
+    text += el.textContent;
+  }
+  let start = at, end = at;
+  while (start > 0 && !/[.!?؟;]/.test(text[start - 1]) && at - start < 400) start--;
+  while (end < text.length && !/[.!?؟;]/.test(text[end]) && end - at < 400) end++;
+  return text.slice(start, end + 1).replace(/\s+/g, ' ').trim();
+}
+
+viewer.addEventListener('click', e => {
+  const sel = window.getSelection();
+  const selected = sel.toString().replace(/\s+/g, ' ').trim();
+  if (selected) {
+    const node = sel.anchorNode;
+    const span = (node?.nodeType === 3 ? node.parentElement : node)?.closest('.textLayer > span');
+    if (span && selected.split(' ').length <= 10) lookup(selected, sentenceAround(span, sel.anchorOffset));
+    return;
+  }
+  const span = e.target.closest('.textLayer > span');
+  if (!span) return;
+  const pos = caretAt(e.clientX, e.clientY);
+  if (!pos || pos.node.nodeType !== 3 || !span.contains(pos.node)) return;
+  const text = pos.node.textContent;
+  let s = pos.offset, en = pos.offset;
+  while (s > 0 && isWordChar(text[s - 1])) s--;
+  while (en < text.length && isWordChar(text[en])) en++;
+  const word = text.slice(s, en).replace(/^['’-]+|['’-]+$/g, '');
+  if (!word || !/\p{L}/u.test(word)) return;
+  lookup(word, sentenceAround(span, s));
+});
+
+// ---------- AI ----------
+function buildPrompt(word, sentence) {
+  const lang = settings.lang || 'العربية';
+  return `You help someone understand a word while they read a book in a foreign language.
+Word or phrase: "${word}"
+The sentence it appears in: "${sentence}"
+The reader's language: ${lang}
+
+Give the meaning of the word AS USED IN THIS SENTENCE, not just its most common meaning.
+Reply with JSON only, no markdown fences, in exactly this shape:
+{"translation": "short translation of the word as used in this sentence, in ${lang}",
+ "explanation": "one or two sentences in ${lang} explaining what it means here and why",
+ "base_form": "dictionary form of the word in its original language",
+ "part_of_speech": "part of speech, in ${lang}",
+ "other_meanings": ["up to 3 other common meanings, in ${lang}"],
+ "sentence_translation": "translation of the whole sentence into ${lang}"}`;
+}
+
+async function askAI(word, sentence) {
+  const prompt = buildPrompt(word, sentence);
+  const model = settings.model || DEFAULT_MODELS[settings.provider];
+  let res, j, text;
+  if (settings.provider === 'gemini') {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': settings.apiKey },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } })
+    });
+    j = await res.json();
+    if (!res.ok) throw new Error(j.error?.message || res.status);
+    text = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+  } else if (settings.provider === 'anthropic') {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': settings.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model, max_tokens: 800, messages: [{ role: 'user', content: prompt }] })
+    });
+    j = await res.json();
+    if (!res.ok) throw new Error(j.error?.message || res.status);
+    text = (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  } else {
+    const headers = { 'content-type': 'application/json' };
+    if (settings.apiKey) headers.authorization = 'Bearer ' + settings.apiKey;
+    res = await fetch(settings.baseUrl.replace(/\/+$/, '') + '/chat/completions', {
+      method: 'POST', headers,
+      body: JSON.stringify({ model, temperature: 0.2, messages: [{ role: 'user', content: prompt }] })
+    });
+    j = await res.json();
+    if (!res.ok) throw new Error(j.error?.message || res.status);
+    text = j.choices?.[0]?.message?.content || '';
+  }
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('النموذج رجّع رد مش مفهوم');
+  return JSON.parse(m[0]);
+}
+
+async function lookup(word, sentence) {
+  showTab('lookup');
+  const pane = $('#lookup');
+  if (!settings.apiKey && settings.provider !== 'openai') {
+    pane.innerHTML = `<div class="word">${esc(word)}</div><p>لازم تضيف مفتاح API أولاً.</p><button class="primary" onclick="openSettings()">افتح الإعدادات</button>`;
+    return;
+  }
+  const id = ++lookupId;
+  pane.innerHTML = `<div class="word">${esc(word)}</div><div style="margin:16px 0"><div class="spinner"></div></div>${sentenceHtml(word, sentence)}`;
+  const key = word.toLowerCase() + '|' + sentence;
+  try {
+    const r = cache.get(key) || await askAI(word, sentence);
+    cache.set(key, r);
+    if (id !== lookupId) return;
+    renderResult(word, sentence, r);
+    saveWord(word, sentence, r);
+  } catch (err) {
+    if (id !== lookupId) return;
+    pane.innerHTML = `<div class="word">${esc(word)}</div><p class="error">ما زبط الطلب: ${esc(err.message)}</p>${sentenceHtml(word, sentence)}`;
+  }
+}
+
+function sentenceHtml(word, sentence) {
+  const safe = esc(sentence);
+  const w = esc(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return `<div class="label">الجملة</div><div class="sentence">${safe.replace(new RegExp(w, 'i'), m => `<mark>${m}</mark>`)}</div>`;
+}
+
+function renderResult(word, sentence, r) {
+  const others = (r.other_meanings || []).map(m => `<span class="chip">${esc(m)}</span>`).join('');
+  $('#lookup').innerHTML = `
+    <div class="word">${esc(word)}</div>
+    ${r.base_form && r.base_form.toLowerCase() !== word.toLowerCase() ? `<div class="hint" dir="ltr" style="text-align:left">${esc(r.base_form)}</div>` : ''}
+    <div class="tr">${esc(r.translation)}</div>
+    ${r.part_of_speech ? `<span class="chip">${esc(r.part_of_speech)}</span>` : ''}
+    <div class="label">المعنى هون</div><div>${esc(r.explanation)}</div>
+    ${sentenceHtml(word, sentence)}
+    ${r.sentence_translation ? `<div class="label">ترجمة الجملة</div><div>${esc(r.sentence_translation)}</div>` : ''}
+    ${others ? `<div class="label">معاني تانية للكلمة</div><div class="chips">${others}</div>` : ''}`;
+}
+
+// ---------- Vocabulary ----------
+function saveWord(word, sentence, r) {
+  vocab = vocab.filter(v => !(v.word.toLowerCase() === word.toLowerCase() && v.sentence === sentence));
+  vocab.unshift({ word, translation: r.translation, explanation: r.explanation, sentence, book: bookName, date: new Date().toISOString() });
+  store.set('vocab', vocab);
+}
+
+function renderVocab() {
+  const pane = $('#vocab');
+  if (!vocab.length) { pane.innerHTML = '<p class="hint">الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.</p>'; return; }
+  pane.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:8px"><button id="exportBtn">تصدير CSV (لـ Anki)</button><span class="hint" style="align-self:center">${vocab.length} كلمة</span></div>` +
+    vocab.map((v, i) => `<div class="vocab-item"><div><div class="w">${esc(v.word)}</div><div>${esc(v.translation)}</div><div class="hint" style="font-size:12px">${esc(v.book)}</div></div><button class="x" data-i="${i}" title="احذف">✕</button></div>`).join('');
+  $('#exportBtn').onclick = exportCsv;
+  pane.querySelectorAll('.x').forEach(b => b.onclick = () => { vocab.splice(+b.dataset.i, 1); store.set('vocab', vocab); renderVocab(); });
+}
+
+function exportCsv() {
+  const q = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+  const rows = vocab.map(v => [v.word, `${v.translation} — ${v.explanation}`, v.sentence, v.book].map(q).join(','));
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'siyaq-vocab.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ---------- UI ----------
+function showTab(name) {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  $('#lookup').hidden = name !== 'lookup';
+  $('#vocab').hidden = name !== 'vocab';
+  if (name === 'vocab') renderVocab();
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+const form = $('#settingsForm');
+function syncProviderFields() {
+  form.querySelector('[data-for="openai"]').hidden = form.provider.value !== 'openai';
+  form.model.placeholder = DEFAULT_MODELS[form.provider.value];
+}
+function openSettings() {
+  for (const k of ['lang', 'provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
+  syncProviderFields();
+  $('#settings').showModal();
+}
+form.provider.onchange = () => { form.model.value = ''; syncProviderFields(); };
+$('#settings').addEventListener('close', () => {
+  if ($('#settings').returnValue !== 'save') return;
+  for (const k of ['lang', 'provider', 'baseUrl', 'apiKey', 'model']) settings[k] = form[k].value.trim();
+  store.set('settings', settings);
+});
+$('#settingsBtn').onclick = openSettings;
+</script>
+</body>
+</html>
