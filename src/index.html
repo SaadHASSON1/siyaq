@@ -140,8 +140,11 @@ const store = {
 };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const DEFAULT_MODELS = { gemini: 'gemini-3.8-flash', anthropic: 'claude-haiku-5-5', openai: 'llama3.1' };
+// Gemini has no fixed default: we pick the newest Flash-Lite the key can use (biggest free quota, fastest).
+const DEFAULT_MODELS = { gemini: '', anthropic: 'claude-haiku-5-5', openai: 'llama3.1' };
 let settings = Object.assign({ provider: 'gemini', apiKey: '', model: '', baseUrl: 'http://localhost:11434/v1', lang: 'العربية' }, store.get('settings', {}));
+// Earlier versions saved these as the model; they have tiny free quotas, so go back to automatic.
+if (/^gemini-(2\.5|3\.8)-flash$/.test(settings.model)) { settings.model = ''; store.set('settings', settings); }
 let vocab = store.get('vocab', []);
 let pdfDoc = null, scale = 1, bookName = '';
 const cache = new Map(store.get('cache', [])); // word|sentence → answer, kept between sessions
@@ -319,7 +322,7 @@ async function postJson(url, headers, body) {
 // ----- Gemini: when one model is busy or retired, move straight on to another -----
 const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/';
 let geminiModels = null; // Flash models this key can use, newest first
-let geminiWorking = null; // the model that answered last, tried first next time
+let geminiWorking = store.get('geminiWorking', null); // the Flash-Lite model that answered last, tried first
 
 async function listGeminiModels() {
   if (geminiModels) return geminiModels;
@@ -328,7 +331,7 @@ async function listGeminiModels() {
   geminiModels = (r.json?.models || [])
     .filter(m => m.supportedGenerationMethods?.includes('generateContent') && /^models\/gemini-[\d.]+-flash(-lite)?$/.test(m.name))
     .map(m => m.name.slice(7))
-    .sort((a, b) => version(b) - version(a) || a.length - b.length);
+    .sort((a, b) => b.endsWith('-lite') - a.endsWith('-lite') || version(b) - version(a));
   return geminiModels;
 }
 
@@ -341,7 +344,7 @@ async function geminiCall(model, prompt, noThinking) {
 }
 
 async function askGemini(prompt) {
-  const queue = [geminiWorking, settings.model || DEFAULT_MODELS.gemini].filter(Boolean);
+  const queue = [settings.model, geminiWorking].filter(Boolean);
   const tried = new Set();
   let listed = false, lastError = BUSY_MSG;
   while (tried.size < 5) {
@@ -356,7 +359,8 @@ async function askGemini(prompt) {
     let r = await geminiCall(model, prompt, true);
     if (r.status === 400 && /thinking/i.test(r.json?.error?.message || '')) r = await geminiCall(model, prompt, false);
     if (r.ok) {
-      geminiWorking = model;
+      // Only remember Flash-Lite: a stand-in Flash model would burn its much smaller daily quota.
+      if (model.endsWith('-lite') && geminiWorking !== model) store.set('geminiWorking', geminiWorking = model);
       return (r.json.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
     }
     const msg = r.json?.error?.message || String(r.status);
@@ -473,7 +477,7 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab
 const form = $('#settingsForm');
 function syncProviderFields() {
   form.querySelector('[data-for="openai"]').hidden = form.provider.value !== 'openai';
-  form.model.placeholder = DEFAULT_MODELS[form.provider.value];
+  form.model.placeholder = DEFAULT_MODELS[form.provider.value] || 'تلقائي (Flash-Lite)';
 }
 function openSettings() {
   for (const k of ['lang', 'provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
