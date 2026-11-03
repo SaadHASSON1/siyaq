@@ -111,7 +111,7 @@ function markTocCurrent(scroll = false) {
 // ---------- Search ----------
 const search = { query: '', pages: [], shown: 0, token: 0 };
 const pageTexts = new Map(); // page number → lower-cased text
-const normText = s => s.toLocaleLowerCase().replace(/\s+/g, ' ');
+const normText = s => s.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ');
 
 async function pageText(doc, n) {
   if (!pageTexts.has(n)) {

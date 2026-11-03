@@ -74,6 +74,11 @@ function readingOrder(texts) {
   return countOf(texts, RTL) >= countOf(texts, LTR_LETTERS) ? flipRuns(order.reverse(), 'L') : flipRuns(order, 'R');
 }
 
+// Some PDFs store Arabic letters as their shaped "presentation forms" (ﻟ for ل, ﻷ for لأ): turn them back into
+// plain letters, so words can be read, looked up and searched. Positions inside a piece shift with it.
+const plain = s => s.normalize('NFKC');
+const plainAt = (s, offset) => plain(s.slice(0, offset)).length;
+
 // A text layer as lines: each with its pieces in reading order, the line's text, and where each piece starts in it.
 function textLines(layer) {
   const lines = [];
@@ -83,7 +88,7 @@ function textLines(layer) {
     const spans = readingOrder(raw.map(el => el.textContent)).map(i => raw[i]);
     const starts = new Map();
     let text = '';
-    for (const el of spans) { starts.set(el, text.length); text += el.textContent; }
+    for (const el of spans) { starts.set(el, text.length); text += plain(el.textContent); }
     lines.push({ spans, starts, text });
     raw = [];
   };
@@ -100,7 +105,7 @@ function itemsToText(items) {
   const out = [];
   let line = [];
   const finish = () => { if (line.length) out.push(readingOrder(line).map(i => line[i]).join('')); line = []; };
-  for (const it of items) { line.push(it.str); if (it.hasEOL) finish(); }
+  for (const it of items) { line.push(plain(it.str)); if (it.hasEOL) finish(); }
   finish();
   return out.join('\n');
 }
@@ -108,7 +113,7 @@ function itemsToText(items) {
 // Where a point in a piece falls in its line (in reading order): the line and the position.
 function lineAt(span, offset) {
   const line = textLines(span.parentElement).find(l => l.starts.has(span));
-  return line ? { line, at: line.starts.get(span) + offset } : null;
+  return line ? { line, at: line.starts.get(span) + plainAt(span.textContent, offset) } : null;
 }
 
 // The whole word around a point, read across pieces (some PDFs give every Arabic letter its own piece).
@@ -131,7 +136,7 @@ function selectedText(sel) {
     if (!range.intersectsNode(layer)) continue;
     for (const line of textLines(layer)) {
       const hit = line.spans.filter(sp => range.intersectsNode(sp));
-      if (hit.length) parts.push(hit.map(sp => sp.textContent).join(''));
+      if (hit.length) parts.push(hit.map(sp => plain(sp.textContent)).join(''));
     }
   }
   return parts.join(' ').replace(/\s+/g, ' ').trim() || plain;
@@ -153,7 +158,7 @@ function sentenceAround(span, offset) {
       else if (prev.length < short && !/[,;:\-–—،]$/.test(prev)) text += '\n';
       else text += ' ';
     }
-    if (l.starts.has(span)) at = text.length + l.starts.get(span) + offset;
+    if (l.starts.has(span)) at = text.length + l.starts.get(span) + plainAt(span.textContent, offset);
     text += l.text;
   });
   return cutSentence(text, at);

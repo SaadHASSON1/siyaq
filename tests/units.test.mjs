@@ -30,6 +30,11 @@ test('itemsToText: PDF.js items joined line by line in reading order', async () 
   assert.equal(text, 'مرحبا العالم\nHello');
 });
 
+test('presentation forms: shaped Arabic letters read as plain letters', async () => {
+  const text = await call('itemsToText', [{ str: 'ﺑﻴﻄﺒﻊ', hasEOL: false }, { str: ' ', hasEOL: false }, { str: 'اﻷﻣﺮ', hasEOL: true }]);
+  assert.equal(text, 'الأمر بيطبع');
+});
+
 test('cutSentence: to the nearest sentence end, at most 120 characters each side, cut between words', async () => {
   const text = 'First one. She sat on the bank of the river. Third one!';
   assert.equal(await call('cutSentence', text, text.indexOf('bank')), 'She sat on the bank of the river.');
