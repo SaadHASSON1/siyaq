@@ -23,7 +23,6 @@
     --shadow-pop: 0 10px 40px rgba(0,0,0,.18);
     --radius: 10px;
     --page-bg: #ffffff;
-    --page-filter: none;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -31,7 +30,7 @@
       --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
       --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
       --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
-      --page-bg: #1a1a19; --page-filter: invert(.9) hue-rotate(180deg); /* night reading: dim white pages */
+      --page-bg: #1b1b1a;
     }
   }
   :root[data-theme="dark"] {
@@ -39,7 +38,7 @@
     --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
     --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
     --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
-    --page-bg: #1a1a19; --page-filter: invert(.9) hue-rotate(180deg);
+    --page-bg: #1b1b1a;
   }
 
   * { box-sizing: border-box; }
@@ -133,7 +132,7 @@
 
   /* ---------- Pages ---------- */
   .page { position: relative; margin: 0 auto 20px; background: var(--page-bg); box-shadow: var(--shadow-page); border-radius: 2px; }
-  .page canvas { display: block; border-radius: 2px; filter: var(--page-filter); }
+  .page canvas { display: block; border-radius: 2px; }
   .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 2; }
   .textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: pointer; transform-origin: 0% 0%; }
   .textLayer ::selection { background: rgba(47, 111, 94, .3); }
@@ -505,6 +504,7 @@ async function renderPage(div) {
   div.appendChild(canvas);
   await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
   if (s !== scale || !canvas.isConnected) return;
+  if (isDark()) await darkenPage(canvas, page, vp, dpr);
 
   const layer = document.createElement('div');
   layer.className = 'textLayer';
@@ -512,6 +512,53 @@ async function renderPage(div) {
   div.appendChild(layer);
   const textContent = await page.getTextContent();
   await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: layer, viewport: vp, textDivs: [] }).promise;
+}
+
+// ---------- Dark pages ----------
+// Dark mode inverts the page so text is light on dark, then paints the pictures back in their real colours.
+async function darkenPage(canvas, page, vp, dpr) {
+  const boxes = await imageBoxes(page, vp, dpr);
+  const original = document.createElement('canvas');
+  original.width = canvas.width;
+  original.height = canvas.height;
+  original.getContext('2d').drawImage(canvas, 0, 0);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if ('filter' in ctx) {
+    ctx.filter = 'invert(.9) hue-rotate(180deg)'; // hue-rotate keeps coloured text roughly its colour
+    ctx.drawImage(original, 0, 0);
+    ctx.filter = 'none';
+  } else {
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height), d = img.data;
+    for (let i = 0; i < d.length; i += 4) for (let c = i; c < i + 3; c++) d[c] = 230 - d[c] * 0.9;
+    ctx.putImageData(img, 0, 0);
+  }
+  for (const [x, y, w, h] of boxes) ctx.drawImage(original, x, y, w, h, x, y, w, h);
+}
+
+// Where (in canvas pixels) the page paints pictures. Walks the drawing commands, tracking the transform.
+async function imageBoxes(page, vp, dpr) {
+  const { OPS, Util } = pdfjsLib;
+  const IMAGE_OPS = [OPS.paintImageXObject, OPS.paintInlineImageXObject, OPS.paintImageXObjectRepeat];
+  const ops = await page.getOperatorList();
+  let ctm = Util.transform([dpr, 0, 0, dpr, 0, 0], vp.transform);
+  const stack = [], boxes = [];
+  ops.fnArray.forEach((fn, i) => {
+    const args = ops.argsArray[i];
+    if (fn === OPS.save) stack.push(ctm);
+    else if (fn === OPS.restore) ctm = stack.pop() || ctm;
+    else if (fn === OPS.transform) ctm = Util.transform(ctm, args);
+    else if (fn === OPS.paintFormXObjectBegin) { stack.push(ctm); if (args[0]) ctm = Util.transform(ctm, args[0]); }
+    else if (fn === OPS.paintFormXObjectEnd) ctm = stack.pop() || ctm;
+    else if (IMAGE_OPS.includes(fn)) {
+      // Images are drawn into the unit square of the current transform.
+      const pts = [[0, 0], [1, 0], [0, 1], [1, 1]].map(p => Util.applyTransform(p, ctm));
+      const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+      const x = Math.floor(Math.min(...xs)), y = Math.floor(Math.min(...ys));
+      boxes.push([x, y, Math.ceil(Math.max(...xs)) - x, Math.ceil(Math.max(...ys)) - y]);
+    }
+  });
+  return boxes;
 }
 
 // ---------- Page number and zoom ----------
@@ -768,8 +815,17 @@ async function geminiCall(model, prompt, noThinking) {
     { 'x-goog-api-key': settings.apiKey }, { contents: [{ parts: [{ text: prompt }] }], generationConfig });
 }
 
+// People type names like "Gemini Flash Lite": turn that into an id, or match it to a model the key has.
+async function resolveGeminiModel(name) {
+  const id = name.trim().toLowerCase().replace(/^models\//, '').replace(/\s+/g, '-');
+  if (/^gemini-\d[\w.-]*$/.test(id)) return id;
+  const words = id.split('-').filter(w => w && w !== 'gemini');
+  return (await listGeminiModels()).find(m => words.every(w => m.split('-').includes(w))) || null;
+}
+
 async function askGemini(prompt) {
-  const queue = [settings.model, geminiWorking].filter(Boolean);
+  const chosen = settings.model && await resolveGeminiModel(settings.model);
+  const queue = [chosen, geminiWorking].filter(Boolean);
   const tried = new Set();
   let listed = false, lastError = t('busy');
   while (tried.size < 5) {
@@ -791,7 +847,8 @@ async function askGemini(prompt) {
     const msg = r.json?.error?.message || String(r.status);
     const suggested = msg.match(/\buse\s+models\/(gemini-[\w.-]*\w)/i)?.[1];
     if (suggested) queue.unshift(suggested);
-    else if (!BUSY.includes(r.status) && r.status !== 404) throw new Error(msg); // e.g. a wrong API key
+    // A wrong key is worth stopping for; a model we can't use just means trying the next one.
+    else if (!BUSY.includes(r.status) && r.status !== 404 && !/model/i.test(msg)) throw new Error(msg);
     lastError = BUSY.includes(r.status) ? t('busy') : msg;
   }
   throw new Error(lastError);
@@ -951,10 +1008,13 @@ $('#settingsBtn').onclick = openSettings;
 const systemDark = matchMedia('(prefers-color-scheme: dark)');
 const isDark = () => settings.theme === 'dark' || (settings.theme === 'system' && systemDark.matches);
 
+let pagesDark = null; // the theme the open book's pages were drawn in
 function applyTheme() {
   if (settings.theme === 'system') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = settings.theme;
   $('#themeBtn').innerHTML = icon(isDark() ? 'sun' : 'moon');
+  if (pagesDark !== null && pagesDark !== isDark()) setZoom(zoom, true); // redraw pages in the new colours
+  pagesDark = isDark();
 }
 // The quick toggle picks the opposite of what's on screen and keeps it, whatever the system does later.
 $('#themeBtn').onclick = () => {
