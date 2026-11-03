@@ -18,9 +18,18 @@ async function lookup(word, sentence, fresh = false) {
   const pane = $('#lookup');
   if (!settings.apiKey && settings.provider !== 'openai') {
     lastLookup = { word, sentence };
-    pane.innerHTML = wordHead(word) + stateCard('key', t('needKey'), `<button class="btn primary" id="keyBtn">${t('openSettings')}</button>`);
-    $('#keyBtn').onclick = openSetup;
-    openSetup();
+    // The demo book answers its dotted words without a key; any other word there says how to get one.
+    const demo = demoAnswer(word);
+    if (demo) {
+      renderResult(word, sentence, demo);
+      $('#lookup .result').insertAdjacentHTML('beforeend', `<p class="demo-note">${icon('sparkle')}<span>${t('demoNote')}</span> <button class="link-btn" id="keyBtn">${t('getKey')}</button></p>`);
+      $('#keyBtn').onclick = () => openSetup();
+      saveWord(word, sentence, demo);
+      return;
+    }
+    pane.innerHTML = wordHead(word) + stateCard('key', t(demoOpen() ? 'demoOnly' : 'needKey'), `<button class="btn primary" id="keyBtn">${t(demoOpen() ? 'getKey' : 'openSettings')}</button>`);
+    $('#keyBtn').onclick = () => openSetup();
+    if (!demoOpen()) openSetup();
     return;
   }
   const id = ++lookupId;

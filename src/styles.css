@@ -147,6 +147,11 @@ main { flex: 1; display: flex; min-height: 0; position: relative; }
 .welcome h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.01em; }
 .welcome p { margin: 0 auto; color: var(--muted); max-width: 340px; }
 .welcome .btn.lg { margin: 24px 0 10px; }
+.welcome .demo-btn { display: flex; margin: 0 auto 8px; }
+.demo-word { text-decoration: underline dotted var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; cursor: pointer; }
+.demo-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 18px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-text); font-size: 12.5px; }
+.demo-note svg { width: 14px; height: 14px; }
+.demo-note .link-btn { margin: 0; }
 .welcome .drop-hint { font-size: 13px; }
 .welcome { grid-template-rows: 1fr auto auto auto auto 1fr; }
 .welcome-card { grid-row: 2; }

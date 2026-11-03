@@ -73,7 +73,7 @@ async function finishOpening(doc, name) {
   loadToc(doc);
   queueBookShare();
   $('#notesCount').textContent = bookHighlights().length || '';
-  if (bookType === 'epub') setTimeout(drawHighlights);
+  if (bookType === 'epub') setTimeout(() => { drawHighlights(); markDemoWords(); });
   restorePosition();
   backTo = null;
   $('#backBtn').hidden = true;

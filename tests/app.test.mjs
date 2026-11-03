@@ -228,6 +228,23 @@ test('streaming: the meaning shows before the whole answer has arrived', async (
   assert.ok(await page.eval(`[...document.querySelectorAll('#lookup .chip')].some(c => c.textContent === 'بنك')`), 'the full answer, other meanings included, arrives at the end');
 });
 
+test('demo book: dotted words have ready meanings without a key', async () => {
+  await fresh({ toured: true, setupSkipped: true, settings: { uiLang: 'ar', lang: 'ar' } });
+  await page.eval(`document.querySelector('#empty [data-demo]').click()`);
+  await page.waitFor(`demoOpen() && document.querySelectorAll('.demo-word').length >= 8`);
+  const clickIn = word => `{ const el = [...document.querySelectorAll('.epub-chapter p')].map(p => textNode(p, '${word}')).find(Boolean);
+    const r = document.createRange(), i = el.textContent.indexOf('${word}'); r.setStart(el, i + 1); r.setEnd(el, i + 2);
+    const b = r.getBoundingClientRect(); document.elementFromPoint(b.left + 1, b.top + b.height / 2).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: b.left + 1, clientY: b.top + b.height / 2 })); }`;
+  await page.eval(clickIn('peeped'));
+  await page.waitFor(`document.querySelector('#lookup .tr')`);
+  assert.equal(await page.eval(`document.querySelector('#lookup .tr').textContent`), 'اختلست النظر');
+  assert.ok(await page.eval(`!!document.querySelector('#lookup .demo-note') && vocab[0]?.word === 'peeped'`), 'saved, with a note about getting a key');
+  assert.equal(await page.eval(`document.querySelector('#setup').open`), false, 'no setup pops up in the demo');
+  await page.eval(clickIn('sister'));
+  await page.waitFor(`document.querySelector('#lookup .state')`);
+  assert.equal(await page.eval(`document.querySelector('#lookup .state p').textContent`), await page.eval(`t('demoOnly')`));
+});
+
 test('no JavaScript errors anywhere above', () => {
   assert.deepEqual(page.errors, []);
 });
