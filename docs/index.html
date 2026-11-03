@@ -19,12 +19,14 @@
     --border: #e6e2da; --navy: #0c1e33; --green: #1fb08c; --green-dark: #17786c; --gold: #c9a45a;
     --accent-soft: #e4f3ee; --mark: rgba(242, 201, 76, .55); --shadow: 0 24px 60px -24px rgba(12, 30, 51, .28);
     --logo: url("logo.svg");
+    --hl: rgba(242, 201, 76, .55); --gold-glow: rgba(201, 164, 90, .28);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0b1320; --bg-2: #101a2a; --surface: #142033; --text: #eef1f6; --muted: #9aa5b5;
       --border: #22304a; --accent-soft: #123a35; --mark: rgba(242, 201, 76, .35); --shadow: 0 24px 60px -24px rgba(0, 0, 0, .7);
       --logo: url("logo-dark.svg");
+      --hl: rgba(31, 176, 140, .34); --gold-glow: rgba(201, 164, 90, .12);
     }
   }
   * { box-sizing: border-box; }
@@ -61,16 +63,35 @@
   .btn.ghost:hover { background: var(--bg-2); }
 
   /* ---------- Hero ---------- */
-  .hero { position: relative; overflow: hidden; padding: 72px 0 96px; isolation: isolate; }
-  .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; z-index: -1; }
-  .hero::before { width: 520px; height: 520px; background: var(--green); top: 60px; inset-inline-end: -180px; }
-  .hero::after { width: 420px; height: 420px; background: var(--gold); bottom: -200px; inset-inline-start: -140px; opacity: .25; }
+  .hero { position: relative; }
+  .hero-stage { position: relative; overflow: hidden; padding: 72px 0 96px; isolation: isolate; }
+  /* Soft glows are plain radial gradients: blur filters this large get cut into visible lines by the GPU. */
+  .glow { position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; will-change: transform; }
+  .glow.green { width: 1000px; height: 1000px; top: -260px; inset-inline-end: -420px; background: radial-gradient(closest-side, rgba(31, 176, 140, .34), rgba(31, 176, 140, 0)); }
+  .glow.gold { width: 820px; height: 820px; bottom: -460px; inset-inline-start: -340px; background: radial-gradient(closest-side, var(--gold-glow), transparent); }
+
+  /* On wide screens the hero stays pinned while you scroll, and scrolling plays the demo. */
+  .hero.scrub { height: 320vh; }
+  .hero.scrub .hero-stage { position: sticky; top: 68px; height: calc(100vh - 68px); min-height: 640px; display: flex; flex-direction: column; justify-content: center; padding: 0; }
+  .hero.scrub .cursor, .hero.scrub .card, .hero.scrub .sentence .w, .hero.scrub .page { transition: none; }
+  .hero.scrub .sentence .w.target { transition: background .2s; }
+  .hero-text, .page { will-change: transform; }
+  .page { transform-origin: 50% 70%; }
+  .dots { display: none; gap: 8px; justify-content: center; margin-top: 40px; }
+  .hero.scrub .dots { display: flex; }
+  .dots i { position: relative; width: 34px; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+  .dots i b { position: absolute; inset: 0; background: var(--green); transform-origin: left; transform: scaleX(0); }
+  [dir="rtl"] .dots { direction: ltr; }
+  .scroll-cue { display: none; position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; transition: opacity .3s; }
+  .hero.scrub .scroll-cue { display: flex; }
+  .scroll-cue svg { width: 20px; height: 20px; animation: nudge 1.6s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: translateY(6px); } }
   .hero .wrap { display: grid; grid-template-columns: 1fr 1.05fr; gap: 56px; align-items: center; }
   .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--green-dark); font-size: 14px; font-weight: 600; }
   @media (prefers-color-scheme: dark) { .pill { color: #7fe0c4; } }
   .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(31, 176, 140, .2); }
   h1 { font-size: clamp(38px, 5.2vw, 62px); line-height: 1.12; margin: 20px 0 18px; letter-spacing: -.02em; }
-  h1 .hl { background: linear-gradient(transparent 62%, var(--mark) 62%); padding: 0 4px; }
+  h1 .hl { background: linear-gradient(transparent 68%, var(--hl) 68%); padding: 0 4px; }
   .lead { font-size: 19px; color: var(--muted); max-width: 520px; margin: 0 0 32px; }
   .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .cta-note { width: 100%; margin-top: 10px; font-size: 14px; color: var(--muted); }
@@ -149,7 +170,7 @@
   .privacy li span { color: var(--muted); font-size: 15px; }
 
   .download { position: relative; overflow: hidden; border-radius: 28px; padding: 64px 48px; background: var(--navy); color: #fff; text-align: center; }
-  .download::before { content: ""; position: absolute; width: 480px; height: 480px; border-radius: 50%; background: var(--green); filter: blur(110px); opacity: .35; top: -220px; inset-inline-start: -100px; }
+  .download::before { content: ""; position: absolute; width: 900px; height: 900px; border-radius: 50%; background: radial-gradient(closest-side, rgba(31, 176, 140, .38), rgba(31, 176, 140, 0)); top: -460px; inset-inline-start: -320px; }
   .download > * { position: relative; }
   .download h2 { color: #fff; }
   .download .sub { color: #b9c4d6; }
@@ -173,7 +194,7 @@
 
   @media (max-width: 960px) {
     .hero .wrap, .privacy { grid-template-columns: 1fr; }
-    .hero { padding-top: 40px; }
+    .hero-stage { padding-top: 40px; }
     .features { grid-template-columns: 1fr 1fr; }
     .steps { grid-template-columns: 1fr; }
     .nav-links { display: none; }
@@ -181,7 +202,6 @@
   }
   @media (max-width: 620px) {
     body { font-size: 16px; }
-    .hero::before { width: 320px; height: 320px; top: 120px; }
     .features { grid-template-columns: 1fr; }
     .page { padding: 28px 24px 36px; min-height: 330px; }
     .sentence { font-size: 21px; }
@@ -214,9 +234,11 @@
 </header>
 
 <main>
-  <section class="hero">
+  <section class="hero" id="hero">
+    <div class="hero-stage">
+    <span class="glow green" id="glowGreen"></span><span class="glow gold" id="glowGold"></span>
     <div class="wrap">
-      <div>
+      <div class="hero-text" id="heroText">
         <span class="pill"><i></i><span data-t="pill"></span></span>
         <h1 data-t="heroTitle"></h1>
         <p class="lead" data-t="heroLead"></p>
@@ -243,7 +265,10 @@
           </div>
         </div>
         <div class="tag">English <span>→</span> <b id="demoTarget"></b></div>
+        <div class="dots" id="dots"><i><b></b></i><i><b></b></i><i><b></b></i></div>
       </div>
+    </div>
+    <div class="scroll-cue" id="scrollCue"><span data-t="scrollCue"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
     </div>
   </section>
 
@@ -350,7 +375,7 @@ const svg = (name, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="
 const T = {
   ar: {
     brand: 'سياق', navHow: 'كيف يعمل', navFeatures: 'المميزات', navDownload: 'التحميل', source: 'الكود المصدري',
-    pill: 'مجاني ومفتوح المصدر', heroTitle: 'اقرأ بأي لغة،<br>دون أن <span class="hl">تغادر الصفحة</span>.',
+    scrollCue: 'مرّر لترى كيف يعمل', pill: 'مجاني ومفتوح المصدر', heroTitle: 'اقرأ بأي لغة،<br>دون أن <span class="hl">تغادر الصفحة</span>.',
     heroLead: 'اضغط على أي كلمة في كتاب PDF أو EPUB، ويظهر معناها كما وردت في تلك الجملة بالذات، لا معناها الأشهر في القاموس.',
     ctaNote: 'لـ Mac وWindows وLinux · بالعربية والإنجليزية والتركية', dlFor: { mac: 'حمّل لـ Mac', windows: 'حمّل لـ Windows', linux: 'حمّل لـ Linux', other: 'حمّل سياق' },
     howEyebrow: 'كيف يعمل', howTitle: 'ثلاث خطوات، ولا شيء غيرها', howSub: 'لا حسابات، ولا نسخ ولصق، ولا تنقّل بين النوافذ.',
@@ -382,7 +407,7 @@ const T = {
   },
   en: {
     brand: 'Siyaq', navHow: 'How it works', navFeatures: 'Features', navDownload: 'Download', source: 'Source code',
-    pill: 'Free and open source', heroTitle: 'Read any language<br>without <span class="hl">leaving the page</span>.',
+    scrollCue: 'Scroll to see it work', pill: 'Free and open source', heroTitle: 'Read any language<br>without <span class="hl">leaving the page</span>.',
     heroLead: 'Click any word in a PDF or EPUB and see what it means in that exact sentence, not just its most common meaning in the dictionary.',
     ctaNote: 'For Mac, Windows and Linux · in Arabic, English and Turkish', dlFor: { mac: 'Download for Mac', windows: 'Download for Windows', linux: 'Download for Linux', other: 'Download Siyaq' },
     howEyebrow: 'How it works', howTitle: 'Three steps. That’s all.', howSub: 'No accounts, no copy and paste, no switching windows.',
@@ -414,7 +439,7 @@ const T = {
   },
   tr: {
     brand: 'Siyaq', navHow: 'Nasıl çalışır', navFeatures: 'Özellikler', navDownload: 'İndir', source: 'Kaynak kod',
-    pill: 'Ücretsiz ve açık kaynak', heroTitle: 'Her dilde okuyun,<br><span class="hl">sayfadan ayrılmadan</span>.',
+    scrollCue: 'Nasıl çalıştığını görmek için kaydırın', pill: 'Ücretsiz ve açık kaynak', heroTitle: 'Her dilde okuyun,<br><span class="hl">sayfadan ayrılmadan</span>.',
     heroLead: 'Bir PDF veya EPUB’daki herhangi bir kelimeye tıklayın; sözlükteki en yaygın anlamını değil, o cümledeki anlamını görün.',
     ctaNote: 'Mac, Windows ve Linux için · Arapça, İngilizce ve Türkçe', dlFor: { mac: 'Mac için indir', windows: 'Windows için indir', linux: 'Linux için indir', other: 'Siyaq’ı indir' },
     howEyebrow: 'Nasıl çalışır', howTitle: 'Üç adım. Hepsi bu.', howSub: 'Hesap yok, kopyala-yapıştır yok, pencereler arasında gezinmek yok.',
@@ -504,6 +529,7 @@ function applyLang() {
   $('#featureGrid').innerHTML = t('features').map(([icon, h, p]) => `<div class="feature reveal seen"><div class="ico">${svg(icon)}</div><h3>${h}</h3><p>${p}</p></div>`).join('');
   $('#privacyList').innerHTML = t('privacy').map(([icon, b, s]) => `<li>${svg(icon)}<div><b>${b}</b><span>${s}</span></div></li>`).join('');
   renderDownloads();
+  if (typeof shown !== 'undefined' && $('#hero').classList.contains('scrub')) { shown = -1; scrubFrame(); }
 }
 document.querySelectorAll('.langs button').forEach(b => b.onclick = () => {
   lang = b.dataset.lang;
@@ -524,13 +550,48 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LANG_NAMES = { ar: 'العربية', en: 'English', tr: 'Türkçe' };
 const demoLang = i => lang === 'en' ? ['ar', 'tr', 'en'][i % 3] : lang;
 
-async function runDemo() {
-  const page = $('#demoPage'), sentence = $('#sentence'), cursor = $('#cursor'), card = $('#card'), ripple = $('#ripple');
-  for (let i = 0; ; i = (i + 1) % EXAMPLES.length) {
-    const ex = EXAMPLES[i];
+const page = $('#demoPage'), sentence = $('#sentence'), cursor = $('#cursor'), card = $('#card'), ripple = $('#ripple');
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => k < .5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;
+
+// Puts example i on the page and works out where the cursor and the card go (page coordinates).
+function prepareExample(i) {
+  const ex = EXAMPLES[i], to = demoLang(i);
+  sentence.innerHTML = ex.words.map((w, k) => `<span class="w${k === ex.at ? ' target' : ''}" style="transition-delay:${k * 45}ms">${w}</span> `).join('');
+  $('#cardWord').textContent = ex.words[ex.at];
+  $('#demoTarget').textContent = LANG_NAMES[to];
+  $('#cardPos').textContent = ex.pos[to];
+  $('#cardMeaning').textContent = ex.meaning[to];
+  $('#cardNote').textContent = ex.note[to];
+  card.dir = to === 'ar' ? 'rtl' : 'ltr';
+  const target = sentence.querySelector('.target');
+  return {
+    target,
+    x: target.offsetLeft + target.offsetWidth * .55,
+    y: target.offsetTop + target.offsetHeight * .6,
+    cardLeft: clamp(target.offsetLeft - 40, 16, page.clientWidth - card.offsetWidth - 16),
+    cardTop: Math.max(target.offsetTop + target.offsetHeight, sentence.offsetTop + sentence.offsetHeight) + 10, // below the whole sentence, even when it wraps
+  };
+}
+
+function playRipple(pos) {
+  ripple.style.left = pos.x + 'px';
+  ripple.style.top = pos.y + 'px';
+  ripple.classList.remove('go');
+  void ripple.offsetWidth;
+  ripple.classList.add('go');
+}
+
+// Phones and reduced motion: the demo plays by itself.
+let playToken = 0;
+async function autoplay() {
+  const token = ++playToken;
+  for (let i = 0; token === playToken; i = (i + 1) % EXAMPLES.length) {
     sentence.classList.remove('in');
-    sentence.innerHTML = ex.words.map((w, k) => `<span class="w${k === ex.at ? ' target' : ''}" style="transition-delay:${k * 45}ms">${w}</span> `).join('');
-    const target = sentence.querySelector('.target');
+    const pos = prepareExample(i);
+    card.style.left = pos.cardLeft + 'px';
+    card.style.top = pos.cardTop + 'px';
     await sleep(60);
     sentence.classList.add('in');
     if (!reduced) {
@@ -538,35 +599,83 @@ async function runDemo() {
       cursor.style.transform = `translate(${page.clientWidth - 70}px, ${page.clientHeight - 60}px)`;
     }
     await sleep(reduced ? 0 : 900);
-    const pr = page.getBoundingClientRect(), tr = target.getBoundingClientRect();
-    const x = tr.left - pr.left + tr.width * 0.55, y = tr.top - pr.top + tr.height * 0.6;
-    cursor.style.transform = `translate(${x}px, ${y}px)`;
+    cursor.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
     await sleep(reduced ? 0 : 1000);
-    ripple.style.left = x + 'px';
-    ripple.style.top = y + 'px';
-    ripple.classList.remove('go');
-    void ripple.offsetWidth;
-    ripple.classList.add('go');
-    target.classList.add('lit');
+    if (token !== playToken) return;
+    playRipple(pos);
+    pos.target.classList.add('lit');
     await sleep(reduced ? 0 : 250);
-    $('#cardWord').textContent = ex.words[ex.at];
-    const to = demoLang(i);
-    $('#demoTarget').textContent = LANG_NAMES[to];
-    $('#cardPos').textContent = ex.pos[to];
-    $('#cardMeaning').textContent = ex.meaning[to];
-    $('#cardNote').textContent = ex.note[to];
-    card.dir = to === 'ar' ? 'rtl' : 'ltr';
-    const left = Math.min(Math.max(tr.left - pr.left - 40, 16), page.clientWidth - card.offsetWidth - 16);
-    card.style.left = left + 'px';
-    card.style.top = (tr.bottom - pr.top + 14) + 'px';
     card.classList.add('show');
     if (reduced) return;
     await sleep(3600);
     card.classList.remove('show');
-    target.classList.remove('lit');
+    pos.target.classList.remove('lit');
     await sleep(500);
   }
 }
+
+// Wide screens: scrolling through the pinned hero tilts the page into place, then plays the three
+// examples one after another; scrolling back plays them backwards.
+let shown = -1, rippled = -1, pos = null;
+function scrubFrame() {
+  const hero = $('#hero');
+  const p = clamp((scrollY - hero.offsetTop) / (hero.offsetHeight - innerHeight));
+  const side = document.documentElement.dir === 'rtl' ? 1 : -1;
+  const k = ease(clamp(p / .12));
+  page.style.transform = `perspective(1400px) rotateX(${(1 - k) * 16}deg) rotateY(${(1 - k) * 12 * side}deg) translateY(${(1 - k) * 40}px) scale(${.92 + .08 * k})`;
+  $('#heroText').style.transform = `translateY(${-p * 50}px)`;
+  $('#glowGreen').style.transform = `translate(${-p * 140 * side}px, ${p * 220}px)`;
+  $('#glowGold').style.transform = `translate(${p * 120 * side}px, ${-p * 180}px)`;
+  $('#scrollCue').style.opacity = p > .02 ? 0 : 1;
+
+  const n = EXAMPLES.length, q = clamp((p - .12) / .88) * n;
+  const i = Math.min(Math.floor(q), n - 1), f = q - i;
+  if (i !== shown) {
+    pos = prepareExample(i);
+    sentence.classList.add('in');
+    card.style.left = pos.cardLeft + 'px';
+    card.style.top = pos.cardTop + 'px';
+    shown = i;
+  }
+  document.querySelectorAll('#dots b').forEach((b, j) => { b.style.transform = `scaleX(${j < i ? 1 : j === i ? f : 0})`; });
+
+  const m = ease(clamp(f / .35));
+  cursor.style.opacity = clamp(p / .1);
+  cursor.style.transform = `translate(${lerp(page.clientWidth - 70, pos.x, m)}px, ${lerp(page.clientHeight - 60, pos.y, m)}px)`;
+  const clicked = f >= .36, last = i === n - 1;
+  if (clicked && rippled !== i) { playRipple(pos); rippled = i; }
+  if (!clicked && rippled === i) rippled = -1;
+  const inK = clamp((f - .4) / .1), outK = last ? 0 : clamp((f - .9) / .08);
+  pos.target.classList.toggle('lit', clicked && outK < .5);
+  card.style.opacity = inK * (1 - outK);
+  card.style.transform = `translateY(${(1 - inK) * 14 - outK * 8}px) scale(${.96 + .04 * inK})`;
+  card.classList.toggle('show', inK > .5 && outK < .5);
+}
+
+const wide = matchMedia('(min-width: 961px)');
+let frameQueued = false;
+const onScroll = () => {
+  if (frameQueued) return;
+  frameQueued = true;
+  requestAnimationFrame(() => { frameQueued = false; scrubFrame(); });
+};
+function setDemoMode() {
+  const scrub = wide.matches && !reduced;
+  $('#hero').classList.toggle('scrub', scrub);
+  for (const el of [page, cursor, card, $('#heroText'), $('#glowGreen'), $('#glowGold')]) el.removeAttribute('style');
+  card.classList.remove('show');
+  removeEventListener('scroll', onScroll);
+  shown = rippled = -1;
+  if (scrub) {
+    playToken++; // stop the autoplay loop
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    scrubFrame();
+  } else {
+    autoplay();
+  }
+}
+wide.addEventListener('change', setDemoMode);
 
 // ---------- Small touches ----------
 const nav = $('#nav');
@@ -575,7 +684,7 @@ const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
 applyLang();
-runDemo();
+setDemoMode();
 </script>
 </body>
 </html>
