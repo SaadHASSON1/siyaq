@@ -4,14 +4,25 @@
 
 قارئ PDF مجاني ومفتوح المصدر: اضغط على أي كلمة في كتاب بلغة أجنبية، وبتطلعلك معناها **حسب الجملة اللي هي فيها**، بدون ما تنسخ وتلصق بمترجم.
 
-A free, open-source PDF reader: click any word in a foreign-language book and get its meaning **in the context of its sentence**.
+A free, open-source PDF reader: click any word in a foreign-language book and get its meaning **in the context of its sentence**, without leaving the page.
 
 ## المميزات
-- يشتغل على أي ملف PDF فيه نص (مش صور ممسوحة ضوئياً)
-- معنى الكلمة حسب السياق، مع شرح وترجمة الجملة والمعاني التانية
+- معنى الكلمة حسب السياق، مع شرح، وترجمة الجملة، والمعاني التانية
+- ترجمة للعربية أو الإنجليزية أو التركية، واكتشاف لغة الكتاب تلقائياً
+- واجهة بالعربية والإنجليزية والتركية
 - ظلّل عبارة كاملة (لحد 10 كلمات) لتعرف معناها، مثل "give up" أو "on the other hand"
-- الكلمات بتنحفظ تلقائياً، وبتقدر تصدّرها CSV لبرنامج Anki
-- ملف واحد بدون تثبيت وبدون سيرفر. الـ PDF ما بيطلع من جهازك أبداً
+- روابط الفهرس بتنقلك لمكانها، مع زر رجوع
+- وضع داكن للقراءة الليلية، والصور بتضل بألوانها
+- الكلمات بتنحفظ تلقائياً، وبتقدر تصدّرها لبرنامج Anki
+- الـ PDF ما بيطلع من جهازك أبداً. بس الجملة اللي بتسأل عنها بتنبعت للذكاء الاصطناعي
+
+## التحميل
+نزّل آخر نسخة لجهازك (Mac أو Windows أو Linux) من صفحة **Releases** بالمستودع.
+
+- **Mac:** إذا ظهر تحذير إنه التطبيق من مطوّر غير معروف، كليك يمين على Glint واختار **Open**.
+- **Windows:** إذا ظهر SmartScreen، اختار **More info** وبعدها **Run anyway**.
+
+بعد التثبيت: افتح **الإعدادات**، واختار Gemini، وحط مفتاح مجاني من https://aistudio.google.com
 
 ## التشغيل والبناء
 بتحتاج [Node.js](https://nodejs.org) و[Rust](https://rustup.rs).
@@ -19,26 +30,29 @@ A free, open-source PDF reader: click any word in a foreign-language book and ge
 ```bash
 npm install
 npm run dev     # يشغّل التطبيق للتطوير
-npm run build   # يبني التطبيق النهائي (.app / .dmg على الماك)
+npm run build   # يبني التطبيق النهائي
 ```
 
 لتجربة الواجهة بالمتصفح بس: `npm run web` وبعدها افتح http://localhost:8765
 
+كل دفعة على `main` بتنبني تلقائياً على GitHub Actions لـ Mac وWindows وLinux. لنشر نسخة جديدة، اعمل tag متل `v0.2.0` وادفعه، فبتنعمل مسودة Release فيها ملفات التثبيت.
+
 ## اختيار نموذج الذكاء الاصطناعي (من الإعدادات)
 | المزوّد | التكلفة | ملاحظات |
 |---|---|---|
-| Google Gemini | فيه خطة مجانية | خذ مفتاح من https://aistudio.google.com |
-| Ollama | مجاني بالكامل، على جهازك | `ollama pull llama3.1` وشغّله بـ `OLLAMA_ORIGINS=* ollama serve` |
+| Google Gemini | فيه خطة مجانية | خذ مفتاح من https://aistudio.google.com. التطبيق بيختار Flash-Lite تلقائياً لأنه حصته المجانية أكبر |
+| Ollama | مجاني بالكامل، على جهازك | `ollama pull llama3.1` |
 | أي خدمة متوافقة مع OpenAI | حسب الخدمة | OpenRouter، Groq، OpenAI… |
 | Anthropic Claude | مدفوع | |
 
-مفتاح الـ API بيتخزن بمتصفحك فقط. اللي بينبعت للمزوّد هو الكلمة والجملة اللي هي فيها، مش الكتاب.
+مفتاح الـ API بيتخزن على جهازك فقط.
 
 ## أفكار للتطوير
-- OCR للكتب الممسوحة ضوئياً (Tesseract.js)
+- نسخة Android للتلفون والتابلت
+- OCR للكتب الممسوحة ضوئياً
 - دعم EPUB
 - تلوين الكلمات اللي بحثت عنها قبل داخل الكتاب
-- مراجعة الكلمات (flashcards) داخل الأداة
+- مراجعة الكلمات (flashcards) داخل التطبيق
 
 ## الرخصة
 MIT
