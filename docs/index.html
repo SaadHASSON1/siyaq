@@ -63,69 +63,78 @@
   .btn.ghost:hover { background: var(--bg-2); }
 
   /* ---------- Hero ---------- */
-  .hero { position: relative; }
-  .hero-stage { position: relative; overflow: hidden; padding: 72px 0 96px; isolation: isolate; }
+  .hero { position: relative; overflow: hidden; isolation: isolate; padding: 72px 0 104px; }
   /* Soft glows are plain radial gradients: blur filters this large get cut into visible lines by the GPU. */
-  .glow { position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; will-change: transform; }
-  .glow.green { width: 1000px; height: 1000px; top: -260px; inset-inline-end: -420px; background: radial-gradient(closest-side, rgba(31, 176, 140, .34), rgba(31, 176, 140, 0)); }
-  .glow.gold { width: 820px; height: 820px; bottom: -460px; inset-inline-start: -340px; background: radial-gradient(closest-side, var(--gold-glow), transparent); }
-
-  /* On wide screens the hero stays pinned while you scroll, and scrolling plays the demo. */
-  .hero.scrub { height: 320vh; }
-  .hero.scrub .hero-stage { position: sticky; top: 68px; height: calc(100vh - 68px); min-height: 640px; display: flex; flex-direction: column; justify-content: center; padding: 0; }
-  .hero.scrub .cursor, .hero.scrub .card, .hero.scrub .sentence .w, .hero.scrub .page { transition: none; }
-  .hero.scrub .sentence .w.target { transition: background .2s; }
-  .hero-text, .page { will-change: transform; }
-  .page { transform-origin: 50% 70%; }
-  .dots { display: none; gap: 8px; justify-content: center; margin-top: 40px; }
-  .hero.scrub .dots { display: flex; }
-  .dots i { position: relative; width: 34px; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
-  .dots i b { position: absolute; inset: 0; background: var(--green); transform-origin: left; transform: scaleX(0); }
-  [dir="rtl"] .dots { direction: ltr; }
-  .scroll-cue { display: none; position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; transition: opacity .3s; }
-  .hero.scrub .scroll-cue { display: flex; }
-  .scroll-cue svg { width: 20px; height: 20px; animation: nudge 1.6s ease-in-out infinite; }
-  @keyframes nudge { 50% { transform: translateY(6px); } }
-  .hero .wrap { display: grid; grid-template-columns: 1fr 1.05fr; gap: 56px; align-items: center; }
+  .glow { position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; }
+  .glow.green { width: 1100px; height: 1100px; top: -420px; inset-inline-end: -460px; background: radial-gradient(closest-side, rgba(31, 176, 140, .3), rgba(31, 176, 140, 0)); }
+  .glow.gold { width: 900px; height: 900px; top: 260px; inset-inline-start: -460px; background: radial-gradient(closest-side, var(--gold-glow), transparent); }
+  .hero-text { max-width: 780px; margin: 0 auto; text-align: center; }
   .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--green-dark); font-size: 14px; font-weight: 600; }
   @media (prefers-color-scheme: dark) { .pill { color: #7fe0c4; } }
   .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(31, 176, 140, .2); }
-  h1 { font-size: clamp(38px, 5.2vw, 62px); line-height: 1.12; margin: 20px 0 18px; letter-spacing: -.02em; }
+  h1 { font-size: clamp(38px, 5.4vw, 66px); line-height: 1.1; margin: 20px 0 18px; letter-spacing: -.02em; }
   h1 .hl { background: linear-gradient(transparent 68%, var(--hl) 68%); padding: 0 4px; }
-  .lead { font-size: 19px; color: var(--muted); max-width: 520px; margin: 0 0 32px; }
-  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 600px; margin: 0 auto 30px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
   .cta-note { width: 100%; margin-top: 10px; font-size: 14px; color: var(--muted); }
 
-  /* The demo: a book page where a cursor clicks a word and the meaning appears. */
-  .demo { position: relative; direction: ltr; }
-  .page { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 40px 46px; box-shadow: var(--shadow); min-height: 360px; }
-  .page .chapter { font: 500 12px "Inter", sans-serif; letter-spacing: .2em; color: var(--muted); margin-bottom: 18px; }
-  .lines span.bar { display: block; height: 11px; border-radius: 6px; background: var(--bg-2); margin: 13px 0; }
-  .sentence { font: 25px/1.5 "Literata", Georgia, serif; margin: 22px 0; min-height: 76px; }
-  .sentence .w { display: inline-block; opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s; }
-  .sentence.in .w { opacity: 1; transform: none; }
-  .sentence .w.target { position: relative; border-radius: 6px; transition: opacity .35s, transform .35s, background .3s; padding: 0 2px; margin: 0 -2px; }
-  .sentence .w.target.lit { background: var(--mark); }
-  .cursor { position: absolute; top: 0; left: 0; width: 26px; height: 26px; z-index: 3; pointer-events: none; transition: transform .9s cubic-bezier(.65, 0, .35, 1), opacity .3s; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .25)); }
-  .ripple { position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; border: 2px solid var(--green); opacity: 0; pointer-events: none; z-index: 2; }
+  /* ---------- Try-it window: a small working copy of the app ---------- */
+  .app {
+    position: relative; max-width: 1040px; margin: 56px auto 0; border-radius: 22px; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+    animation: rise .9s .15s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(36px) scale(.97); } }
+  .app-bar { display: flex; align-items: center; gap: 14px; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+  .lights { display: flex; gap: 7px; direction: ltr; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: var(--border); }
+  .app-bar .name { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+  .app-bar .logo { width: 27px; height: 18px; }
+  .pair { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; padding: 3px 3px 3px 10px; border: 1px solid var(--border); border-radius: 10px; font: 500 13px "Inter", sans-serif; color: var(--muted); direction: ltr; }
+  .pair button { border: 0; background: none; padding: 5px 10px; border-radius: 7px; font: 600 13px "IBM Plex Sans Arabic", "Inter", sans-serif; color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
+  .pair button:hover { color: var(--text); }
+  .pair button.on { background: var(--accent-soft); color: var(--green-dark); }
+  @media (prefers-color-scheme: dark) { .pair button.on { color: #7fe0c4; } }
+  .app-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr); min-height: 400px; }
+
+  .panel { padding: 22px 24px 26px; border-inline-end: 1px solid var(--border); text-align: start; }
+  .tabs3 { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--bg-2); margin-bottom: 20px; }
+  .tabs3 span { flex: 1; text-align: center; padding: 5px 0; border-radius: 8px; font-size: 13px; color: var(--muted); }
+  .tabs3 span:first-child { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+  .panel-content { transition: opacity .22s, transform .22s; }
+  .panel-content.out { opacity: 0; transform: translateY(6px); }
+  .p-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; }
+  .p-word { font: 700 26px "Inter", sans-serif; direction: ltr; }
+  .p-pos { font-size: 12px; color: var(--muted); background: var(--bg-2); padding: 1px 8px; border-radius: 6px; }
+  .p-meaning { font-size: 24px; font-weight: 700; color: var(--green-dark); margin: 6px 0 4px; }
+  @media (prefers-color-scheme: dark) { .p-meaning { color: #6fdcbc; } }
+  .p-note { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0; }
+  .p-label { font-size: 12px; font-weight: 600; color: var(--muted); margin: 18px 0 6px; }
+  .p-sentence { padding: 10px 12px; border-radius: 10px; background: var(--bg-2); border-inline-start: 3px solid var(--green); font: 15px/1.6 "Literata", Georgia, serif; direction: ltr; text-align: left; }
+  .p-sentence mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 2px; }
+  .p-tr { margin: 0; font-size: 15px; line-height: 1.6; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-2); font-size: 13px; }
+  .skel { display: grid; gap: 10px; }
+  .skel i { height: 13px; border-radius: 6px; background: linear-gradient(90deg, var(--bg-2), var(--border), var(--bg-2)); background-size: 200% 100%; animation: shimmer 1.1s linear infinite; }
+  .skel i:nth-child(1) { width: 40%; height: 22px; } .skel i:nth-child(2) { width: 62%; height: 20px; } .skel i:nth-child(4) { width: 75%; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .p-empty { padding: 56px 8px; text-align: center; color: var(--muted); }
+  .p-empty svg { width: 30px; height: 30px; margin: 0 auto 10px; opacity: .8; }
+
+  .book { padding: 38px 46px 40px; direction: ltr; text-align: left; font: 21px/1.85 "Literata", Georgia, serif; }
+  .book .chapter { font: 500 12px "Inter", sans-serif; letter-spacing: .2em; color: var(--muted); margin-bottom: 16px; }
+  .book p { margin: 0 0 16px; }
+  .book p.dim { color: var(--muted); }
+  .book .w { cursor: pointer; border-radius: 5px; padding: 0 2px; margin: 0 -2px; background-image: linear-gradient(90deg, var(--green) 45%, transparent 45%); background-size: 6px 2px; background-repeat: repeat-x; background-position: 0 100%; transition: background-color .25s; }
+  .book .w:hover { background-color: var(--accent-soft); }
+  .book .w.lit { background-color: var(--mark); background-image: none; }
+  .cursor { position: absolute; top: 0; left: 0; z-index: 6; width: 24px; height: 24px; opacity: 0; pointer-events: none; transition: transform .9s cubic-bezier(.65, 0, .35, 1), opacity .3s; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .25)); }
+  .ripple { position: absolute; z-index: 5; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; border: 2px solid var(--green); opacity: 0; pointer-events: none; }
   .ripple.go { animation: ripple .6s ease-out; }
   @keyframes ripple { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
-  .card {
-    position: absolute; z-index: 4; width: 290px; padding: 18px 20px 16px; border-radius: 16px; background: var(--surface);
-    border: 1px solid var(--border); box-shadow: 0 18px 50px -12px rgba(12, 30, 51, .35); text-align: start;
-    opacity: 0; transform: translateY(10px) scale(.97); transition: opacity .3s, transform .35s cubic-bezier(.2, .9, .3, 1.2); pointer-events: none;
-  }
-  .card.show { opacity: 1; transform: none; }
-  .card .head { display: flex; align-items: baseline; gap: 10px; direction: ltr; }
-  .card .word { font: 700 22px "Inter", sans-serif; }
-  .card .pos { font-size: 12px; color: var(--muted); background: var(--bg-2); padding: 1px 8px; border-radius: 6px; }
-  .card .meaning { font-size: 22px; font-weight: 700; color: var(--green-dark); margin: 6px 0 4px; }
-  @media (prefers-color-scheme: dark) { .card .meaning { color: #6fdcbc; } }
-  .card .note { font-size: 14px; color: var(--muted); line-height: 1.55; }
-  .card .spark { position: absolute; top: -12px; inset-inline-end: 14px; width: 26px; height: 26px; color: var(--gold); opacity: 0; transform: scale(.4) rotate(-20deg); transition: opacity .3s .15s, transform .45s .15s cubic-bezier(.2, 1.4, .4, 1); }
-  .card.show .spark { opacity: 1; transform: none; }
-  .demo .tag { position: absolute; bottom: -16px; inset-inline-start: 28px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--navy); color: #fff; font: 600 13px "Inter", sans-serif; box-shadow: var(--shadow); }
-  .demo .tag b { color: var(--gold); font-weight: 600; }
+  .try { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 0; color: var(--muted); font-size: 14px; text-align: center; }
+  .try svg { width: 18px; height: 18px; flex: none; color: var(--green); }
 
   /* ---------- Sections ---------- */
   section.block { padding: 96px 0; }
@@ -193,8 +202,10 @@
   .reveal.seen { opacity: 1; transform: none; }
 
   @media (max-width: 960px) {
-    .hero .wrap, .privacy { grid-template-columns: 1fr; }
-    .hero-stage { padding-top: 40px; }
+    .privacy { grid-template-columns: 1fr; }
+    .hero { padding-top: 40px; }
+    .app-body { grid-template-columns: 1fr; }
+    .panel { order: 2; border-inline-end: 0; border-top: 1px solid var(--border); min-height: 300px; }
     .features { grid-template-columns: 1fr 1fr; }
     .steps { grid-template-columns: 1fr; }
     .nav-links { display: none; }
@@ -203,9 +214,11 @@
   @media (max-width: 620px) {
     body { font-size: 16px; }
     .features { grid-template-columns: 1fr; }
-    .page { padding: 28px 24px 36px; min-height: 330px; }
-    .sentence { font-size: 21px; }
-    .card { width: 250px; }
+    .book { padding: 26px 22px; font-size: 18px; }
+    .app-bar .name, .lights, .pair > span:not(#pairBtns) { display: none; }
+    .pair { width: 100%; margin: 0; padding: 3px; justify-content: center; }
+    #pairBtns { display: flex; width: 100%; }
+    #pairBtns button { flex: 1; }
     .download { padding: 48px 22px; border-radius: 22px; }
     section.block { padding: 72px 0; }
     .btn { height: 50px; padding: 0 20px; }
@@ -235,10 +248,9 @@
 
 <main>
   <section class="hero" id="hero">
-    <div class="hero-stage">
-    <span class="glow green" id="glowGreen"></span><span class="glow gold" id="glowGold"></span>
+    <span class="glow green"></span><span class="glow gold"></span>
     <div class="wrap">
-      <div class="hero-text" id="heroText">
+      <div class="hero-text">
         <span class="pill"><i></i><span data-t="pill"></span></span>
         <h1 data-t="heroTitle"></h1>
         <p class="lead" data-t="heroLead"></p>
@@ -249,26 +261,28 @@
         </div>
       </div>
 
-      <div class="demo" id="demo" aria-hidden="true">
-        <div class="page" id="demoPage">
-          <div class="chapter">CHAPTER ONE</div>
-          <div class="lines"><span class="bar" style="width:92%"></span><span class="bar" style="width:84%"></span></div>
-          <div class="sentence" id="sentence"></div>
-          <div class="lines"><span class="bar" style="width:96%"></span><span class="bar" style="width:88%"></span><span class="bar" style="width:62%"></span></div>
-          <div class="ripple" id="ripple"></div>
-          <svg class="cursor" id="cursor" viewBox="0 0 24 24"><path d="M5 3l14 7.5-6.2 1.7L10 18.5z" fill="#fff" stroke="#0c1e33" stroke-width="1.6" stroke-linejoin="round"/></svg>
-          <div class="card" id="card">
-            <svg class="spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1c.9 5.6 2.4 7.1 11 8.5-8.6 1.4-10.1 2.9-11 13.5C11.1 12.4 9.6 10.9 1 9.5 9.6 8.1 11.1 6.6 12 1z"/></svg>
-            <div class="head"><span class="word" id="cardWord"></span><span class="pos" id="cardPos"></span></div>
-            <div class="meaning" id="cardMeaning"></div>
-            <div class="note" id="cardNote"></div>
+      <div class="app" id="app">
+        <div class="app-bar">
+          <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="name"><span class="logo"></span><span data-t="brand"></span></span>
+          <div class="pair" role="group" aria-label="Translate to"><span>English</span><span aria-hidden="true">→</span><span id="pairBtns"></span></div>
+        </div>
+        <div class="app-body">
+          <aside class="panel">
+            <div class="tabs3" id="appTabs" aria-hidden="true"></div>
+            <div class="panel-content" id="panelContent" aria-live="polite"></div>
+          </aside>
+          <div class="book" id="book">
+            <div class="chapter">CHAPTER ONE</div>
+            <p>She sat on the <span class="w" data-w="bank" role="button" tabindex="0">bank</span> of the river, watching the water.</p>
+            <p>She could not <span class="w" data-w="bear" role="button" tabindex="0">bear</span> the noise of the city any longer, so she decided to <span class="w" data-w="book" role="button" tabindex="0">book</span> a quiet room by the sea for the summer.</p>
+            <p class="dim">The days were long and warm, and for the first time in years she had nothing to do but read.</p>
           </div>
         </div>
-        <div class="tag">English <span>→</span> <b id="demoTarget"></b></div>
-        <div class="dots" id="dots"><i><b></b></i><i><b></b></i><i><b></b></i></div>
+        <div class="ripple" id="ripple"></div>
+        <svg class="cursor" id="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 7.5-6.2 1.7L10 18.5z" fill="#fff" stroke="#0c1e33" stroke-width="1.6" stroke-linejoin="round"/></svg>
       </div>
-    </div>
-    <div class="scroll-cue" id="scrollCue"><span data-t="scrollCue"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.04 9.69a.5.5 0 0 1 .65-.65l11 4.5a.5.5 0 0 1-.07.95l-4.35 1.04a1 1 0 0 0-.74.74l-1.04 4.35a.5.5 0 0 1-.95.07z"/><path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="M7.2 2.2 8 5.1"/></svg><span data-t="tryIt"></span></p>
     </div>
   </section>
 
@@ -375,7 +389,7 @@ const svg = (name, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="
 const T = {
   ar: {
     brand: 'سياق', navHow: 'كيف يعمل', navFeatures: 'المميزات', navDownload: 'التحميل', source: 'الكود المصدري',
-    scrollCue: 'مرّر لترى كيف يعمل', pill: 'مجاني ومفتوح المصدر', heroTitle: 'اقرأ بأي لغة،<br>دون أن <span class="hl">تغادر الصفحة</span>.',
+    tryIt: 'جرّبه بنفسك: اضغط على الكلمات المنقّطة، أو غيّر لغة الترجمة من الأعلى.', pill: 'مجاني ومفتوح المصدر', heroTitle: 'اقرأ بأي لغة،<br>دون أن <span class="hl">تغادر الصفحة</span>.',
     heroLead: 'اضغط على أي كلمة في كتاب PDF أو EPUB، ويظهر معناها كما وردت في تلك الجملة بالذات، لا معناها الأشهر في القاموس.',
     ctaNote: 'لـ Mac وWindows وLinux · بالعربية والإنجليزية والتركية', dlFor: { mac: 'حمّل لـ Mac', windows: 'حمّل لـ Windows', linux: 'حمّل لـ Linux', other: 'حمّل سياق' },
     howEyebrow: 'كيف يعمل', howTitle: 'ثلاث خطوات، ولا شيء غيرها', howSub: 'لا حسابات، ولا نسخ ولصق، ولا تنقّل بين النوافذ.',
@@ -407,7 +421,7 @@ const T = {
   },
   en: {
     brand: 'Siyaq', navHow: 'How it works', navFeatures: 'Features', navDownload: 'Download', source: 'Source code',
-    scrollCue: 'Scroll to see it work', pill: 'Free and open source', heroTitle: 'Read any language<br>without <span class="hl">leaving the page</span>.',
+    tryIt: 'Try it yourself: click the dotted words, or change the translation language at the top.', pill: 'Free and open source', heroTitle: 'Read any language<br>without <span class="hl">leaving the page</span>.',
     heroLead: 'Click any word in a PDF or EPUB and see what it means in that exact sentence, not just its most common meaning in the dictionary.',
     ctaNote: 'For Mac, Windows and Linux · in Arabic, English and Turkish', dlFor: { mac: 'Download for Mac', windows: 'Download for Windows', linux: 'Download for Linux', other: 'Download Siyaq' },
     howEyebrow: 'How it works', howTitle: 'Three steps. That’s all.', howSub: 'No accounts, no copy and paste, no switching windows.',
@@ -439,7 +453,7 @@ const T = {
   },
   tr: {
     brand: 'Siyaq', navHow: 'Nasıl çalışır', navFeatures: 'Özellikler', navDownload: 'İndir', source: 'Kaynak kod',
-    scrollCue: 'Nasıl çalıştığını görmek için kaydırın', pill: 'Ücretsiz ve açık kaynak', heroTitle: 'Her dilde okuyun,<br><span class="hl">sayfadan ayrılmadan</span>.',
+    tryIt: 'Kendiniz deneyin: noktalı kelimelere tıklayın ya da yukarıdan çeviri dilini değiştirin.', pill: 'Ücretsiz ve açık kaynak', heroTitle: 'Her dilde okuyun,<br><span class="hl">sayfadan ayrılmadan</span>.',
     heroLead: 'Bir PDF veya EPUB’daki herhangi bir kelimeye tıklayın; sözlükteki en yaygın anlamını değil, o cümledeki anlamını görün.',
     ctaNote: 'Mac, Windows ve Linux için · Arapça, İngilizce ve Türkçe', dlFor: { mac: 'Mac için indir', windows: 'Windows için indir', linux: 'Linux için indir', other: 'Siyaq’ı indir' },
     howEyebrow: 'Nasıl çalışır', howTitle: 'Üç adım. Hepsi bu.', howSub: 'Hesap yok, kopyala-yapıştır yok, pencereler arasında gezinmek yok.',
@@ -471,21 +485,33 @@ const T = {
   },
 };
 
-// The hero demo: the same idea as the app, in three words that a dictionary gets wrong.
-const EXAMPLES = [
-  { words: ['She', 'sat', 'on', 'the', 'bank', 'of', 'the', 'river.'], at: 4,
-    pos: { ar: 'اسم', en: 'noun', tr: 'isim' },
-    meaning: { ar: 'ضفّة النهر', en: 'the side of a river', tr: 'nehir kıyısı' },
-    note: { ar: 'ليس البنك: هي جالسة بجانب النهر.', en: 'Not the money kind: she is beside a river.', tr: 'Para bankası değil: nehrin yanında oturuyor.' } },
-  { words: ['He', 'could', 'not', 'bear', 'the', 'noise', 'any', 'longer.'], at: 3,
-    pos: { ar: 'فعل', en: 'verb', tr: 'fiil' },
-    meaning: { ar: 'يتحمّل', en: 'to put up with', tr: 'katlanmak' },
-    note: { ar: 'فعل هنا، وليس حيوان الدبّ.', en: 'A verb here, not the animal.', tr: 'Burada fiil; hayvan olan ayı değil.' } },
-  { words: ['I', 'need', 'to', 'book', 'a', 'room', 'for', 'tonight.'], at: 3,
-    pos: { ar: 'فعل', en: 'verb', tr: 'fiil' },
-    meaning: { ar: 'يحجز', en: 'to reserve', tr: 'rezervasyon yapmak' },
-    note: { ar: 'بمعنى الحجز، وليس كتاباً يُقرأ.', en: 'To reserve, not something you read.', tr: 'Ayırtmak; okunan bir kitap değil.' } },
+// The try-it window: three words a dictionary gets wrong, and what Siyaq says about each one.
+const SENTENCES = [
+  { text: 'She sat on the bank of the river, watching the water.',
+    tr: { ar: 'جلست على ضفّة النهر تراقب الماء.', en: 'She sat by the side of the river, looking at the water.', tr: 'Nehrin kıyısında oturmuş, suyu izliyordu.' } },
+  { text: 'She could not bear the noise of the city any longer, so she decided to book a quiet room by the sea for the summer.',
+    tr: { ar: 'لم تعد تتحمّل ضجيج المدينة، فقرّرت أن تحجز غرفة هادئة على البحر للصيف.', en: 'She couldn’t stand the city’s noise anymore, so she decided to reserve a quiet room by the sea for the summer.', tr: 'Şehrin gürültüsüne artık katlanamıyordu, bu yüzden yaz için deniz kenarında sessiz bir oda ayırtmaya karar verdi.' } },
 ];
+const WORDS = {
+  bank: { s: 0, pos: { ar: 'اسم', en: 'noun', tr: 'isim' },
+    meaning: { ar: 'ضفّة النهر', en: 'the side of a river', tr: 'nehir kıyısı' },
+    note: { ar: 'هنا تعني حافة النهر، لأنها جالسة تراقب الماء، وليس البنك.', en: 'The land by a river: she is watching the water, not visiting a bank.', tr: 'Nehrin kenarındaki toprak: suyu izliyor, bankada değil.' },
+    others: { ar: ['بنك', 'مصرف', 'رصيد'], en: ['a place for money', 'a supply of something', 'to tilt (a plane)'], tr: ['banka', 'birikim', 'yatmak (uçak)'] } },
+  bear: { s: 1, pos: { ar: 'فعل', en: 'verb', tr: 'fiil' },
+    meaning: { ar: 'تتحمّل', en: 'to put up with', tr: 'katlanmak' },
+    note: { ar: 'فعل بمعنى الاحتمال هنا، وليس حيوان الدبّ.', en: 'A verb meaning to tolerate, not the animal.', tr: 'Burada “dayanmak” anlamında bir fiil; hayvan olan ayı değil.' },
+    others: { ar: ['دبّ', 'يحمل', 'يُثمر'], en: ['the animal', 'to carry', 'to produce (fruit)'], tr: ['ayı', 'taşımak', 'meyve vermek'] } },
+  book: { s: 1, pos: { ar: 'فعل', en: 'verb', tr: 'fiil' },
+    meaning: { ar: 'تحجز', en: 'to reserve', tr: 'ayırtmak' },
+    note: { ar: 'فعل بمعنى الحجز المسبق، وليس كتاباً يُقرأ.', en: 'To arrange it in advance, not something you read.', tr: 'Önceden ayırtmak; okunan bir kitap değil.' },
+    others: { ar: ['كتاب', 'دفتر', 'يسجّل مخالفة'], en: ['something you read', 'a record', 'to charge (a player)'], tr: ['kitap', 'defter', 'ceza yazmak'] } },
+};
+const PANEL = {
+  ar: { tabs: ['المعنى', 'الفهرس', 'كلماتي'], sentence: 'الجملة', tr: 'ترجمة الجملة', same: 'بكلمات أبسط', others: 'معانٍ أخرى', empty: 'اضغط على كلمة منقّطة في الصفحة' },
+  en: { tabs: ['Meaning', 'Contents', 'My words'], sentence: 'Sentence', tr: 'Sentence translation', same: 'In simpler words', others: 'Other meanings', empty: 'Click a dotted word on the page' },
+  tr: { tabs: ['Anlam', 'İçindekiler', 'Kelimelerim'], sentence: 'Cümle', tr: 'Cümlenin çevirisi', same: 'Daha basit sözcüklerle', others: 'Diğer anlamları', empty: 'Sayfadaki noktalı bir kelimeye tıklayın' },
+};
+const LANG_NAMES = { ar: 'العربية', en: 'English', tr: 'Türkçe' };
 
 let lang = (() => {
   const asked = new URLSearchParams(location.search).get('lang');
@@ -529,7 +555,7 @@ function applyLang() {
   $('#featureGrid').innerHTML = t('features').map(([icon, h, p]) => `<div class="feature reveal seen"><div class="ico">${svg(icon)}</div><h3>${h}</h3><p>${p}</p></div>`).join('');
   $('#privacyList').innerHTML = t('privacy').map(([icon, b, s]) => `<li>${svg(icon)}<div><b>${b}</b><span>${s}</span></div></li>`).join('');
   renderDownloads();
-  if (typeof shown !== 'undefined' && $('#hero').classList.contains('scrub')) { shown = -1; scrubFrame(); }
+  if (typeof syncDemoLang === 'function') syncDemoLang();
 }
 document.querySelectorAll('.langs button').forEach(b => b.onclick = () => {
   lang = b.dataset.lang;
@@ -543,139 +569,115 @@ document.querySelectorAll('[data-shot]').forEach(b => b.onclick = () => {
   $('#shot').src = b.dataset.shot;
 });
 
-// ---------- Hero demo ----------
+// ---------- Try-it window ----------
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Arabic and Turkish pages answer in their own language; the English page shows all three in turn.
-const LANG_NAMES = { ar: 'العربية', en: 'English', tr: 'Türkçe' };
-const demoLang = i => lang === 'en' ? ['ar', 'tr', 'en'][i % 3] : lang;
+const app = $('#app'), content = $('#panelContent'), cursor = $('#cursor'), ripple = $('#ripple');
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let current = null, target = lang, chooseToken = 0, autoplaying = !reduced;
 
-const page = $('#demoPage'), sentence = $('#sentence'), cursor = $('#cursor'), card = $('#card'), ripple = $('#ripple');
-const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-const lerp = (a, b, k) => a + (b - a) * k;
-const ease = k => k < .5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;
-
-// Puts example i on the page and works out where the cursor and the card go (page coordinates).
-function prepareExample(i) {
-  const ex = EXAMPLES[i], to = demoLang(i);
-  sentence.innerHTML = ex.words.map((w, k) => `<span class="w${k === ex.at ? ' target' : ''}" style="transition-delay:${k * 45}ms">${w}</span> `).join('');
-  $('#cardWord').textContent = ex.words[ex.at];
-  $('#demoTarget').textContent = LANG_NAMES[to];
-  $('#cardPos').textContent = ex.pos[to];
-  $('#cardMeaning').textContent = ex.meaning[to];
-  $('#cardNote').textContent = ex.note[to];
-  card.dir = to === 'ar' ? 'rtl' : 'ltr';
-  const target = sentence.querySelector('.target');
-  return {
-    target,
-    x: target.offsetLeft + target.offsetWidth * .55,
-    y: target.offsetTop + target.offsetHeight * .6,
-    cardLeft: clamp(target.offsetLeft - 40, 16, page.clientWidth - card.offsetWidth - 16),
-    cardTop: Math.max(target.offsetTop + target.offsetHeight, sentence.offsetTop + sentence.offsetHeight) + 10, // below the whole sentence, even when it wraps
-  };
+function renderPanel() {
+  const L = PANEL[lang];
+  $('#appTabs').innerHTML = L.tabs.map(x => `<span>${x}</span>`).join('');
+  if (!current) {
+    content.innerHTML = `<div class="p-empty">${svg('target')}<div>${L.empty}</div></div>`;
+    return;
+  }
+  const w = WORDS[current], sent = SENTENCES[w.s], d = `dir="${target === 'ar' ? 'rtl' : 'ltr'}"`;
+  const marked = esc(sent.text).replace(new RegExp(`\\b${current}\\b`), m => `<mark>${m}</mark>`);
+  content.innerHTML = `
+    <div class="p-head"><span class="p-word">${current}</span><span class="p-pos" ${d}>${w.pos[target]}</span></div>
+    <div class="p-meaning" ${d}>${w.meaning[target]}</div>
+    <p class="p-note" ${d}>${w.note[target]}</p>
+    <div class="p-label">${L.sentence}</div>
+    <div class="p-sentence">${marked}</div>
+    <div class="p-label">${target === 'en' ? L.same : L.tr}</div>
+    <p class="p-tr" ${d}>${sent.tr[target]}</p>
+    <div class="p-label">${L.others}</div>
+    <div class="chips" ${d}>${w.others[target].map(o => `<span>${o}</span>`).join('')}</div>`;
 }
 
-function playRipple(pos) {
-  ripple.style.left = pos.x + 'px';
-  ripple.style.top = pos.y + 'px';
+function renderPair() {
+  $('#pairBtns').innerHTML = Object.keys(LANG_NAMES).map(l => `<button data-to="${l}" class="${l === target ? 'on' : ''}">${LANG_NAMES[l]}</button>`).join('');
+}
+
+// Like the app: the word lights up, a moment of "thinking", then the answer.
+async function choose(word) {
+  const token = ++chooseToken;
+  current = word;
+  app.querySelectorAll('.w').forEach(el => el.classList.toggle('lit', el.dataset.w === word));
+  content.classList.add('out');
+  await sleep(170);
+  if (token !== chooseToken) return;
+  content.innerHTML = '<div class="skel"><i></i><i></i><i></i><i></i></div>';
+  content.classList.remove('out');
+  await sleep(reduced ? 0 : 520);
+  if (token !== chooseToken) return;
+  content.classList.add('out');
+  await sleep(140);
+  if (token !== chooseToken) return;
+  renderPanel();
+  content.classList.remove('out');
+}
+
+function pointAt(el) {
+  const a = app.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: r.left - a.left + r.width * .55, y: r.top - a.top + r.height * .7 };
+}
+
+function playRipple(pt) {
+  ripple.style.left = pt.x + 'px';
+  ripple.style.top = pt.y + 'px';
   ripple.classList.remove('go');
   void ripple.offsetWidth;
   ripple.classList.add('go');
 }
 
-// Phones and reduced motion: the demo plays by itself.
-let playToken = 0;
+// Until the visitor clicks something themselves, a cursor demonstrates the three words in turn.
 async function autoplay() {
-  const token = ++playToken;
-  for (let i = 0; token === playToken; i = (i + 1) % EXAMPLES.length) {
-    sentence.classList.remove('in');
-    const pos = prepareExample(i);
-    card.style.left = pos.cardLeft + 'px';
-    card.style.top = pos.cardTop + 'px';
-    await sleep(60);
-    sentence.classList.add('in');
-    if (!reduced) {
-      cursor.style.opacity = 1;
-      cursor.style.transform = `translate(${page.clientWidth - 70}px, ${page.clientHeight - 60}px)`;
-    }
-    await sleep(reduced ? 0 : 900);
-    cursor.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-    await sleep(reduced ? 0 : 1000);
-    if (token !== playToken) return;
-    playRipple(pos);
-    pos.target.classList.add('lit');
-    await sleep(reduced ? 0 : 250);
-    card.classList.add('show');
-    if (reduced) return;
-    await sleep(3600);
-    card.classList.remove('show');
-    pos.target.classList.remove('lit');
-    await sleep(500);
+  if (!autoplaying) { choose('bank'); return; }
+  await sleep(1200);
+  const start = { x: app.clientWidth * .72, y: app.clientHeight - 40 };
+  cursor.style.transition = 'none';
+  cursor.style.transform = `translate(${start.x}px, ${start.y}px)`;
+  void cursor.offsetWidth;
+  cursor.style.transition = '';
+  for (let i = 0; autoplaying; i = (i + 1) % 3) {
+    const el = app.querySelector(`.w[data-w="${['bank', 'bear', 'book'][i]}"]`);
+    cursor.style.opacity = 1;
+    const pt = pointAt(el);
+    cursor.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
+    await sleep(1000);
+    if (!autoplaying) break;
+    playRipple(pt);
+    choose(el.dataset.w);
+    await sleep(3800);
   }
+  cursor.style.opacity = 0;
 }
 
-// Wide screens: scrolling through the pinned hero tilts the page into place, then plays the three
-// examples one after another; scrolling back plays them backwards.
-let shown = -1, rippled = -1, pos = null;
-function scrubFrame() {
-  const hero = $('#hero');
-  const p = clamp((scrollY - hero.offsetTop) / (hero.offsetHeight - innerHeight));
-  const side = document.documentElement.dir === 'rtl' ? 1 : -1;
-  const k = ease(clamp(p / .12));
-  page.style.transform = `perspective(1400px) rotateX(${(1 - k) * 16}deg) rotateY(${(1 - k) * 12 * side}deg) translateY(${(1 - k) * 40}px) scale(${.92 + .08 * k})`;
-  $('#heroText').style.transform = `translateY(${-p * 50}px)`;
-  $('#glowGreen').style.transform = `translate(${-p * 140 * side}px, ${p * 220}px)`;
-  $('#glowGold').style.transform = `translate(${p * 120 * side}px, ${-p * 180}px)`;
-  $('#scrollCue').style.opacity = p > .02 ? 0 : 1;
-
-  const n = EXAMPLES.length, q = clamp((p - .12) / .88) * n;
-  const i = Math.min(Math.floor(q), n - 1), f = q - i;
-  if (i !== shown) {
-    pos = prepareExample(i);
-    sentence.classList.add('in');
-    card.style.left = pos.cardLeft + 'px';
-    card.style.top = pos.cardTop + 'px';
-    shown = i;
-  }
-  document.querySelectorAll('#dots b').forEach((b, j) => { b.style.transform = `scaleX(${j < i ? 1 : j === i ? f : 0})`; });
-
-  const m = ease(clamp(f / .35));
-  cursor.style.opacity = clamp(p / .1);
-  cursor.style.transform = `translate(${lerp(page.clientWidth - 70, pos.x, m)}px, ${lerp(page.clientHeight - 60, pos.y, m)}px)`;
-  const clicked = f >= .36, last = i === n - 1;
-  if (clicked && rippled !== i) { playRipple(pos); rippled = i; }
-  if (!clicked && rippled === i) rippled = -1;
-  const inK = clamp((f - .4) / .1), outK = last ? 0 : clamp((f - .9) / .08);
-  pos.target.classList.toggle('lit', clicked && outK < .5);
-  card.style.opacity = inK * (1 - outK);
-  card.style.transform = `translateY(${(1 - inK) * 14 - outK * 8}px) scale(${.96 + .04 * inK})`;
-  card.classList.toggle('show', inK > .5 && outK < .5);
+function stopAutoplay() {
+  autoplaying = false;
+  cursor.style.opacity = 0;
 }
 
-const wide = matchMedia('(min-width: 961px)');
-let frameQueued = false;
-const onScroll = () => {
-  if (frameQueued) return;
-  frameQueued = true;
-  requestAnimationFrame(() => { frameQueued = false; scrubFrame(); });
-};
-function setDemoMode() {
-  const scrub = wide.matches && !reduced;
-  $('#hero').classList.toggle('scrub', scrub);
-  for (const el of [page, cursor, card, $('#heroText'), $('#glowGreen'), $('#glowGold')]) el.removeAttribute('style');
-  card.classList.remove('show');
-  removeEventListener('scroll', onScroll);
-  shown = rippled = -1;
-  if (scrub) {
-    playToken++; // stop the autoplay loop
-    addEventListener('scroll', onScroll, { passive: true });
-    addEventListener('resize', onScroll);
-    scrubFrame();
-  } else {
-    autoplay();
-  }
+app.addEventListener('click', e => {
+  const w = e.target.closest('.w');
+  const to = e.target.closest('[data-to]');
+  if (w) { stopAutoplay(); playRipple(pointAt(w)); choose(w.dataset.w); }
+  if (to) { target = to.dataset.to; renderPair(); if (current) choose(current); }
+});
+app.addEventListener('keydown', e => {
+  const w = e.target.closest('.w');
+  if (w && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); stopAutoplay(); choose(w.dataset.w); }
+});
+
+// The page language is also the language the window answers in, until the visitor picks another.
+function syncDemoLang() {
+  target = lang;
+  renderPair();
+  renderPanel();
 }
-wide.addEventListener('change', setDemoMode);
 
 // ---------- Small touches ----------
 const nav = $('#nav');
@@ -684,7 +686,7 @@ const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
 applyLang();
-setDemoMode();
+autoplay();
 </script>
 </body>
 </html>
