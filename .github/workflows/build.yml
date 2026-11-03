@@ -1,4 +1,4 @@
-# Builds Siyaq for Mac, Windows and Linux on every push.
+# Tests Siyaq, then builds it for Mac, Windows and Linux on every push.
 # Push a tag like v0.2.0 to also publish a (draft) GitHub release with the installers attached.
 name: Build
 
@@ -10,7 +10,22 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The end-to-end tests (tests/), in headless Chrome. Builds and releases wait for them.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: Arabic fonts for the right-to-left test book
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-core
+      - run: npm ci
+      - run: npm test
+
   build:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -64,6 +79,8 @@ jobs:
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: Siyaq ${{ github.ref_name }}
           releaseDraft: true
+          # latest.json is written once by the release-notes job, after every build has uploaded.
+          uploadUpdaterJson: false
 
       - uses: actions/upload-artifact@v5
         with:
