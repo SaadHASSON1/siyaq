@@ -1,4 +1,4 @@
-# Builds Glint for Mac, Windows and Linux on every push.
+# Builds Siyaq for Mac, Windows and Linux on every push.
 # Push a tag like v0.2.0 to also publish a (draft) GitHub release with the installers attached.
 name: Build
 
@@ -59,12 +59,12 @@ jobs:
           args: ${{ matrix.args }}
           # Only tag pushes create a release; other pushes just build.
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-          releaseName: Glint ${{ github.ref_name }}
+          releaseName: Siyaq ${{ github.ref_name }}
           releaseDraft: true
 
       - uses: actions/upload-artifact@v5
         with:
-          name: glint-${{ matrix.name }}
+          name: siyaq-${{ matrix.name }}
           if-no-files-found: ignore
           path: |
             src-tauri/target/**/release/bundle/dmg/*.dmg

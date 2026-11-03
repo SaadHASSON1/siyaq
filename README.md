@@ -1,11 +1,11 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="src/logo-dark.svg">
-    <img src="src/logo.svg" width="110" alt="Glint">
+    <img src="src/logo.svg" width="150" alt="سياق Siyaq">
   </picture>
 </p>
 
-# Glint
+# سياق · Siyaq
 
 قارئ PDF مجاني ومفتوح المصدر: اضغط على أي كلمة في كتاب بلغة أجنبية، وبتطلعلك معناها **حسب الجملة اللي هي فيها**، بدون ما تنسخ وتلصق بمترجم.
 
@@ -24,7 +24,7 @@ A free, open-source PDF reader: click any word in a foreign-language book and ge
 ## التحميل
 نزّل آخر نسخة لجهازك (Mac أو Windows أو Linux) من صفحة **Releases** بالمستودع.
 
-- **Mac:** إذا ظهر تحذير إنه التطبيق من مطوّر غير معروف، كليك يمين على Glint واختار **Open**.
+- **Mac:** إذا ظهر تحذير إنه التطبيق من مطوّر غير معروف، كليك يمين على Siyaq واختار **Open**.
 - **Windows:** إذا ظهر SmartScreen، اختار **More info** وبعدها **Run anyway**.
 
 بعد التثبيت: افتح **الإعدادات**، واختار Gemini، وحط مفتاح مجاني من https://aistudio.google.com

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Glint</title>
+<title>سياق</title>
 <script src="vendor/pdf.min.js"></script>
 <style>
   :root {
@@ -79,7 +79,7 @@
   }
   [dir="rtl"] .bar { padding: 0 16px 0 12px; }
   .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
-  .logo { width: 28px; height: 28px; display: block; }
+  .logo { width: 42px; height: 28px; display: block; }
   .book-title {
     flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     padding-inline-start: 12px; border-inline-start: 1px solid var(--border);
@@ -123,7 +123,7 @@
     transition: border-color .15s, background .15s;
   }
   .welcome.drag .welcome-card { border-color: var(--accent); background: var(--accent-soft); }
-  .welcome-icon { display: block; width: 64px; height: 64px; margin: 0 auto 18px; }
+  .welcome-icon { display: block; width: 108px; height: 72px; margin: 0 auto 16px; }
   .welcome h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.01em; }
   .welcome p { margin: 0 auto; color: var(--muted); max-width: 340px; }
   .welcome .btn.lg { margin: 24px 0 10px; }
@@ -230,7 +230,7 @@
 <header class="bar">
   <div class="brand">
     <i data-logo class="logo"></i>
-    <span>Glint</span>
+    <span data-i18n="brand"></span>
   </div>
   <div class="book-title" id="bookTitle"></div>
   <div class="tools" id="tools" hidden>
@@ -334,9 +334,15 @@ const tauri = window.__TAURI__; // set when running as the installed app
 
 const $ = s => document.querySelector(s);
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('glint:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('glint:' + k, JSON.stringify(v)); } catch {} }
+  get(k, d) { try { const v = localStorage.getItem('siyaq:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('siyaq:' + k, JSON.stringify(v)); } catch {} }
 };
+// The app was briefly called Glint; carry over settings, saved words and answers stored under that name.
+try {
+  for (const k of Object.keys(localStorage)) {
+    if (k.startsWith('glint:') && localStorage.getItem('siyaq:' + k.slice(6)) == null) localStorage.setItem('siyaq:' + k.slice(6), localStorage.getItem(k));
+  }
+} catch {}
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // Icons (Lucide, ISC license).
@@ -357,7 +363,7 @@ const ICONS = {
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
 };
-const LOGO = `<svg viewBox="45 33 560 560" aria-hidden="true"><path d="M515.4 287.4A200 200 0 1 1 394.9 144.6" fill="none" stroke="var(--logo)" stroke-width="70"/>  <path d="M372 280H549.6L553.9 352H265Z" fill="var(--logo)"/><path d="M470 63Q488.6 141.4 565 160Q488.6 178.6 470 257Q451.4 178.6 375 160Q451.4 141.4 470 63Z" fill="#f4c542"/>  <path d="M378 189Q384.6 215.4 411 222Q384.6 228.6 378 255Q371.4 228.6 345 222Q371.4 215.4 378 189Z" fill="#f0b448"/></svg>`;
+const LOGO = `<svg viewBox="0 0 1200 800" aria-hidden="true"><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="#17786c"><path d="M7968 5791 c-63 -5 -92 -11 -106 -24 -11 -10 -45 -22 -75 -26 -85 -11 -357 -165 -357 -201 0 -5 -36 -47 -79 -94 -75 -81 -151 -204 -151 -245 0 -9 -9 -40 -20 -69 -15 -39 -20 -76 -20 -146 0 -65 -6 -112 -19 -154 -11 -34 -23 -78 -27 -99 -12 -68 -86 -246 -141 -338 -194 -323 -445 -480 -863 -537 -41 -6 -282 -12 -536 -14 l-461 -5 -7 -447 c-4 -246 -4 -500 0 -564 l7 -118 601 0 c513 1 607 3 641 16 22 8 88 19 147 23 65 5 116 14 130 23 13 8 45 18 71 21 26 4 72 18 101 32 29 14 62 25 72 25 11 0 30 7 43 16 13 9 41 21 64 26 22 5 52 18 68 28 15 11 33 20 40 20 13 0 176 93 249 143 178 121 500 460 605 637 21 36 48 81 61 101 38 61 81 152 97 204 8 28 22 64 31 80 9 17 19 46 22 65 3 19 13 50 21 69 8 18 17 61 20 95 3 34 14 76 25 96 17 29 22 64 29 200 4 92 13 179 19 196 7 18 12 106 12 234 0 113 2 310 4 439 7 322 15 315 -318 292z"/></g><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="#1fb08c"><path d="M7885 7534 c-268 -16 -623 -110 -875 -232 -707 -342 -1181 -929 -1370 -1699 -46 -187 -60 -392 -60 -859 0 -544 -19 -504 240 -506 222 -1 357 12 396 39 16 11 44 23 63 26 84 17 260 160 363 296 32 42 58 81 58 88 0 7 11 33 25 59 14 26 25 64 25 85 0 21 9 55 20 76 14 28 22 73 29 173 14 197 52 334 140 510 39 78 87 161 107 186 20 24 55 71 78 104 111 158 464 375 688 421 29 6 73 20 96 31 73 34 645 35 751 1 40 -12 85 -23 98 -23 28 0 194 -55 301 -99 226 -94 382 -192 580 -361 57 -48 180 -203 227 -285 15 -27 43 -70 61 -94 42 -55 182 -337 190 -382 3 -19 16 -59 30 -90 16 -38 26 -84 30 -145 3 -49 13 -111 22 -139 21 -68 21 -297 -1 -392 -35 -154 -50 -242 -54 -316 l-5 -77 74 0 c74 0 74 0 105 53 18 28 43 79 58 112 14 33 37 70 50 83 14 13 25 32 25 44 0 11 9 37 19 57 39 75 74 205 81 306 5 66 14 112 26 135 17 32 19 63 19 380 0 337 -1 346 -22 392 -17 35 -23 65 -23 117 0 162 -165 575 -322 807 -178 263 -420 516 -648 676 -59 41 -266 159 -380 215 -158 78 -411 161 -560 183 -41 6 -115 18 -165 25 -88 14 -471 26 -590 19z"/></g><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="var(--logo)"><path d="M8790 6197 c0 -73 0 -73 71 -122 70 -48 172 -152 251 -256 41 -54 148 -264 148 -291 0 -7 8 -29 18 -48 10 -19 24 -71 31 -115 7 -44 20 -91 29 -105 25 -36 25 -309 0 -360 -9 -19 -22 -66 -28 -105 -7 -38 -25 -97 -41 -130 -15 -33 -33 -73 -39 -89 -33 -88 -177 -294 -261 -372 -54 -51 -161 -134 -194 -151 -16 -9 -41 -24 -54 -34 -13 -11 -32 -19 -43 -19 -10 0 -38 -10 -61 -21 -23 -12 -67 -28 -97 -35 -126 -29 -155 -57 -249 -244 -162 -317 -389 -589 -653 -783 l-98 -71 0 -74 0 -75 463 5 c407 4 466 7 495 22 20 10 74 20 145 25 70 5 125 15 145 25 17 9 42 16 55 16 34 0 150 36 222 70 33 15 73 31 89 34 17 4 41 15 55 25 14 10 47 25 73 35 149 55 493 320 576 443 123 183 233 392 252 479 6 25 19 63 30 84 11 22 20 55 20 74 0 19 8 57 19 83 48 122 56 628 13 798 -11 44 -25 100 -31 125 -27 119 -57 186 -188 427 -154 281 -331 457 -647 642 -48 29 -116 63 -150 75 -33 13 -96 38 -139 55 -63 25 -93 31 -153 31 l-74 0 0 -73z M4730 5591 c-106 -5 -142 -10 -163 -23 -14 -10 -36 -18 -47 -18 -23 0 -121 -47 -195 -95 -155 -99 -301 -300 -324 -446 -4 -26 -13 -54 -18 -61 -20 -26 -22 -118 -25 -1193 -2 -1240 -5 -1366 -38 -1475 -33 -111 -126 -313 -188 -410 -125 -195 -364 -373 -574 -426 -35 -9 -69 -21 -77 -28 -43 -34 -461 -36 -516 -2 -11 7 -45 19 -75 26 -110 27 -356 150 -478 240 -533 394 -798 1176 -622 1842 58 224 117 357 238 543 80 124 328 375 439 445 72 45 72 45 72 118 l1 72 -85 0 c-66 0 -96 -5 -127 -20 -23 -11 -45 -20 -49 -20 -15 0 -157 -70 -262 -129 -194 -109 -287 -181 -490 -386 -142 -142 -208 -227 -366 -470 -86 -133 -211 -438 -211 -517 0 -19 -7 -44 -17 -57 -11 -17 -19 -60 -25 -145 -5 -67 -13 -148 -19 -181 -20 -119 -23 -421 -4 -488 10 -34 21 -113 25 -177 4 -75 13 -126 23 -147 10 -18 17 -44 17 -58 0 -27 49 -181 79 -250 65 -146 192 -387 230 -435 15 -19 39 -55 54 -80 129 -222 555 -590 832 -720 39 -18 93 -43 120 -56 96 -45 313 -114 376 -120 35 -4 77 -14 94 -22 92 -46 883 -45 973 2 17 9 46 16 64 16 18 0 56 7 83 15 28 8 84 24 125 35 41 12 79 25 85 29 5 4 28 13 50 20 338 115 741 436 1006 802 141 194 289 473 289 542 0 11 6 28 14 36 15 18 36 97 36 138 0 16 7 39 17 52 12 17 18 57 23 140 4 66 15 137 25 166 21 60 29 1113 18 2514 l-6 843 -33 14 c-35 15 -114 16 -374 5z"/></g><g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="#c9a45a"><path d="M2403 4821 c-35 -16 -42 -25 -45 -52 -3 -30 -11 -36 -120 -94 -197 -105 -280 -167 -439 -325 -350 -348 -505 -746 -504 -1290 2 -364 114 -744 304 -1027 56 -83 56 -83 129 -83 l72 0 0 70 c0 49 -7 88 -24 132 -183 478 30 1069 485 1346 72 43 199 102 222 102 7 0 38 8 69 19 87 30 201 40 562 47 337 7 340 7 363 30 23 23 23 23 23 556 -1 403 -4 537 -13 549 -29 38 -43 39 -549 39 -463 0 -496 -2 -535 -19z"/></g></svg>`;
 document.querySelectorAll('i[data-logo]').forEach(el => el.outerHTML = LOGO.replace('<svg', `<svg class="${el.className}"`));
 const icon = (name, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 document.querySelectorAll('i[data-icon]').forEach(el => el.outerHTML = icon(el.dataset.icon, el.className));
@@ -373,7 +379,7 @@ const LANGS = {
 // Interface text, in the app language chosen in settings (separate from the translation language).
 const STRINGS = {
   ar: {
-    title: 'Glint — قارئ PDF', open: 'افتح PDF', settings: 'الإعدادات', uiLang: 'لغة التطبيق', theme: 'المظهر', themeSystem: 'حسب الجهاز', themeLight: 'فاتح', themeDark: 'داكن', toggleTheme: 'الوضع الداكن', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
+    brand: 'سياق', title: 'سياق — قارئ PDF', open: 'افتح PDF', settings: 'الإعدادات', uiLang: 'لغة التطبيق', theme: 'المظهر', themeSystem: 'حسب الجهاز', themeLight: 'فاتح', themeDark: 'داكن', toggleTheme: 'الوضع الداكن', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
     langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
     panelTitle: 'اضغط على أي كلمة',
@@ -393,7 +399,7 @@ const STRINGS = {
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
   },
   en: {
-    title: 'Glint — PDF reader', open: 'Open PDF', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
+    brand: 'Siyaq', title: 'Siyaq — PDF reader', open: 'Open PDF', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
     langPair: 'Book language → translation language', auto: 'Auto',
     tabMeaning: 'Meaning', tabWords: 'My words',
     panelTitle: 'Click any word',
@@ -413,7 +419,7 @@ const STRINGS = {
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
   },
   tr: {
-    title: 'Glint — PDF okuyucu', open: 'PDF aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
+    brand: 'Siyaq', title: 'Siyaq — PDF okuyucu', open: 'PDF aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
     langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',
     panelTitle: 'Herhangi bir kelimeye tıklayın',
@@ -684,7 +690,7 @@ document.querySelectorAll('.file-input').forEach(input => input.addEventListener
   if (f) openPdf(new Uint8Array(await f.arrayBuffer()), f.name);
   e.target.value = '';
 }));
-// PDFs double-clicked in Finder / Explorer, or opened with "Open with Glint".
+// PDFs double-clicked in Finder / Explorer, or opened with "Open with Siyaq".
 async function openFromOS(path) {
   if (!path) return;
   const bytes = await tauri.core.invoke('read_pdf', { path });
@@ -1014,7 +1020,7 @@ function exportCsv() {
   const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'glint-vocab.csv';
+  a.download = 'siyaq-vocab.csv';
   a.click();
   URL.revokeObjectURL(a.href);
 }

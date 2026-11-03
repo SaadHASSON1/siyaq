@@ -1,12 +1,12 @@
 [package]
-name = "glint"
-version = "0.1.0"
+name = "siyaq"
+version = "0.2.0"
 description = "Context-aware word lookup for any PDF"
 license = "MIT"
 edition = "2021"
 
 [lib]
-name = "glint_lib"
+name = "siyaq_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
