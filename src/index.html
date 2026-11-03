@@ -1063,13 +1063,22 @@ document.addEventListener('keydown', e => {
   else if (e.key.toLowerCase() === 'f' && pdfDoc) { e.preventDefault(); openSearch(); }
 });
 
-// Keep "100%" meaning "fits the width" when the window is resized.
+// Keep "100%" meaning "fits the width" when the window is resized. While it is being resized, the pages
+// already drawn are stretched (CSS zoom, no redrawing) so they follow the window at once; once it stops
+// they are redrawn sharp at the new size.
 let resizeTimer;
+const keepScrollPlace = change => {
+  const at = viewer.scrollTop / Math.max(viewer.scrollHeight, 1);
+  change();
+  viewer.scrollTop = at * viewer.scrollHeight;
+};
 window.addEventListener('resize', () => {
+  if (!pdfDoc || bookType === 'epub') return; // EPUB text reflows by itself
+  const fit = fitWidthScale(), ratio = fit / fitScale;
+  keepScrollPlace(() => { for (const div of viewer.children) div.style.zoom = Math.abs(ratio - 1) > 0.01 ? ratio : ''; });
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (!pdfDoc || bookType === 'epub') return; // EPUB text reflows by itself
-    const fit = fitWidthScale();
+    keepScrollPlace(() => { for (const div of viewer.children) div.style.zoom = ''; });
     if (Math.abs(fit - fitScale) > 0.01) { fitScale = fit; setZoom(zoom, true); }
   }, 200);
 });
