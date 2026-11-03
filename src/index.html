@@ -204,6 +204,21 @@
   }
   .sentence mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ask-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .ask-quick .chip { cursor: pointer; color: var(--text); font: inherit; font-size: 13px; }
+  .ask-quick .chip:hover { border-color: var(--accent); color: var(--accent-text); }
+  .ask-form { margin-top: 12px; display: grid; gap: 8px; }
+  .ask-form textarea {
+    width: 100%; resize: vertical; min-height: 56px; padding: 9px 11px; font: inherit; font-size: 14px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--text);
+  }
+  .ask-form textarea:focus { outline: none; border-color: var(--accent); }
+  .btn.ask-send { height: auto; padding: 8px 14px; flex-direction: column; gap: 2px; }
+  .ask-label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+  .ask-cost { font-size: 11.5px; font-weight: 400; opacity: .85; }
+  .passage { max-height: 180px; overflow: auto; font-size: 13.5px; }
+  .ask-turn { margin-top: 22px; }
+  .ask-turn .explain + .explain { margin-top: 10px; }
   .chip { padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; }
 
   .skeleton { display: grid; gap: 10px; margin: 14px 0 6px; }
@@ -305,9 +320,69 @@
   .btn .badge { background: rgba(255,255,255,.25); color: inherit; }
 
   /* ---------- First-run setup ---------- */
+  dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; overflow: hidden; }
+  .tour-skip { position: absolute; top: 14px; inset-inline-end: 16px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; padding: 4px 6px; }
+  .tour-skip:hover { color: var(--text); }
+  .slide { display: none; min-height: 368px; text-align: center; }
+  .slide.on { display: flex; flex-direction: column; justify-content: center; animation: slide-in .35s ease both; }
+  .slide.on.back { animation-name: slide-back; }
+  @keyframes slide-in { from { opacity: 0; transform: translateX(18px); } }
+  @keyframes slide-back { from { opacity: 0; transform: translateX(-18px); } }
+  [dir="rtl"] .slide.on { animation-name: slide-back; }
+  [dir="rtl"] .slide.on.back { animation-name: slide-in; }
+  .slide h3 { margin: 20px 0 8px; font-size: 21px; letter-spacing: -.01em; }
+  .slide > p { margin: 0 auto; max-width: 400px; color: var(--muted); line-height: 1.65; }
+  .slide[data-slide="key"], .slide[data-slide="key"] .steps { text-align: start; }
+  .slide[data-slide="key"] h3 { margin-top: 12px; }
+  .tour-logo { display: block; width: 150px; height: 118px; margin: 26px auto 8px; }
+  .slide[data-slide="hello"] h3 { font-size: 26px; }
+  .slide[data-slide="hello"] .lang-pick { margin-top: 26px; }
+  .tour-icon { display: grid; place-items: center; width: 52px; height: 52px; margin: 0 auto; border-radius: 16px; background: var(--accent-soft); color: var(--accent-text); }
+  .tour-icon svg { width: 24px; height: 24px; }
+  .tour-icon.done { width: 72px; height: 72px; border-radius: 50%; margin-top: 50px; }
+  .tour-icon.done svg { width: 34px; height: 34px; }
+  .tour-note { display: flex; gap: 8px; align-items: flex-start; justify-content: center; max-width: 420px; margin: 14px auto 0; font-size: 12.5px; color: var(--muted); text-align: start; }
+  .tour-note svg { width: 15px; height: 15px; flex: none; margin-top: 2px; color: var(--accent-text); }
   .setup-head { text-align: center; }
-  .setup-logo { display: block; width: 72px; height: 56px; margin: 0 auto 10px; }
   .setup-head p { margin: 6px 0 0; color: var(--muted); }
+  .tour-foot { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .dots { display: flex; gap: 6px; margin-inline-end: auto; }
+  .dots span { width: 7px; height: 7px; border-radius: 99px; background: var(--border); transition: width .25s, background .25s; }
+  .dots span.on { width: 20px; background: var(--accent); }
+  .tour-btns { display: flex; gap: 8px; }
+  .tour-btns[hidden] { display: none; }
+
+  /* The little pictures in the tour */
+  .demo { position: relative; height: 150px; margin: 6px auto 0; max-width: 420px; border-radius: 14px; background: var(--page-bg); border: 1px solid var(--border);
+    box-shadow: var(--shadow-page); font: 17px/1.6 Georgia, serif; color: var(--text); direction: ltr; text-align: left; overflow: hidden; }
+  .demo p { margin: 0; padding: 22px 24px; }
+  .demo .bubble { position: absolute; display: flex; flex-direction: column; gap: 2px; padding: 9px 13px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+    box-shadow: var(--shadow-pop); font: 600 14px/1.4 system-ui, sans-serif; color: var(--accent-text); text-align: start; }
+  [dir="rtl"] .demo .bubble { direction: rtl; }
+  .demo .bubble small { font-weight: 400; color: var(--muted); font-size: 12px; }
+  .slide.on .demo-word .w { animation: word-hit 3.2s ease infinite; border-radius: 4px; }
+  @keyframes word-hit { 0%, 12% { background: transparent; } 20%, 100% { background: var(--mark); } }
+  .demo-word .bubble { left: 92px; top: 66px; }
+  .slide.on .demo-word .bubble { animation: pop 3.2s ease infinite; }
+  @keyframes pop { 0%, 22% { opacity: 0; transform: translateY(6px) scale(.97); } 32%, 90% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  .demo-ask p { font-size: 15px; padding-bottom: 0; }
+  .slide.on .demo-ask .sel { background: linear-gradient(var(--accent-soft), var(--accent-soft)) no-repeat; background-size: 0 100%; animation: select 3.6s ease infinite; }
+  @keyframes select { 0% { background-size: 0 100%; } 35%, 100% { background-size: 100% 100%; } }
+  .demo-ask .bubble { flex-direction: row; align-items: center; gap: 6px; right: 18px; bottom: 14px; }
+  .demo-ask .bubble svg { width: 15px; height: 15px; }
+  .slide.on .demo-ask .bubble { animation: pop 3.6s ease infinite; animation-delay: .4s; }
+  .demo-words p { font-size: 15px; }
+  .demo-words u { text-decoration: none; border-bottom: 2px solid var(--accent); }
+  .flash { position: absolute; left: 50%; bottom: 14px; width: 150px; height: 58px; margin-left: -75px; perspective: 600px; }
+  .flash .face { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+    box-shadow: var(--shadow-pop); backface-visibility: hidden; font: 700 17px system-ui, sans-serif; }
+  .flash .back { transform: rotateY(180deg); color: var(--accent-text); font-size: 15px; }
+  .slide.on .flash .face { animation: flip-front 4s ease infinite; }
+  .slide.on .flash .back { animation-name: flip-back; }
+  @keyframes flip-front { 0%, 40% { transform: rotateY(0); } 55%, 90% { transform: rotateY(180deg); } 100% { transform: rotateY(360deg); } }
+  @keyframes flip-back { 0%, 40% { transform: rotateY(180deg); } 55%, 90% { transform: rotateY(360deg); } 100% { transform: rotateY(540deg); } }
+  @media (prefers-reduced-motion: reduce) { .slide.on, .slide.on * { animation: none !important; } .demo .bubble { opacity: 1; } .demo-ask .sel { background-size: 100% 100% !important; } }
+  @media (max-width: 520px) { dialog.tour { padding: 22px 18px 16px; } .slide { min-height: 400px; } .tour-foot { flex-wrap: wrap; } .tour-btns { width: 100%; } .tour-btns .btn { flex: 1; } .demo-word .bubble { left: 40px; } }
   .steps { display: grid; gap: 14px; margin: 20px 0 0; padding-inline-start: 22px; }
   .steps li::marker { color: var(--accent); font-weight: 700; }
   .steps .btn { margin-top: 8px; }
@@ -462,26 +537,76 @@
   </form>
 </dialog>
 
-<dialog id="setup">
-  <div class="setup-head">
-    <i data-logo class="setup-logo"></i>
-    <h3 data-i18n="setupTitle"></h3>
-    <p data-i18n="setupText"></p>
+<dialog id="setup" class="tour">
+  <button class="tour-skip" id="tourSkip" type="button" data-i18n="tourSkip"></button>
+  <!-- A short tour for new readers; its last steps connect the AI key. -->
+  <section class="slide" data-slide="hello">
+    <i data-logo class="tour-logo"></i>
+    <h3 data-i18n="tourHello"></h3>
+    <p data-i18n="tourHelloText"></p>
     <div class="lang-pick" data-lang-pick></div>
-  </div>
-  <ol class="steps">
-    <li><span data-i18n="setupStep1"></span><br>
-      <button class="btn small" id="setupOpen" type="button"><i data-icon="external"></i><span data-i18n="setupOpen"></span></button></li>
-    <li data-i18n="setupStep2"></li>
-    <li><span data-i18n="setupStep3"></span><input id="setupKey" dir="ltr" autocomplete="off" spellcheck="false" placeholder="AIza…"></li>
-  </ol>
-  <p class="msg" id="setupMsg"></p>
-  <div class="row">
-    <button class="btn" id="setupOther" type="button" data-i18n="setupOther"></button>
-    <span style="flex:1"></span>
-    <button class="btn" id="setupLater" type="button" data-i18n="setupLater"></button>
-    <button class="btn primary" id="setupSave" type="button" data-i18n="setupTest"></button>
-  </div>
+  </section>
+  <section class="slide" data-slide="word">
+    <div class="demo demo-word" aria-hidden="true">
+      <p>She sat on the <span class="w">bank</span> of the river.</p>
+      <div class="bubble"><b data-i18n="demoMeaning"></b><small data-i18n="demoWhy"></small></div>
+    </div>
+    <h3 data-i18n="tourWord"></h3>
+    <p data-i18n="tourWordText"></p>
+  </section>
+  <section class="slide" data-slide="ask">
+    <div class="demo demo-ask" aria-hidden="true">
+      <p><span class="sel">Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.</span> Once or twice she had peeped into the book.</p>
+      <div class="bubble"><i data-icon="sparkle"></i><span data-i18n="askExplain"></span></div>
+    </div>
+    <h3 data-i18n="tourAsk"></h3>
+    <p data-i18n="tourAskText"></p>
+    <p class="tour-note"><i data-icon="key"></i><span data-i18n="tourAskNote"></span></p>
+  </section>
+  <section class="slide" data-slide="words">
+    <div class="demo demo-words" aria-hidden="true">
+      <p>…the <u>bank</u> was steep, and she <u>peeped</u> over the edge…</p>
+      <div class="flash"><div class="face front">bank</div><div class="face back" data-i18n="demoMeaning"></div></div>
+    </div>
+    <h3 data-i18n="tourWords"></h3>
+    <p data-i18n="tourWordsText"></p>
+  </section>
+  <section class="slide" data-slide="key">
+    <div class="setup-head">
+      <span class="tour-icon"><i data-icon="key"></i></span>
+      <h3 data-i18n="setupTitle"></h3>
+      <p data-i18n="setupText"></p>
+    </div>
+    <ol class="steps">
+      <li><span data-i18n="setupStep1"></span><br>
+        <button class="btn small" id="setupOpen" type="button"><i data-icon="external"></i><span data-i18n="setupOpen"></span></button></li>
+      <li data-i18n="setupStep2"></li>
+      <li><span data-i18n="setupStep3"></span><input id="setupKey" dir="ltr" autocomplete="off" spellcheck="false" placeholder="AIza…"></li>
+    </ol>
+    <p class="tour-note"><i data-icon="lock"></i><span data-i18n="tourKeyNote"></span></p>
+    <p class="msg" id="setupMsg"></p>
+  </section>
+  <section class="slide" data-slide="done">
+    <span class="tour-icon done"><i data-icon="check"></i></span>
+    <h3 data-i18n="tourDone"></h3>
+    <p data-i18n="tourDoneText"></p>
+    <p class="tour-note" id="tourMcpNote"><i data-icon="plug"></i><span data-i18n="tourMcp"></span></p>
+  </section>
+  <footer class="tour-foot">
+    <div class="dots" id="tourDots"></div>
+    <div class="tour-btns" data-for="intro">
+      <button class="btn" id="tourBack" type="button" data-i18n="tourBack"></button>
+      <button class="btn primary" id="tourNext" type="button" data-i18n="tourNext"></button>
+    </div>
+    <div class="tour-btns" data-for="key">
+      <button class="btn" id="setupOther" type="button" data-i18n="setupOther"></button>
+      <button class="btn" id="setupLater" type="button" data-i18n="setupLater"></button>
+      <button class="btn primary" id="setupSave" type="button" data-i18n="setupTest"></button>
+    </div>
+    <div class="tour-btns" data-for="done">
+      <label class="btn primary"><i data-icon="folder"></i><span data-i18n="open"></span><input class="file-input" type="file" accept=".pdf,.epub,application/pdf,application/epub+zip" hidden></label>
+    </div>
+  </footer>
 </dialog>
 
 <script>
@@ -513,6 +638,7 @@ const ICONS = {
   lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+  sparkle: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   plug: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
   copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
@@ -550,7 +676,7 @@ const STRINGS = {
     langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
     panelTitle: 'اضغط على أي كلمة',
-    hint: 'بيطلعلك معناها <b>حسب الجملة</b> اللي هي فيها. لعبارة كاملة، ظلّلها بالماوس.',
+    hint: 'بيطلعلك معناها <b>حسب الجملة</b> اللي هي فيها. لعبارة كاملة، ظلّلها بالماوس. ولتسأل عن فقرة، ظلّلها كلها.',
     emptyTitle: 'افتح كتاب وابدأ القراءة',
     emptyText: 'اضغط على أي كلمة وبيطلعلك معناها حسب سياقها، بدون ما تترك الصفحة.',
     dropHint: 'أو اسحب ملف PDF أو EPUB إلى هنا',
@@ -564,12 +690,12 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    setupHelp: 'مساعدة بإعداد مفتاح Gemini', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
     nothingDue: 'ما في كلمات بدها مراجعة هلق. ارجع بكرا!', backToList: 'رجوع للقائمة', left: n => `باقي ${n}`,
-    setupTitle: 'خطوة وحدة قبل ما تبلّش', setupText: 'سياق بيستخدم Gemini من Google ليفهم الكلمات. المفتاح مجاني وبياخد دقيقة.',
+    tourSkip: 'تخطّي', tourNext: 'التالي', tourBack: 'رجوع', tourHello: 'أهلاً فيك بسياق', tourHelloText: 'اقرأ كتبك بأي لغة، وافهم كل كلمة بدون ما تطلع من الصفحة.', tourWord: 'اكبس على أي كلمة', tourWordText: 'بيطلعلك معناها <b>بهالجملة بالذات</b>، مع شرح قصير وترجمة الجملة، مش أول معنى بالقاموس.', demoMeaning: 'ضفّة النهر', demoWhy: 'مش البنك: هي قاعدة جنب النهر', tourAsk: 'ظلّل فقرة واسأل عنها', tourAskText: 'اطلب شرح، أو تلخيص، أو ترجمة كاملة، أو اكتب سؤالك. والجواب بيطلع جنب الكتاب.', tourAskNote: 'الأسئلة عن الفقرات بتستهلك من حصّتك بالـ API أكتر من الكلمات، لأنه بينبعت نص أطول.', tourWords: 'كلماتك ما بتضيع', tourWordsText: 'كل كلمة بتدوّر عليها بتنحفظ، وبينحطّ تحتها خط وين ما رجعت ظهرت، وبتراجعها ببطاقات.', tourKeyNote: 'مفتاحك بيضل على جهازك بس. وكل استخدام بيكون على حسابك أنت عند Google، وفيه حصّة مجانية.', tourDone: 'كلشي جاهز!', tourDoneText: 'افتح كتاب واكبس على أي كلمة.', tourMcp: 'وإذا عندك Claude Desktop، بتقدر تربطه بسياق من الإعدادات.', setupTitle: 'آخر خطوة: اربط الذكاء الاصطناعي', setupText: 'سياق بيستخدم Gemini من Google ليفهم الكلمات. المفتاح مجاني وبياخد دقيقة.',
     setupStep1: 'افتح Google AI Studio وسجّل دخولك بحساب Google.', setupOpen: 'افتح الصفحة',
     setupStep2: 'اكبس <b>Create API key</b> وانسخ المفتاح.', setupStep3: 'الصقه هون:',
     setupTest: 'جرّب واحفظ', setupLater: 'لاحقاً', setupOther: 'عندي مزوّد تاني',
@@ -582,7 +708,7 @@ const STRINGS = {
     langPair: 'Book language → translation language', auto: 'Auto',
     tabMeaning: 'Meaning', tabWords: 'My words',
     panelTitle: 'Click any word',
-    hint: 'You’ll see what it means <b>in its sentence</b>. For a whole phrase, select it.',
+    hint: 'You’ll see what it means <b>in its sentence</b>. For a whole phrase, select it. To ask about a paragraph, select all of it.',
     emptyTitle: 'Open a book to start reading',
     emptyText: 'Click any word to see what it means in context, without leaving the page.',
     dropHint: 'or drop a PDF or EPUB here',
@@ -596,12 +722,12 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    setupHelp: 'Help me set up a Gemini key', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
+    setupHelp: 'Help me set up a Gemini key', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
     nothingDue: 'Nothing to review right now. Come back tomorrow!', backToList: 'Back to list', left: n => `${n} left`,
-    setupTitle: 'One step before you start', setupText: 'Siyaq uses Google’s Gemini to understand words. The key is free and takes a minute.',
+    tourSkip: 'Skip', tourNext: 'Next', tourBack: 'Back', tourHello: 'Welcome to Siyaq', tourHelloText: 'Read books in any language and understand every word, without leaving the page.', tourWord: 'Click any word', tourWordText: 'You’ll see what it means <b>in that very sentence</b>, with a short explanation and the sentence translated, not just the first dictionary meaning.', demoMeaning: 'riverbank', demoWhy: 'Not the money kind: she’s by a river', tourAsk: 'Select a paragraph and ask', tourAskText: 'Ask for an explanation, a summary, a full translation, or type your own question. The answer appears beside the book.', tourAskNote: 'Questions about passages use more of your API quota than words do, because more text is sent.', tourWords: 'Your words stay with you', tourWordsText: 'Every word you look up is saved, underlined wherever it shows up again, and ready to review as flashcards.', tourKeyNote: 'Your key stays on this device. Everything you use counts against your own Google account, which has a free quota.', tourDone: 'You’re all set!', tourDoneText: 'Open a book and click any word.', tourMcp: 'Have Claude Desktop? You can connect it to Siyaq in Settings.', setupTitle: 'Last step: connect the AI', setupText: 'Siyaq uses Google’s Gemini to understand words. The key is free and takes a minute.',
     setupStep1: 'Open Google AI Studio and sign in with your Google account.', setupOpen: 'Open the page',
     setupStep2: 'Press <b>Create API key</b> and copy the key.', setupStep3: 'Paste it here:',
     setupTest: 'Test and save', setupLater: 'Later', setupOther: 'I use another provider',
@@ -614,7 +740,7 @@ const STRINGS = {
     langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',
     panelTitle: 'Herhangi bir kelimeye tıklayın',
-    hint: '<b>Cümledeki</b> anlamını göreceksiniz. Bir ifadenin tamamı için onu seçin.',
+    hint: '<b>Cümledeki</b> anlamını göreceksiniz. Bir ifadenin tamamı için onu seçin. Bir paragraf hakkında sormak için tamamını seçin.',
     emptyTitle: 'Okumaya başlamak için bir kitap açın',
     emptyText: 'Herhangi bir kelimeye tıklayın, sayfadan ayrılmadan bağlamdaki anlamını görün.',
     dropHint: 'ya da PDF veya EPUB dosyasını buraya sürükleyin',
@@ -628,12 +754,12 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    setupHelp: 'Gemini anahtarı kurulumu', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
+    setupHelp: 'Gemini anahtarı kurulumu', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
     nothingDue: 'Şu an tekrar edilecek kelime yok. Yarın tekrar gelin!', backToList: 'Listeye dön', left: n => `${n} kaldı`,
-    setupTitle: 'Başlamadan önce tek adım', setupText: 'Siyaq, kelimeleri anlamak için Google’ın Gemini’sini kullanır. Anahtar ücretsizdir ve bir dakika sürer.',
+    tourSkip: 'Geç', tourNext: 'İleri', tourBack: 'Geri', tourHello: 'Siyaq’a hoş geldiniz', tourHelloText: 'Kitaplarınızı her dilde okuyun, sayfadan ayrılmadan her kelimeyi anlayın.', tourWord: 'Herhangi bir kelimeye tıklayın', tourWordText: '<b>Tam o cümledeki</b> anlamını, kısa bir açıklama ve cümlenin çevirisiyle görürsünüz; sözlükteki ilk anlamını değil.', demoMeaning: 'nehir kıyısı', demoWhy: 'Banka değil: nehrin kenarında oturuyor', tourAsk: 'Bir paragraf seçin ve sorun', tourAskText: 'Açıklama, özet ya da tam çeviri isteyin veya kendi sorunuzu yazın. Cevap kitabın yanında görünür.', tourAskNote: 'Bölümlerle ilgili sorular, daha uzun metin gönderildiği için API kotanızdan kelimelerden daha fazla harcar.', tourWords: 'Kelimeleriniz kaybolmaz', tourWordsText: 'Aradığınız her kelime kaydedilir, tekrar geçtiği her yerde altı çizilir ve kartlarla tekrar edilebilir.', tourKeyNote: 'Anahtarınız yalnızca bu cihazda kalır. Tüm kullanım, ücretsiz kotası olan kendi Google hesabınızdan düşer.', tourDone: 'Her şey hazır!', tourDoneText: 'Bir kitap açın ve herhangi bir kelimeye tıklayın.', tourMcp: 'Claude Desktop’ınız varsa Ayarlar’dan Siyaq’a bağlayabilirsiniz.', setupTitle: 'Son adım: yapay zekâyı bağlayın', setupText: 'Siyaq, kelimeleri anlamak için Google’ın Gemini’sini kullanır. Anahtar ücretsizdir ve bir dakika sürer.',
     setupStep1: 'Google AI Studio’yu açın ve Google hesabınızla giriş yapın.', setupOpen: 'Sayfayı aç',
     setupStep2: '<b>Create API key</b> düğmesine basın ve anahtarı kopyalayın.', setupStep3: 'Buraya yapıştırın:',
     setupTest: 'Dene ve kaydet', setupLater: 'Sonra', setupOther: 'Başka bir sağlayıcı kullanıyorum',
@@ -1036,6 +1162,7 @@ viewer.addEventListener('click', e => {
     const node = sel.anchorNode;
     const span = (node?.nodeType === 3 ? node.parentElement : node)?.closest('.textLayer > span');
     if (span && selected.split(' ').length <= 10) lookup(selected, sentenceAround(span, offsetIn(span, node, sel.anchorOffset)));
+    else if (span) openAsk(selected);
     return;
   }
   // A plain click on a link follows it; selecting the link's text still translates it (above).
@@ -1165,7 +1292,11 @@ async function askGemini(prompt) {
 }
 
 async function askAI(word, sentence) {
-  const prompt = buildPrompt(word, sentence);
+  return askModel(buildPrompt(word, sentence));
+}
+
+// Sends a prompt that asks for JSON to the chosen provider and returns the parsed reply.
+async function askModel(prompt, maxTokens = 800) {
   const model = settings.model || DEFAULT_MODELS[settings.provider];
   let r, text;
   if (settings.provider === 'gemini') {
@@ -1173,7 +1304,7 @@ async function askAI(word, sentence) {
   } else if (settings.provider === 'anthropic') {
     r = await postJson('https://api.anthropic.com/v1/messages',
       { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      { model, max_tokens: 800, messages: [{ role: 'user', content: prompt }] });
+      { model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] });
     if (!r.ok) throw new Error(r.json?.error?.message || r.status);
     text = (r.json.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
   } else {
@@ -1186,6 +1317,71 @@ async function askAI(word, sentence) {
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) throw new Error(t('badReply'));
   return JSON.parse(m[0]);
+}
+
+// ---------- Ask about a passage ----------
+// Selecting more than a phrase offers a question about it. It costs more of the reader's own
+// AI quota than a word does (the whole passage is sent), so the button says so.
+const ASK_LIMIT = 4000; // characters of the passage sent with a question
+let askPassage = '', askId = 0;
+
+function buildAskPrompt(passage, question) {
+  const lang = LANGS[settings.lang].english;
+  return `You help someone understand a passage from the book they are reading.
+Passage: \"\"\"${passage.slice(0, ASK_LIMIT)}\"\"\"
+Language of the book: ${LANGS[bookLang]?.english || 'detect it from the passage'}
+The reader asks: "${question}"
+Answer in ${lang}, clearly and briefly (under 150 words unless they ask for more). Plain text, no markdown; separate paragraphs with a blank line.
+Reply with JSON only, no markdown fences, in exactly this shape: {"answer": "..."}`;
+}
+
+const askForm = () => `
+  <div class="ask-quick">${['askExplain', 'askSummary', 'askTranslate', 'askGrammar'].map(k => `<button class="chip" type="button" data-q="${k}">${t(k)}</button>`).join('')}</div>
+  <form class="ask-form" id="askForm">
+    <textarea id="askInput" rows="2" dir="auto" placeholder="${t('askPh')}"></textarea>
+    <button class="btn primary ask-send" type="submit">
+      <span class="ask-label">${icon('sparkle')}${t('askSend')}</span>
+      <small class="ask-cost">${t('askCost')}</small>
+    </button>
+  </form>`;
+
+function openAsk(passage) {
+  showTab('lookup');
+  askPassage = passage;
+  lastLookup = null;
+  ++lookupId; // a word answer still on its way shouldn't replace this
+  $('#lookup').innerHTML = `<article class="result ask">
+    <header class="result-head"><h2 class="word">${t('askTitle')}</h2></header>
+    <blockquote class="sentence passage" dir="auto">${esc(passage.length > 600 ? passage.slice(0, 600) + '…' : passage)}</blockquote>
+    ${askForm()}
+    <div id="askAnswers"></div>
+  </article>`;
+  wireAsk();
+  $('#askInput').focus();
+}
+
+function wireAsk() {
+  $('#askForm').onsubmit = e => { e.preventDefault(); ask($('#askInput').value.trim()); };
+  $('#askInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#askForm').requestSubmit(); } });
+  document.querySelectorAll('.ask-quick [data-q]').forEach(b => b.onclick = () => ask(t(b.dataset.q)));
+}
+
+async function ask(question) {
+  if (!question) { $('#askInput').focus(); return; }
+  if (!settings.apiKey && settings.provider !== 'openai') { openSetup(); return; }
+  const id = ++askId, box = document.createElement('section');
+  box.className = 'ask-turn';
+  box.innerHTML = `<h3 class="label" dir="auto">${esc(question)}</h3><div class="skeleton"><span></span><span></span><span class="short"></span></div>`;
+  $('#askAnswers').prepend(box);
+  $('#askInput').value = '';
+  try {
+    const r = await askModel(buildAskPrompt(askPassage, question), 1500);
+    if (id !== askId && !box.isConnected) return;
+    const d = `dir="${LANGS[settings.lang].dir}"`;
+    box.querySelector('.skeleton').outerHTML = String(r.answer || '').split(/\n\s*\n/).map(p => `<p class="explain" ${d}>${esc(p.trim())}</p>`).join('');
+  } catch (err) {
+    box.querySelector('.skeleton').outerHTML = stateCard('alert', esc(err.message), '', 'error');
+  }
 }
 
 // ---------- Lookup panel ----------
@@ -1510,6 +1706,7 @@ function clickEpub(e, sel, selected) {
   if (selected) {
     const node = sel.anchorNode, block = (node?.nodeType === 3 ? node.parentElement : node)?.closest(EPUB_BLOCKS);
     if (block && selected.split(' ').length <= 10) lookup(selected, cutSentence(block.textContent, offsetIn(block, node, sel.anchorOffset)));
+    else if (block) openAsk(selected);
     return;
   }
   const a = e.target.closest('a[data-href], a[data-url]');
@@ -1964,12 +2161,43 @@ $('#mcpCopy').onclick = async () => {
 // ---------- First-run setup ----------
 const AI_STUDIO = 'https://aistudio.google.com/apikey';
 
-function openSetup() {
+const SLIDES = [...document.querySelectorAll('#setup .slide')].map(s => s.dataset.slide);
+let slide = 0, tourFull = false; // tourFull: started from the welcome, not straight at the key
+
+function showSlide(n, back = false) {
+  slide = Math.max(0, Math.min(n, SLIDES.length - 1));
+  const name = SLIDES[slide];
+  document.querySelectorAll('#setup .slide').forEach((s, i) => { s.classList.toggle('on', i === slide); s.classList.toggle('back', back); });
+  const part = name === 'key' ? 'key' : name === 'done' ? 'done' : 'intro';
+  document.querySelectorAll('#setup .tour-btns').forEach(b => b.hidden = b.dataset.for !== part);
+  $('#tourBack').style.visibility = slide ? '' : 'hidden';
+  $('#tourSkip').hidden = part !== 'intro';
+  $('#tourDots').innerHTML = SLIDES.map((_, i) => `<span class="${i === slide ? 'on' : ''}"></span>`).join('');
+  $('#tourDots').hidden = !tourFull;
+  if (name === 'key') setTimeout(() => $('#setupKey').focus(), 50);
+}
+
+// The whole tour for a new reader; straight to the key from Settings or a lookup without one.
+function openSetup(full = false) {
+  tourFull = full;
   $('#setupKey').value = settings.apiKey || '';
   $('#setupMsg').className = 'msg';
   $('#setupMsg').textContent = '';
+  $('#tourMcpNote').hidden = !tauri || /Android|iPhone|iPad/.test(navigator.userAgent);
+  showSlide(full ? 0 : SLIDES.indexOf('key'));
   if (!$('#setup').open) $('#setup').showModal();
 }
+
+$('#tourNext').onclick = () => showSlide(slide + 1);
+$('#tourBack').onclick = () => showSlide(slide - 1, true);
+$('#tourSkip').onclick = () => showSlide(SLIDES.indexOf('key'));
+$('#setup').addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea') || SLIDES[slide] === 'key') return;
+  const forward = (e.key === 'ArrowRight') !== (document.dir === 'rtl');
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') showSlide(slide + (forward ? 1 : -1), !forward);
+});
+$('#setup').addEventListener('close', () => store.set('toured', true));
+$('#setup').querySelector('.file-input').addEventListener('change', () => $('#setup').close());
 
 async function openLink(url) {
   if (tauri) await tauri.core.invoke('open_link', { url });
@@ -1994,6 +2222,7 @@ $('#setupSave').onclick = async () => {
     msg.className = 'msg ok';
     msg.textContent = t('setupOk');
     setTimeout(() => {
+      if (tourFull) { showSlide(SLIDES.indexOf('done')); return; }
       $('#setup').close();
       if (lastLookup) lookup(lastLookup.word, lastLookup.sentence);
     }, 900);
@@ -2123,7 +2352,8 @@ applyTheme();
 applyUiLanguage();
 updateVocabCount();
 refreshKnown();
-if (!settings.apiKey && settings.provider === 'gemini' && !store.get('setupSkipped', false)) openSetup();
+// New readers get the tour once; people who already have a key, or chose Later before, don't.
+if (!settings.apiKey && settings.provider === 'gemini' && !store.get('setupSkipped', false)) openSetup(!store.get('toured', false));
 </script>
 </body>
 </html>
