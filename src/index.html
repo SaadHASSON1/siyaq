@@ -107,7 +107,10 @@
   .actions { display: flex; align-items: center; gap: 2px; }
 
   /* ---------- Layout ---------- */
-  main { flex: 1; display: flex; min-height: 0; }
+  main { flex: 1; display: flex; min-height: 0; position: relative; }
+  .back { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 5; box-shadow: var(--shadow-pop); border-radius: 999px; }
+  .flip-back { transform: scaleX(-1); }
+  [dir="rtl"] .flip-back { transform: none; }
   #viewer { flex: 1; overflow: auto; padding: 24px; position: relative; direction: ltr; }
 
   /* ---------- Welcome ---------- */
@@ -267,6 +270,7 @@
     </div>
     <div class="pane" id="vocab" hidden></div>
   </aside>
+  <button class="btn back" id="backBtn" hidden><i data-icon="arrow" class="flip-back"></i><span data-i18n="back"></span></button>
   <div id="viewer">
     <div class="welcome" id="empty">
       <div class="welcome-card">
@@ -380,7 +384,7 @@ const STRINGS = {
     apiKey: 'مفتاح API', keyHelp: 'بيتخزن على جهازك فقط. لـ Gemini خذ مفتاح مجاني من aistudio.google.com. لـ Ollama اتركه فاضي.',
     model: 'اسم النموذج (اختياري)', autoModel: 'تلقائي (Flash-Lite)', save: 'حفظ', cancel: 'إلغاء',
     langs: { ar: 'العربية', en: 'الإنجليزية', tr: 'التركية', other: 'لغة أخرى' },
-    needKey: 'لازم تضيف مفتاح API أولاً.', openSettings: 'افتح الإعدادات', retry: 'جرّب مرة تانية',
+    back: 'رجوع', needKey: 'لازم تضيف مفتاح API أولاً.', openSettings: 'افتح الإعدادات', retry: 'جرّب مرة تانية',
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
@@ -400,7 +404,7 @@ const STRINGS = {
     apiKey: 'API key', keyHelp: 'Stored on your device only. Get a free Gemini key at aistudio.google.com. Leave empty for Ollama.',
     model: 'Model name (optional)', autoModel: 'Automatic (Flash-Lite)', save: 'Save', cancel: 'Cancel',
     langs: { ar: 'Arabic', en: 'English', tr: 'Turkish', other: 'Other' },
-    needKey: 'Add an API key first.', openSettings: 'Open settings', retry: 'Try again',
+    back: 'Back', needKey: 'Add an API key first.', openSettings: 'Open settings', retry: 'Try again',
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
@@ -420,7 +424,7 @@ const STRINGS = {
     apiKey: 'API anahtarı', keyHelp: 'Yalnızca cihazınızda saklanır. Ücretsiz Gemini anahtarını aistudio.google.com adresinden alın. Ollama için boş bırakın.',
     model: 'Model adı (isteğe bağlı)', autoModel: 'Otomatik (Flash-Lite)', save: 'Kaydet', cancel: 'İptal',
     langs: { ar: 'Arapça', en: 'İngilizce', tr: 'Türkçe', other: 'Diğer' },
-    needKey: 'Önce bir API anahtarı ekleyin.', openSettings: 'Ayarları aç', retry: 'Tekrar dene',
+    back: 'Geri', needKey: 'Önce bir API anahtarı ekleyin.', openSettings: 'Ayarları aç', retry: 'Tekrar dene',
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
@@ -471,6 +475,8 @@ async function openPdf(data, name) {
     observer.observe(div);
   }
   viewer.scrollTop = 0;
+  backTo = null;
+  $('#backBtn').hidden = true;
   $('#tools').hidden = false;
   $('#pageTotal').textContent = doc.numPages;
   updatePageLabel();
@@ -512,6 +518,33 @@ async function renderPage(div) {
   div.appendChild(layer);
   const textContent = await page.getTextContent();
   await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: layer, viewport: vp, textDivs: [] }).promise;
+
+  // Links inside the book (table of contents, footnotes), in page pixels.
+  div._links = (await page.getAnnotations())
+    .filter(a => a.subtype === 'Link' && a.dest)
+    .map(a => {
+      const [x1, y1, x2, y2] = vp.convertToViewportRectangle(a.rect);
+      return { x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1), dest: a.dest };
+    });
+}
+
+function linkAt(pageDiv, clientX, clientY) {
+  const r = pageDiv.getBoundingClientRect(), x = clientX - r.left, y = clientY - r.top;
+  return (pageDiv._links || []).find(l => x >= l.x && x <= l.x + l.w && y >= l.y && y <= l.y + l.h);
+}
+
+let backTo = null; // where to return after following a link
+async function goToDest(dest) {
+  const explicit = typeof dest === 'string' ? await pdfDoc.getDestination(dest) : dest;
+  if (!Array.isArray(explicit)) return;
+  const index = typeof explicit[0] === 'object' ? await pdfDoc.getPageIndex(explicit[0]) : explicit[0];
+  const div = viewer.querySelector(`.page[data-page="${index + 1}"]`);
+  if (!div) return;
+  backTo = viewer.scrollTop;
+  $('#backBtn').hidden = false;
+  const top = explicit[1]?.name === 'XYZ' ? explicit[3] : null; // PDF units, measured from the page bottom
+  const h = +div.dataset.h || pageSize.h;
+  viewer.scrollTop = div.offsetTop + (top != null ? Math.max(0, (h - top) * scale - 16) : -24);
 }
 
 // ---------- Dark pages ----------
@@ -524,15 +557,17 @@ async function darkenPage(canvas, page, vp, dpr) {
   original.getContext('2d').drawImage(canvas, 0, 0);
   const ctx = canvas.getContext('2d');
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  if ('filter' in ctx) {
-    ctx.filter = 'invert(.9) hue-rotate(180deg)'; // hue-rotate keeps coloured text roughly its colour
-    ctx.drawImage(original, 0, 0);
-    ctx.filter = 'none';
-  } else {
-    const img = ctx.getImageData(0, 0, canvas.width, canvas.height), d = img.data;
-    for (let i = 0; i < d.length; i += 4) for (let c = i; c < i + 3; c++) d[c] = 230 - d[c] * 0.9;
-    ctx.putImageData(img, 0, 0);
+  // Done by hand: canvas filters don't work in every web engine (Safari's, which the Mac app uses).
+  // Flipping lightness but not hue: white → near-black, black → near-white, blue links stay blue.
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const shift = 255 - Math.max(r, g, b) - Math.min(r, g, b);
+    d[i] = 27 + (r + shift) * 0.79;
+    d[i + 1] = 27 + (g + shift) * 0.79;
+    d[i + 2] = 27 + (b + shift) * 0.79;
   }
+  ctx.putImageData(img, 0, 0);
   for (const [x, y, w, h] of boxes) ctx.drawImage(original, x, y, w, h, x, y, w, h);
 }
 
@@ -592,6 +627,12 @@ viewer.addEventListener('scroll', () => {
 $('#pageInput').addEventListener('change', e => { goToPage(+e.target.value); e.target.blur(); });
 $('#pageInput').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
 $('#pageInput').addEventListener('blur', updatePageLabel);
+
+$('#backBtn').onclick = () => {
+  if (backTo != null) viewer.scrollTop = backTo;
+  backTo = null;
+  $('#backBtn').hidden = true;
+};
 
 const ZOOM_STEPS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 const zoomStep = dir => setZoom(dir > 0 ? ZOOM_STEPS.find(z => z > zoom + 0.001) ?? zoom : [...ZOOM_STEPS].reverse().find(z => z < zoom - 0.001) ?? zoom);
@@ -732,6 +773,10 @@ viewer.addEventListener('click', e => {
     if (span && selected.split(' ').length <= 10) lookup(selected, sentenceAround(span, sel.anchorOffset));
     return;
   }
+  // A plain click on a link follows it; selecting the link's text still translates it (above).
+  const pageDiv = e.target.closest('.page');
+  const link = pageDiv && linkAt(pageDiv, e.clientX, e.clientY);
+  if (link) { goToDest(link.dest); return; }
   const span = e.target.closest('.textLayer > span');
   if (!span) return;
   const pos = caretAt(e.clientX, e.clientY);
