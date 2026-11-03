@@ -22,6 +22,8 @@
     --shadow-page: 0 1px 2px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
     --shadow-pop: 0 10px 40px rgba(0,0,0,.18);
     --radius: 10px;
+    --page-bg: #ffffff;
+    --page-filter: none;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -29,6 +31,7 @@
       --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
       --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
       --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
+      --page-bg: #1a1a19; --page-filter: invert(.9) hue-rotate(180deg); /* night reading: dim white pages */
     }
   }
   :root[data-theme="dark"] {
@@ -36,6 +39,7 @@
     --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
     --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
     --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
+    --page-bg: #1a1a19; --page-filter: invert(.9) hue-rotate(180deg);
   }
 
   * { box-sizing: border-box; }
@@ -75,8 +79,7 @@
   }
   [dir="rtl"] .bar { padding: 0 16px 0 12px; }
   .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
-  .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: grid; place-items: center; color: #fff; }
-  .logo svg { width: 16px; height: 16px; fill: currentColor; }
+  .logo { width: 28px; height: 28px; display: block; }
   .book-title {
     flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     padding-inline-start: 12px; border-inline-start: 1px solid var(--border);
@@ -117,8 +120,7 @@
     transition: border-color .15s, background .15s;
   }
   .welcome.drag .welcome-card { border-color: var(--accent); background: var(--accent-soft); }
-  .welcome-icon { width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
-  .welcome-icon .i { width: 28px; height: 28px; }
+  .welcome-icon { display: block; width: 64px; height: 64px; margin: 0 auto 18px; }
   .welcome h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.01em; }
   .welcome p { margin: 0 auto; color: var(--muted); max-width: 340px; }
   .welcome .btn.lg { margin: 24px 0 10px; }
@@ -130,8 +132,8 @@
   .privacy .i { width: 14px; height: 14px; }
 
   /* ---------- Pages ---------- */
-  .page { position: relative; margin: 0 auto 20px; background: #fff; box-shadow: var(--shadow-page); border-radius: 2px; }
-  .page canvas { display: block; border-radius: 2px; }
+  .page { position: relative; margin: 0 auto 20px; background: var(--page-bg); box-shadow: var(--shadow-page); border-radius: 2px; }
+  .page canvas { display: block; border-radius: 2px; filter: var(--page-filter); }
   .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 2; }
   .textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: pointer; transform-origin: 0% 0%; }
   .textLayer ::selection { background: rgba(47, 111, 94, .3); }
@@ -224,7 +226,7 @@
 <body>
 <header class="bar">
   <div class="brand">
-    <span class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l2 6.2L20 12l-6 2.8L12 21l-2-6.2L4 12l6-2.8z"/></svg></span>
+    <img class="logo" src="logo.svg" alt="">
     <span>Glint</span>
   </div>
   <div class="book-title" id="bookTitle"></div>
@@ -246,6 +248,7 @@
   </div>
   <div class="actions">
     <label class="icon-btn" data-i18n-title="open"><i data-icon="folder"></i><input class="file-input" type="file" accept="application/pdf" hidden></label>
+    <button class="icon-btn" id="themeBtn" data-i18n-title="toggleTheme"></button>
     <button class="icon-btn" id="settingsBtn" data-i18n-title="settings"><i data-icon="sliders"></i></button>
   </div>
 </header>
@@ -268,7 +271,7 @@
   <div id="viewer">
     <div class="welcome" id="empty">
       <div class="welcome-card">
-        <div class="welcome-icon"><i data-icon="book"></i></div>
+        <img class="welcome-icon" src="logo.svg" alt="">
         <h2 data-i18n="emptyTitle"></h2>
         <p data-i18n="emptyText"></p>
         <label class="btn primary lg"><i data-icon="folder"></i><span data-i18n="open"></span><input class="file-input" type="file" accept="application/pdf" hidden></label>
@@ -282,6 +285,20 @@
 <dialog id="settings">
   <form method="dialog" id="settingsForm">
     <h3 data-i18n="settings"></h3>
+    <label><span data-i18n="uiLang"></span>
+      <select name="uiLang">
+        <option value="ar">العربية</option>
+        <option value="en">English</option>
+        <option value="tr">Türkçe</option>
+      </select>
+    </label>
+    <label><span data-i18n="theme"></span>
+      <select name="theme">
+        <option value="system" data-i18n="themeSystem"></option>
+        <option value="light" data-i18n="themeLight"></option>
+        <option value="dark" data-i18n="themeDark"></option>
+      </select>
+    </label>
     <label><span data-i18n="provider"></span>
       <select name="provider">
         <option value="gemini" data-i18n="optGemini"></option>
@@ -333,6 +350,8 @@ const ICONS = {
   key: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
   alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
   bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
 };
 const icon = (name, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 document.querySelectorAll('i[data-icon]').forEach(el => el.outerHTML = icon(el.dataset.icon, el.className));
@@ -345,10 +364,10 @@ const LANGS = {
   tr: { english: 'Turkish', dir: 'ltr' },
 };
 
-// Interface text. The interface follows the "translate to" language: that's the reader's own language.
+// Interface text, in the app language chosen in settings (separate from the translation language).
 const STRINGS = {
   ar: {
-    title: 'Glint — قارئ PDF', open: 'افتح PDF', settings: 'الإعدادات', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
+    title: 'Glint — قارئ PDF', open: 'افتح PDF', settings: 'الإعدادات', uiLang: 'لغة التطبيق', theme: 'المظهر', themeSystem: 'حسب الجهاز', themeLight: 'فاتح', themeDark: 'داكن', toggleTheme: 'الوضع الداكن', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
     langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
     panelTitle: 'اضغط على أي كلمة',
@@ -368,7 +387,7 @@ const STRINGS = {
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
   },
   en: {
-    title: 'Glint — PDF reader', open: 'Open PDF', settings: 'Settings', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
+    title: 'Glint — PDF reader', open: 'Open PDF', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
     langPair: 'Book language → translation language', auto: 'Auto',
     tabMeaning: 'Meaning', tabWords: 'My words',
     panelTitle: 'Click any word',
@@ -388,7 +407,7 @@ const STRINGS = {
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
   },
   tr: {
-    title: 'Glint — PDF okuyucu', open: 'PDF aç', settings: 'Ayarlar', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
+    title: 'Glint — PDF okuyucu', open: 'PDF aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
     langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',
     panelTitle: 'Herhangi bir kelimeye tıklayın',
@@ -410,9 +429,11 @@ const STRINGS = {
 };
 
 const systemLang = ['ar', 'tr', 'en'].find(l => (navigator.language || '').toLowerCase().startsWith(l)) || 'en';
-let settings = Object.assign({ provider: 'gemini', apiKey: '', model: '', baseUrl: 'http://localhost:11434/v1', lang: systemLang }, store.get('settings', {}));
+let settings = Object.assign({ provider: 'gemini', apiKey: '', model: '', baseUrl: 'http://localhost:11434/v1', lang: systemLang, theme: 'system' }, store.get('settings', {}));
 if (!LANGS[settings.lang]) settings.lang = 'ar'; // earlier versions stored free text here, always Arabic
-const t = key => STRINGS[settings.lang][key] ?? STRINGS.en[key];
+// lang: what words are translated into. uiLang: the app's own language. Before they were split, one drove both.
+if (!LANGS[settings.uiLang]) settings.uiLang = store.get('settings', null) ? settings.lang : systemLang;
+const t = key => STRINGS[settings.uiLang][key] ?? STRINGS.en[key];
 // Earlier versions saved these as the model; they have tiny free quotas, so go back to automatic.
 if (/^gemini-(2\.5|3\.8)-flash$/.test(settings.model)) { settings.model = ''; store.set('settings', settings); }
 let vocab = store.get('vocab', []);
@@ -908,21 +929,44 @@ function syncProviderFields() {
   form.model.placeholder = DEFAULT_MODELS[form.provider.value] || t('autoModel');
 }
 function openSettings() {
-  for (const k of ['provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
+  for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
   syncProviderFields();
   $('#settings').showModal();
 }
 form.provider.onchange = () => { form.model.value = ''; syncProviderFields(); };
 $('#settings').addEventListener('close', () => {
   if ($('#settings').returnValue !== 'save') return;
-  for (const k of ['provider', 'baseUrl', 'apiKey', 'model']) settings[k] = form[k].value.trim();
+  const uiChanged = form.uiLang.value !== settings.uiLang;
+  for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) settings[k] = form[k].value.trim();
   store.set('settings', settings);
+  applyTheme();
+  if (uiChanged) {
+    applyUiLanguage();
+    if (lastLookup) lookup(lastLookup.word, lastLookup.sentence); // redraw the open word's labels
+  }
 });
 $('#settingsBtn').onclick = openSettings;
 
+// ---------- Appearance ----------
+const systemDark = matchMedia('(prefers-color-scheme: dark)');
+const isDark = () => settings.theme === 'dark' || (settings.theme === 'system' && systemDark.matches);
+
+function applyTheme() {
+  if (settings.theme === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = settings.theme;
+  $('#themeBtn').innerHTML = icon(isDark() ? 'sun' : 'moon');
+}
+// The quick toggle picks the opposite of what's on screen and keeps it, whatever the system does later.
+$('#themeBtn').onclick = () => {
+  settings.theme = isDark() ? 'light' : 'dark';
+  store.set('settings', settings);
+  applyTheme();
+};
+systemDark.addEventListener('change', applyTheme);
+
 function applyUiLanguage() {
-  document.documentElement.lang = settings.lang;
-  document.documentElement.dir = LANGS[settings.lang].dir;
+  document.documentElement.lang = settings.uiLang;
+  document.documentElement.dir = LANGS[settings.uiLang].dir;
   document.title = t('title');
   document.querySelectorAll('[data-i18n]').forEach(el => el.innerHTML = t(el.dataset.i18n));
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
@@ -938,9 +982,9 @@ target.value = settings.lang;
 target.onchange = () => {
   settings.lang = target.value;
   store.set('settings', settings);
-  applyUiLanguage();
   if (lastLookup) lookup(lastLookup.word, lastLookup.sentence); // show the open word in the new language
 };
+applyTheme();
 applyUiLanguage();
 updateVocabCount();
 </script>

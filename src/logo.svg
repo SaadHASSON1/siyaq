@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3f957c"/>
+      <stop offset="1" stop-color="#1d4c40"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe9a3"/>
+      <stop offset="1" stop-color="#f2b933"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  <!-- open book -->
+  <path d="M512 372C430 320 318 310 226 334V770C318 748 430 758 512 810Z" fill="#f8f6f0"/>
+  <path d="M512 372C594 320 706 310 798 334V770C706 748 594 758 512 810Z" fill="#e2ede8"/>
+  <!-- lines of text -->
+  <g stroke="#c5d2cb" stroke-width="24" stroke-linecap="round" fill="none">
+    <path d="M290 456H446"/><path d="M290 528H430"/><path d="M290 600H446"/><path d="M290 672H404"/>
+    <path d="M578 456H734"/><path d="M578 600H734"/><path d="M578 672H692"/>
+  </g>
+  <!-- the word you clicked -->
+  <rect x="562" y="500" width="164" height="56" rx="16" fill="#f2c94c"/>
+  <path d="M590 528H698" stroke="#1d4c40" stroke-width="24" stroke-linecap="round"/>
+  <!-- the glint -->
+  <path d="M806 118C819 200 838 219 920 232C838 245 819 264 806 346C793 264 774 245 692 232C774 219 793 200 806 118Z" fill="url(#spark)"/>
+  <path d="M906 330C911 362 917 368 948 373C917 378 911 384 906 416C901 384 895 378 864 373C895 368 901 362 906 330Z" fill="#ffe9a3"/>
+</svg>
