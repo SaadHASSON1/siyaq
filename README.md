@@ -115,6 +115,10 @@ Pushing a tag such as `v0.5.0` builds signed installers and update files for eve
 - [x] Flashcards, saved words, automatic updates
 - [ ] Android, with *Siyaq* in the text-selection menu of every app
 
+## Problems and ideas
+
+Found something that doesn't work, or have an idea? [Report a problem](https://github.com/SaadHASSON1/siyaq/issues/new?template=bug.yml) or [suggest a feature](https://github.com/SaadHASSON1/siyaq/issues/new?template=feature.yml) on GitHub, or write to **contact@x13labs.com**. You can also do it from Siyaq's **Settings**.
+
 ## License
 
 [MIT](LICENSE) © Saad HASSON

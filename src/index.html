@@ -130,9 +130,10 @@
   .welcome p { margin: 0 auto; color: var(--muted); max-width: 340px; }
   .welcome .btn.lg { margin: 24px 0 10px; }
   .welcome .drop-hint { font-size: 13px; }
-  .welcome { grid-template-rows: 1fr auto 1fr; }
+  .welcome { grid-template-rows: 1fr auto auto auto 1fr; }
   .welcome-card { grid-row: 2; }
-  .welcome > .lang-pick { grid-row: 3; align-self: start; margin-top: 18px; }
+  .welcome > .lang-pick { grid-row: 3; justify-self: center; margin-top: 18px; }
+  .welcome-ver { grid-row: 4; justify-self: center; margin: 12px 0 0; font-size: 12px; color: var(--muted); opacity: .8; }
   /* App language, offered where a new user first looks: each name is written in its own language. */
   .lang-pick { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 13px; }
   .lang-pick svg { width: 15px; height: 15px; margin-inline: 8px 4px; }
@@ -258,6 +259,14 @@
   .mcp-box .check input { display: inline; width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
   .mcp-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .mcp-msg { color: var(--accent-text) !important; }
+  .mcp-box.feedback b { font-size: 13px; }
+  .about { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13px; }
+  .about-logo { width: 26px; height: 20px; }
+  .about .ver { color: var(--muted); }
+  .about .btn { margin-inline-start: auto; }
+  .update-msg { flex-basis: 100%; margin: 0 !important; }
+  .update-msg.ok { color: var(--accent-text); }
+  .update-msg.error { color: var(--danger); }
   .mcp-msg.error { color: var(--danger) !important; }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
 
@@ -481,6 +490,7 @@
         <p class="privacy"><i data-icon="lock"></i><span data-i18n="privacy"></span></p>
       </div>
       <div class="lang-pick" data-lang-pick></div>
+      <p class="welcome-ver" data-version></p>
     </div>
   </div>
 </main>
@@ -529,6 +539,21 @@
         <button class="btn small" type="button" id="mcpCopy"><i data-icon="copy"></i><span data-i18n="mcpCopy"></span></button>
       </div>
       <small class="mcp-msg" id="mcpMsg" hidden></small>
+    </div>
+    <div class="mcp-box feedback">
+      <b data-i18n="fbTitle"></b>
+      <small data-i18n="fbHelp"></small>
+      <div class="mcp-actions">
+        <button class="btn small" type="button" id="fbBug"><i data-icon="alert"></i><span data-i18n="fbBug"></span></button>
+        <button class="btn small" type="button" id="fbIdea"><i data-icon="sparkle"></i><span data-i18n="fbIdea"></span></button>
+        <button class="btn small" type="button" id="fbMail"><i data-icon="mail"></i><span dir="ltr">contact@x13labs.com</span></button>
+      </div>
+    </div>
+    <div class="about">
+      <i data-logo class="about-logo"></i>
+      <span><b data-i18n="brand"></b> <span class="ver" data-version></span></span>
+      <button class="btn small" type="button" id="updateCheck"><i data-icon="refresh"></i><span data-i18n="updateCheck"></span></button>
+      <small class="update-msg" id="updateMsg" hidden></small>
     </div>
     <div class="row">
       <button class="btn" value="cancel" formnovalidate data-i18n="cancel"></button>
@@ -639,6 +664,8 @@ const ICONS = {
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
   sparkle: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
   plug: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
   copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
@@ -690,7 +717,7 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', askTitle: 'اسأل عن هالمقطع', askPh: 'اكتب سؤالك عن المقطع…', askSend: 'اسأل', askCost: 'بيستهلك من حصّتك بالذكاء الاصطناعي، يعني الـ API', askExplain: 'اشرحلي شو قصده', askSummary: 'لخّصلي ياه', askTranslate: 'ترجملي ياه كامل', askGrammar: 'اشرحلي القواعد والتعابير', fbTitle: 'عندك مشكلة أو فكرة؟', fbHelp: 'بلّغنا عن أي شي ما عم يشتغل، أو اقترح ميزة بدّك ياها. على GitHub، أو بالإيميل إذا ما عندك حساب.', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
@@ -701,7 +728,7 @@ const STRINGS = {
     setupTest: 'جرّب واحفظ', setupLater: 'لاحقاً', setupOther: 'عندي مزوّد تاني',
     setupChecking: 'عم نجرّب المفتاح…', setupOk: 'المفتاح شغّال ✓', setupBad: 'المفتاح ما زبط: ',
     resumed: n => `رجعناك للصفحة ${n}، وين وقفت آخر مرة`, ocrRunning: 'عم نقرأ نص الصفحة…',
-    updateAvail: v => `في نسخة جديدة من سياق (${v})`, updateNow: 'حدّث هلق', updating: 'عم يتحدّث… سياق رح يفتح من جديد', updateFailed: 'ما زبط التحديث: ',
+    updateCheck: 'دوّر على تحديث', updateChecking: 'عم دوّر على تحديث…', updateNone: 'عندك آخر نسخة ✓', updateCheckFailed: 'ما قدرت اتأكد، تأكّد من الإنترنت: ', versionLabel: v => `الإصدار ${v}`, updateAvail: v => `في نسخة جديدة من سياق (${v})`, updateNow: 'حدّث هلق', updating: 'عم يتحدّث… سياق رح يفتح من جديد', updateFailed: 'ما زبط التحديث: ',
   },
   en: {
     brand: 'Siyaq', title: 'Siyaq — book reader', open: 'Open a book', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
@@ -722,7 +749,7 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    setupHelp: 'Help me set up a Gemini key', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
+    setupHelp: 'Help me set up a Gemini key', askTitle: 'Ask about this passage', askPh: 'Type your question about the passage…', askSend: 'Ask', askCost: 'Uses your own AI quota (API)', askExplain: 'Explain what it means', askSummary: 'Summarise it', askTranslate: 'Translate all of it', askGrammar: 'Explain the grammar and phrases', fbTitle: 'A problem or an idea?', fbHelp: 'Tell us about anything that isn’t working, or suggest a feature you’d like. On GitHub, or by email if you don’t have an account.', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
@@ -733,7 +760,7 @@ const STRINGS = {
     setupTest: 'Test and save', setupLater: 'Later', setupOther: 'I use another provider',
     setupChecking: 'Checking the key…', setupOk: 'The key works ✓', setupBad: 'The key didn’t work: ',
     resumed: n => `Back on page ${n}, where you left off`, ocrRunning: 'Reading the page’s text…',
-    updateAvail: v => `A new version of Siyaq is available (${v})`, updateNow: 'Update now', updating: 'Updating… Siyaq will reopen', updateFailed: 'Update failed: ',
+    updateCheck: 'Check for updates', updateChecking: 'Checking for updates…', updateNone: 'You have the latest version ✓', updateCheckFailed: 'Couldn’t check. Are you online? ', versionLabel: v => `Version ${v}`, updateAvail: v => `A new version of Siyaq is available (${v})`, updateNow: 'Update now', updating: 'Updating… Siyaq will reopen', updateFailed: 'Update failed: ',
   },
   tr: {
     brand: 'Siyaq', title: 'Siyaq — kitap okuyucu', open: 'Kitap aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
@@ -754,7 +781,7 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    setupHelp: 'Gemini anahtarı kurulumu', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
+    setupHelp: 'Gemini anahtarı kurulumu', askTitle: 'Bu bölüm hakkında sor', askPh: 'Bölümle ilgili sorunuzu yazın…', askSend: 'Sor', askCost: 'Kendi yapay zekâ kotanızdan harcar (API)', askExplain: 'Ne demek istediğini açıkla', askSummary: 'Özetle', askTranslate: 'Tamamını çevir', askGrammar: 'Dilbilgisini ve kalıpları açıkla', fbTitle: 'Bir sorun ya da fikriniz mi var?', fbHelp: 'Çalışmayan bir şeyi bildirin ya da istediğiniz bir özelliği önerin. GitHub’da, hesabınız yoksa e-postayla.', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
@@ -765,7 +792,7 @@ const STRINGS = {
     setupTest: 'Dene ve kaydet', setupLater: 'Sonra', setupOther: 'Başka bir sağlayıcı kullanıyorum',
     setupChecking: 'Anahtar deneniyor…', setupOk: 'Anahtar çalışıyor ✓', setupBad: 'Anahtar çalışmadı: ',
     resumed: n => `Kaldığınız yere, ${n}. sayfaya döndünüz`, ocrRunning: 'Sayfanın metni okunuyor…',
-    updateAvail: v => `Siyaq’ın yeni sürümü var (${v})`, updateNow: 'Şimdi güncelle', updating: 'Güncelleniyor… Siyaq yeniden açılacak', updateFailed: 'Güncelleme başarısız: ',
+    updateCheck: 'Güncellemeleri denetle', updateChecking: 'Güncellemeler denetleniyor…', updateNone: 'En son sürümü kullanıyorsunuz ✓', updateCheckFailed: 'Denetlenemedi. İnternete bağlı mısınız? ', versionLabel: v => `Sürüm ${v}`, updateAvail: v => `Siyaq’ın yeni sürümü var (${v})`, updateNow: 'Şimdi güncelle', updating: 'Güncelleniyor… Siyaq yeniden açılacak', updateFailed: 'Güncelleme başarısız: ',
   },
 };
 
@@ -2215,6 +2242,17 @@ $('#mcpCopy').onclick = async () => {
   } catch (err) { mcpMessage(String(err), true); }
 };
 
+// ---------- Feedback ----------
+// Problems and ideas go to GitHub Issues (forms in .github/ISSUE_TEMPLATE), or by email for people without GitHub.
+const REPO = 'https://github.com/SaadHASSON1/siyaq', CONTACT = 'contact@x13labs.com';
+const systemName = () => /Android/.test(navigator.userAgent) ? 'Android' : /Mac/.test(navigator.platform) ? 'macOS'
+  : /Win/.test(navigator.platform) ? 'Windows' : /Linux/.test(navigator.platform) ? 'Linux' : navigator.platform;
+const appVersion = async () => tauri ? await tauri.app.getVersion().catch(() => '') : 'web';
+
+$('#fbBug').onclick = async () => openLink(`${REPO}/issues/new?template=bug.yml&version=${encodeURIComponent(await appVersion())}&system=${encodeURIComponent(systemName())}`);
+$('#fbIdea').onclick = async () => openLink(`${REPO}/issues/new?template=feature.yml&version=${encodeURIComponent(await appVersion())}`);
+$('#fbMail').onclick = async () => openLink(`mailto:${CONTACT}?subject=${encodeURIComponent('Siyaq ' + await appVersion())}&body=${encodeURIComponent(`\n\n—\nSiyaq ${await appVersion()} · ${systemName()}`)}`);
+
 // ---------- First-run setup ----------
 const AI_STUDIO = 'https://aistudio.google.com/apikey';
 
@@ -2289,20 +2327,46 @@ $('#setupSave').onclick = async () => {
   }
 };
 
-// ---------- Updates (installed app only) ----------
+// ---------- Version and updates ----------
+appVersion().then(v => {
+  if (!v || v === 'web') return;
+  document.querySelectorAll('[data-version]').forEach(el => el.dataset.v = v);
+  showVersion();
+});
+
+function offerUpdate(version) {
+  showToast(t('updateAvail')(version), {
+    label: t('updateNow'),
+    run: async () => {
+      showToast(t('updating'));
+      try { await tauri.core.invoke('install_update'); } catch (err) { showToast(t('updateFailed') + err); }
+    },
+  });
+}
+
+// On its own a few seconds after starting (installed app only), and from Settings whenever asked.
 if (tauri) setTimeout(async () => {
   try {
     const version = await tauri.core.invoke('check_update');
-    if (!version) return;
-    showToast(t('updateAvail')(version), {
-      label: t('updateNow'),
-      run: async () => {
-        showToast(t('updating'));
-        try { await tauri.core.invoke('install_update'); } catch (err) { showToast(t('updateFailed') + err); }
-      },
-    });
+    if (version) offerUpdate(version);
   } catch {} // offline, or no releases yet
 }, 3000);
+
+$('#updateCheck').onclick = async () => {
+  const msg = $('#updateMsg'), say = (text, cls = '') => { msg.textContent = text; msg.className = 'update-msg ' + cls; msg.hidden = false; };
+  // Phones update from their app store; the web version is always the latest.
+  if (!tauri || /Android|iPhone|iPad/.test(navigator.userAgent)) { say(t('updateNone'), 'ok'); return; }
+  say(t('updateChecking'));
+  try {
+    const version = await tauri.core.invoke('check_update');
+    if (!version) { say(t('updateNone'), 'ok'); return; }
+    say(t('updateAvail')(version), 'ok');
+    $('#settings').close('cancel');
+    offerUpdate(version);
+  } catch (err) {
+    say(t('updateCheckFailed') + err, 'error');
+  }
+};
 
 // ---------- UI ----------
 function showTab(name) {
@@ -2378,6 +2442,11 @@ function applyUiLanguage() {
   if (!pdfDoc) $('#toc').innerHTML = stateCard('list', t('noBook'));
   $('#searchInput').placeholder = t('searchPh');
   renderLangPicks();
+  showVersion();
+}
+
+function showVersion() {
+  document.querySelectorAll('[data-version]').forEach(el => { if (el.dataset.v) el.textContent = t('versionLabel')(el.dataset.v); });
 }
 
 // The same choice as App language in Settings, one click away on the first screens.

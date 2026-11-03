@@ -1,0 +1,20 @@
+name: Suggest a feature · اقترح ميزة
+description: An idea that would make Siyaq better · فكرة بتخلّي سياق أحسن
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea · فكرتك
+      description: What would you like Siyaq to do? · شو بتحب سياق يعمل؟
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it would help · ليش بتفيد
+      description: When would you use it while reading? · إيمتى رح تستخدمها وإنت عم تقرا؟
+  - type: input
+    id: version
+    attributes:
+      label: Siyaq version · نسخة سياق

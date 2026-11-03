@@ -44,7 +44,8 @@ async fn ai_request(
 #[tauri::command]
 fn open_link(app: tauri::AppHandle, url: String) -> Result<(), String> {
     use tauri_plugin_opener::OpenerExt;
-    if !url.starts_with("https://") {
+    // Web pages, and an email to the project's own address (for feedback).
+    if !url.starts_with("https://") && !url.starts_with("mailto:contact@x13labs.com") {
         return Err("only https links can be opened".into());
     }
     app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())

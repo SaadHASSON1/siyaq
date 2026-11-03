@@ -196,6 +196,8 @@
   footer .brand { font-size: 16px; color: var(--text); }
   footer nav { margin-inline-start: auto; display: flex; gap: 18px; }
   footer a { text-decoration: none; }
+  footer nav.feedback { flex-basis: 100%; margin: 0; justify-content: flex-end; font-size: 13px; }
+  @media (max-width: 620px) { footer nav, footer nav.feedback { margin: 0; flex-wrap: wrap; justify-content: flex-start; } }
   footer a:hover { color: var(--text); }
 
   .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s, transform .7s; }
@@ -360,6 +362,11 @@
       <a href="https://github.com/SaadHASSON1/siyaq/releases" data-t="releases"></a>
       <a href="https://github.com/SaadHASSON1/siyaq/blob/main/LICENSE">MIT</a>
     </nav>
+    <nav class="feedback">
+      <a href="https://github.com/SaadHASSON1/siyaq/issues/new?template=bug.yml" data-t="fbBug"></a>
+      <a href="https://github.com/SaadHASSON1/siyaq/issues/new?template=feature.yml" data-t="fbIdea"></a>
+      <a href="mailto:contact@x13labs.com" dir="ltr">contact@x13labs.com</a>
+    </nav>
   </div>
 </footer>
 
@@ -417,7 +424,7 @@ const T = {
     ],
     dlTitle: 'ابدأ القراءة الآن', dlSub: 'مجاني بالكامل. ستحتاج فقط إلى مفتاح Gemini مجاني، والتطبيق يرشدك إليه في دقيقة.',
     dlFine: 'التطبيق غير موقّع بشهادة مدفوعة بعد، لذلك قد يظهر تحذير عند أول تشغيل. على Mac: انقر بالزر الأيمن ثم «Open». على Windows: «More info» ثم «Run anyway».',
-    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `الإصدار ${v}`, releases: 'الإصدارات', footer: 'صُنع بحب للقرّاء · رخصة MIT',
+    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `الإصدار ${v}`, releases: 'الإصدارات', fbBug: 'بلّغ عن مشكلة', fbIdea: 'اقترح ميزة', footer: 'صُنع بحب للقرّاء · رخصة MIT',
   },
   en: {
     brand: 'Siyaq', navHow: 'How it works', navFeatures: 'Features', navDownload: 'Download', source: 'Source code',
@@ -449,7 +456,7 @@ const T = {
     ],
     dlTitle: 'Start reading now', dlSub: 'Completely free. You only need a free Gemini key, and the app walks you through it in a minute.',
     dlFine: 'Siyaq isn’t signed with a paid certificate yet, so the first launch may show a warning. On Mac: right-click → Open. On Windows: More info → Run anyway.',
-    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `Version ${v}`, releases: 'Releases', footer: 'Made with care for readers · MIT license',
+    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `Version ${v}`, releases: 'Releases', fbBug: 'Report a problem', fbIdea: 'Suggest a feature', footer: 'Made with care for readers · MIT license',
   },
   tr: {
     brand: 'Siyaq', navHow: 'Nasıl çalışır', navFeatures: 'Özellikler', navDownload: 'İndir', source: 'Kaynak kod',
@@ -481,7 +488,7 @@ const T = {
     ],
     dlTitle: 'Hemen okumaya başlayın', dlSub: 'Tamamen ücretsiz. Yalnızca ücretsiz bir Gemini anahtarı gerekir; uygulama bir dakikada yol gösterir.',
     dlFine: 'Siyaq henüz ücretli bir sertifikayla imzalanmadı; ilk açılışta uyarı görebilirsiniz. Mac’te: sağ tık → Open. Windows’ta: More info → Run anyway.',
-    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `Sürüm ${v}`, releases: 'Sürümler', footer: 'Okurlar için özenle yapıldı · MIT lisansı',
+    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `Sürüm ${v}`, releases: 'Sürümler', fbBug: 'Sorun bildir', fbIdea: 'Özellik öner', footer: 'Okurlar için özenle yapıldı · MIT lisansı',
   },
 };
 

@@ -128,6 +128,10 @@ npm run build   # بناء ملفات التثبيت لنظامك
 - [x] بطاقات المراجعة، والكلمات المحفوظة، والتحديث التلقائي
 - [ ] Android للهواتف والأجهزة اللوحية، مع خيار *سياق* في قائمة تحديد النص في كل التطبيقات
 
+## المشاكل والاقتراحات
+
+وجدت شيئاً لا يعمل، أو عندك فكرة؟ [بلّغ عن مشكلة](https://github.com/SaadHASSON1/siyaq/issues/new?template=bug.yml) أو [اقترح ميزة](https://github.com/SaadHASSON1/siyaq/issues/new?template=feature.yml) على GitHub، أو راسلنا على **contact@x13labs.com**. ويمكنك ذلك أيضاً من **الإعدادات** في سياق.
+
 ## الرخصة
 
 [MIT](LICENSE) © Saad HASSON

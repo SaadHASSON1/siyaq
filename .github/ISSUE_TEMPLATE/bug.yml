@@ -1,0 +1,26 @@
+name: Report a problem · بلّغ عن مشكلة
+description: Something doesn't work as it should · شي ما عم يشتغل متل ما لازم
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? · شو صار؟
+      description: What you did, what you expected, and what happened instead. A screenshot helps. · شو عملت، وشو كنت متوقّع، وشو صار بدالها. صورة الشاشة بتساعد كتير.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Siyaq version · نسخة سياق
+      placeholder: "0.5.1"
+  - type: input
+    id: system
+    attributes:
+      label: Device and system · الجهاز والنظام
+      placeholder: "MacBook Air 2017, macOS 12.7"
+  - type: input
+    id: book
+    attributes:
+      label: Book type · نوع الكتاب
+      description: PDF, EPUB, scanned… (please don't attach books you don't own) · PDF أو EPUB أو مصوّر…
