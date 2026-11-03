@@ -88,6 +88,58 @@ async function geminiCall(model, prompt, noThinking) {
     { 'x-goog-api-key': settings.apiKey }, { contents: [{ parts: [{ text: prompt }] }], generationConfig });
 }
 
+// ----- Streaming: the answer shows while it is still being written -----
+// Reads Gemini's server-sent events and calls onText with all of the answer so far; returns the whole answer.
+async function geminiStream(model, prompt, onText) {
+  const url = `${GEMINI}models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`;
+  const thinkingConfig = /gemini-2\./.test(model) ? { thinkingBudget: 0 } : { thinkingLevel: 'minimal' };
+  const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2, thinkingConfig } };
+  const headers = { 'x-goog-api-key': settings.apiKey, 'content-type': 'application/json' };
+  let buffer = '', text = '';
+  const feed = chunk => {
+    buffer += chunk;
+    for (let i; (i = buffer.indexOf('\n')) >= 0;) {
+      const line = buffer.slice(0, i).trim();
+      buffer = buffer.slice(i + 1);
+      if (!line.startsWith('data:')) continue;
+      try {
+        const part = JSON.parse(line.slice(5));
+        text += (part.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+        onText(text);
+      } catch {} // a keep-alive or an unfinished line
+    }
+  };
+  if (tauri) {
+    // In the app, through Rust (no CORS); pieces come over a channel, ending with a NUL.
+    const channel = new tauri.core.Channel();
+    const ended = new Promise(resolve => { channel.onmessage = m => (m === '\0' ? resolve() : feed(m)); });
+    await tauri.core.invoke('ai_stream', { url, headers, body, onChunk: channel });
+    await ended;
+  } else {
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(await res.text());
+    const reader = res.body.getReader(), decoder = new TextDecoder();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      feed(decoder.decode(value, { stream: true }));
+    }
+  }
+  feed('\n');
+  if (!text) throw new Error(t('badReply'));
+  return text;
+}
+
+// The string fields an unfinished JSON reply already has: {"translation": "…", "explanation": "half a sen…
+function partialFields(text) {
+  const out = {};
+  for (const m of text.matchAll(/"(\w+)"\s*:\s*"((?:[^"\\]|\\.)*)("?)/g)) {
+    const raw = m[2].replace(/\\(u[0-9a-fA-F]{0,3})?$/, ''); // an escape cut off at the end
+    try { out[m[1]] = JSON.parse(`"${raw}"`); } catch { out[m[1]] = raw; }
+  }
+  return out;
+}
+
 // People type names like "Gemini Flash Lite": turn that into an id, or match it to a model the key has.
 async function resolveGeminiModel(name) {
   const id = name.trim().toLowerCase().replace(/^models\//, '').replace(/\s+/g, '-');
@@ -129,17 +181,24 @@ async function askGemini(prompt) {
   throw new Error(lastError);
 }
 
-async function askAI(word, sentence) {
-  return askModel(buildPrompt(word, sentence));
+async function askAI(word, sentence, onPartial) {
+  return askModel(buildPrompt(word, sentence), 800, onPartial);
 }
 
 // Sends a prompt that asks for JSON to the chosen provider and returns the parsed reply.
-async function askModel(prompt, maxTokens = 800) {
+// onPartial (Gemini only) gets the reply so far while it streams in. Streaming uses the model that answered
+// last; the first lookup, or one whose stream fails, goes the usual way, which also finds a working model.
+async function askModel(prompt, maxTokens = 800, onPartial) {
   const model = settings.model || DEFAULT_MODELS[settings.provider];
   lastModel = model;
   let r, text;
   if (settings.provider === 'gemini') {
-    text = await askGemini(prompt);
+    const streamModel = onPartial && ((settings.model && await resolveGeminiModel(settings.model)) || geminiWorking);
+    if (streamModel) {
+      try { text = await geminiStream(streamModel, prompt, onPartial); lastModel = streamModel; }
+      catch { text = null; }
+    }
+    if (!text) text = await askGemini(prompt);
   } else if (settings.provider === 'anthropic') {
     r = await postJson('https://api.anthropic.com/v1/messages',
       { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
@@ -233,11 +292,19 @@ async function ask(question) {
   $('#askAnswers').prepend(box);
   $('#askInput').value = '';
   try {
-    const r = await askModel(buildAskPrompt(askPassage, question), 1500);
-    countUse('asks');
-    if (id !== askId && !box.isConnected) return;
     const d = `dir="${LANGS[settings.lang].dir}"`;
-    box.querySelector('.skeleton').outerHTML = String(r.answer || '').split(/\n\s*\n/).map(p => `<p class="explain" ${d}>${esc(p.trim())}</p>`).join('');
+    const paragraphs = answer => String(answer || '').split(/\n\s*\n/).filter(p => p.trim()).map(p => `<p class="explain" ${d}>${esc(p.trim())}</p>`).join('');
+    const body = document.createElement('div');
+    box.querySelector('.skeleton').before(body);
+    // The answer fills in as it is written; the skeleton stays until it is complete.
+    const r = await askModel(buildAskPrompt(askPassage, question), 1500, text => {
+      const p = partialFields(text);
+      if (p.answer) body.innerHTML = paragraphs(p.answer);
+    });
+    countUse('asks');
+    if (!box.isConnected) return;
+    body.innerHTML = paragraphs(r.answer);
+    box.querySelector('.skeleton')?.remove();
   } catch (err) {
     box.querySelector('.skeleton').outerHTML = stateCard('alert', esc(err.message), '', 'error');
   }

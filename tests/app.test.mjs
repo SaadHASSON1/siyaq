@@ -21,6 +21,7 @@ window.__TAURI__ = { app: { getVersion: async () => '9.9.9' }, event: { listen: 
 
 // Helpers inside the page: fake AI answers, clicking a word where it is drawn, selecting text.
 const HELPERS = `
+window.__realAskModel = window.__realAskModel || askModel;
 window.askModel = async prompt => /The reader asks/.test(prompt) ? { answer: 'An answer.\\n\\nSecond paragraph.' }
   : { translation: 'T-' + settings.lang, explanation: 'E', base_form: 'b', part_of_speech: 'noun', other_meanings: ['o1'], sentence_translation: 'ST' };
 window.spanWith = text => [...document.querySelectorAll('.textLayer > span')].find(s => s.textContent.includes(text));
@@ -196,6 +197,35 @@ test('desktop app: recent books, backup and restore, sharing with AI apps', asyn
   await page.waitFor('vocab.length === 2');
   await page.eval('setSharing(true)');
   await page.waitFor(`__calls.some(c => c[0] === 'mcp_share_book')`);
+});
+
+test('streaming: the meaning shows before the whole answer has arrived', async () => {
+  await fresh();
+  await openPdf();
+  // Gemini's streaming endpoint, faked: the reply comes in four pieces, 250 ms apart.
+  await page.eval(`{
+    askModel = __realAskModel; // the app's own, which streams
+    settings.provider = 'gemini'; geminiWorking = 'gemini-test-flash-lite';
+    const reply = '{"translation": "ضفّة النهر", "explanation": "Here it is the land by a river.", "base_form": "bank", "part_of_speech": "noun", "other_meanings": ["بنك"], "sentence_translation": "جلست على ضفّة النهر."}';
+    const pieces = [reply.slice(0, 40), reply.slice(40, 90), reply.slice(90, 150), reply.slice(150)];
+    window.__seen = [];
+    const realFetch = window.fetch;
+    window.fetch = async (url, init) => {
+      if (!String(url).includes(':streamGenerateContent')) return realFetch(url, init);
+      const enc = new TextEncoder();
+      const stream = new ReadableStream({ async start(c) {
+        for (const p of pieces) { await new Promise(r => setTimeout(r, 250)); c.enqueue(enc.encode('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text: p }] } }] }) + '\\r\\n\\r\\n')); }
+        c.close(); } });
+      return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    };
+    new MutationObserver(() => { const tr = document.querySelector('#lookup .tr'); if (tr) __seen.push([!!document.querySelector('#lookup .streaming'), tr.textContent]); }).observe(document.querySelector('#lookup'), { childList: true, subtree: true });
+  }`);
+  await page.eval(`clickWord('bank of the river', 'bank')`);
+  await page.waitFor(`document.querySelector('#lookup .result:not(.streaming) .tr')`, 5000);
+  const seen = await page.eval('__seen');
+  assert.ok(seen.some(([streaming, tr]) => streaming && tr === 'ضفّة النهر'), 'the meaning appeared while the answer was still streaming');
+  assert.equal(await page.eval(`document.querySelector('#lookup .tr').textContent`), 'ضفّة النهر');
+  assert.ok(await page.eval(`[...document.querySelectorAll('#lookup .chip')].some(c => c.textContent === 'بنك')`), 'the full answer, other meanings included, arrives at the end');
 });
 
 test('no JavaScript errors anywhere above', () => {

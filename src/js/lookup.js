@@ -34,7 +34,17 @@ async function lookup(word, sentence, fresh = false) {
   }
   try {
     const fromCache = cache.has(key), started = performance.now();
-    const r = cache.get(key) || await askAI(word, sentence);
+    // While the answer streams in, show what has arrived (the meaning first), with the rest still loading.
+    let frame = 0, latest = '';
+    const r = cache.get(key) || await askAI(word, sentence, text => {
+      latest = text;
+      if (!frame) frame = requestAnimationFrame(() => {
+        frame = 0;
+        const p = partialFields(latest);
+        if (id === lookupId && p.translation) renderPartial(word, sentence, p);
+      });
+    });
+    cancelAnimationFrame(frame);
     if (!fromCache) countUse('words');
     const { _took, ...kept } = r;
     cache.set(key, kept); // a saved answer shows no time: it took none
@@ -65,6 +75,19 @@ function renderResult(word, sentence, r) {
       ${r.sentence_translation ? section(t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr'), `<p ${d}>${esc(r.sentence_translation)}</p>`) : ''}
       ${others ? section(t('others'), `<div class="chips" ${d}>${others}</div>`) : ''}
       ${r._took ? `<p class="took" dir="ltr">${esc(r._took.model.replace(/^models\//, ''))} · ${(r._took.ms / 1000).toFixed(1)}s</p>` : ''}
+    </article>`;
+}
+
+// An answer still arriving: what is there so far, and a skeleton for the rest.
+function renderPartial(word, sentence, p) {
+  const d = `dir="${LANGS[settings.lang].dir}"`;
+  $('#lookup').innerHTML = `
+    <article class="result streaming">
+      ${wordHead(word, p.part_of_speech ? `<div class="meta"><span class="pos" ${d}>${esc(p.part_of_speech)}</span></div>` : '')}
+      <p class="tr" ${d}>${esc(p.translation)}</p>
+      ${p.explanation ? `<p class="explain" ${d}>${esc(p.explanation)}</p>` : ''}
+      ${sentenceBlock(word, sentence)}
+      ${p.sentence_translation ? section(t(sameLanguage() ? 'sentenceSimple' : 'sentenceTr'), `<p ${d}>${esc(p.sentence_translation)}</p>`) : '<div class="skeleton"><span class="short"></span></div>'}
     </article>`;
 }
 

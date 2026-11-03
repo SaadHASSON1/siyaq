@@ -40,6 +40,45 @@ async fn ai_request(
     Ok(AiResponse { status, body })
 }
 
+/// Like ai_request, but hands the reply over piece by piece as it arrives (server-sent events), so the
+/// meaning can show while the rest is still being written. Returns the status; an error reply is returned whole.
+#[tauri::command]
+async fn ai_stream(
+    url: String,
+    headers: HashMap<String, String>,
+    body: serde_json::Value,
+    on_chunk: tauri::ipc::Channel<String>,
+) -> Result<u16, String> {
+    use futures_util::StreamExt;
+    let mut req = reqwest::Client::new().post(&url).json(&body);
+    for (k, v) in headers {
+        req = req.header(k, v);
+    }
+    let res = req.send().await.map_err(|e| e.to_string())?;
+    let status = res.status().as_u16();
+    if !res.status().is_success() {
+        return Err(res.text().await.unwrap_or_default());
+    }
+    // Pieces can end in the middle of a character: hold back an unfinished one until the rest arrives.
+    let mut stream = res.bytes_stream();
+    let mut pending: Vec<u8> = Vec::new();
+    while let Some(chunk) = stream.next().await {
+        pending.extend_from_slice(&chunk.map_err(|e| e.to_string())?);
+        let valid = match std::str::from_utf8(&pending) {
+            Ok(_) => pending.len(),
+            Err(e) => e.valid_up_to(),
+        };
+        if valid > 0 {
+            let text = String::from_utf8_lossy(&pending[..valid]).into_owned();
+            pending.drain(..valid);
+            on_chunk.send(text).map_err(|e| e.to_string())?;
+        }
+    }
+    // A last, empty-but-for-NUL message says the reply is complete (channel messages arrive in order).
+    on_chunk.send("\0".into()).map_err(|e| e.to_string())?;
+    Ok(status)
+}
+
 /// Opens a web page in the user's browser (used for getting an API key).
 #[tauri::command]
 fn open_link(app: tauri::AppHandle, url: String) -> Result<(), String> {
@@ -151,6 +190,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             ai_request,
+            ai_stream,
             read_book,
             take_pending_file,
             open_link,

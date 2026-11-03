@@ -35,6 +35,12 @@ test('presentation forms: shaped Arabic letters read as plain letters', async ()
   assert.equal(text, 'الأمر بيطبع');
 });
 
+test('partialFields: the string fields an unfinished JSON reply already has', async () => {
+  assert.deepEqual(await call('partialFields', '{"translation": "ضفّة", "explanation": "half a sen'), { translation: 'ضفّة', explanation: 'half a sen' });
+  assert.deepEqual(await call('partialFields', '{"answer": "line one\\n\\nline two \\'), { answer: 'line one\n\nline two ' });
+  assert.deepEqual(await call('partialFields', '{"other_meanings": ["a", "b"]'), {}, 'arrays are left for the full reply');
+});
+
 test('cutSentence: to the nearest sentence end, at most 120 characters each side, cut between words', async () => {
   const text = 'First one. She sat on the bank of the river. Third one!';
   assert.equal(await call('cutSentence', text, text.indexOf('bank')), 'She sat on the bank of the river.');
