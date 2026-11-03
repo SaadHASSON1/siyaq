@@ -1,4 +1,9 @@
-<p align="center"><img src="src/logo.svg" width="96" alt="Glint"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="src/logo-dark.svg">
+    <img src="src/logo.svg" width="110" alt="Glint">
+  </picture>
+</p>
 
 # Glint
 

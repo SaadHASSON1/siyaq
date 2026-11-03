@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="45 33 560 560">
+  <!-- G: a thick ring open at the top right, closed by a crossbar with a slanted tip -->
+  <path d="M515.4 287.4A200 200 0 1 1 394.9 144.6" fill="none" stroke="#e8edf4" stroke-width="70"/>
+  <path d="M372 280H549.6L553.9 352H265Z" fill="#e8edf4"/>
+  <!-- the glint -->
+  <path d="M470 63Q488.6 141.4 565 160Q488.6 178.6 470 257Q451.4 178.6 375 160Q451.4 141.4 470 63Z" fill="#f4c542"/>
+  <path d="M378 189Q384.6 215.4 411 222Q384.6 228.6 378 255Q371.4 228.6 345 222Q371.4 215.4 378 189Z" fill="#f0b448"/>
+</svg>

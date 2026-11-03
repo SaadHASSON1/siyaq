@@ -23,6 +23,7 @@
     --shadow-pop: 0 10px 40px rgba(0,0,0,.18);
     --radius: 10px;
     --page-bg: #ffffff;
+    --logo: #102f52;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -30,7 +31,7 @@
       --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
       --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
       --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
-      --page-bg: #1b1b1a;
+      --page-bg: #1b1b1a; --logo: #e8edf4;
     }
   }
   :root[data-theme="dark"] {
@@ -38,7 +39,7 @@
     --border: #2f2e2b; --accent: #5fb39b; --accent-hover: #74c2ab; --accent-soft: #1f322c; --accent-text: #8fd1bd;
     --mark: rgba(242, 201, 76, .3); --danger: #e58a76;
     --shadow-page: 0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
-    --page-bg: #1b1b1a;
+    --page-bg: #1b1b1a; --logo: #e8edf4;
   }
 
   * { box-sizing: border-box; }
@@ -228,7 +229,7 @@
 <body>
 <header class="bar">
   <div class="brand">
-    <img class="logo" src="logo.svg" alt="">
+    <i data-logo class="logo"></i>
     <span>Glint</span>
   </div>
   <div class="book-title" id="bookTitle"></div>
@@ -274,7 +275,7 @@
   <div id="viewer">
     <div class="welcome" id="empty">
       <div class="welcome-card">
-        <img class="welcome-icon" src="logo.svg" alt="">
+        <i data-logo class="welcome-icon"></i>
         <h2 data-i18n="emptyTitle"></h2>
         <p data-i18n="emptyText"></p>
         <label class="btn primary lg"><i data-icon="folder"></i><span data-i18n="open"></span><input class="file-input" type="file" accept="application/pdf" hidden></label>
@@ -356,6 +357,8 @@ const ICONS = {
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
 };
+const LOGO = `<svg viewBox="45 33 560 560" aria-hidden="true"><path d="M515.4 287.4A200 200 0 1 1 394.9 144.6" fill="none" stroke="var(--logo)" stroke-width="70"/>  <path d="M372 280H549.6L553.9 352H265Z" fill="var(--logo)"/><path d="M470 63Q488.6 141.4 565 160Q488.6 178.6 470 257Q451.4 178.6 375 160Q451.4 141.4 470 63Z" fill="#f4c542"/>  <path d="M378 189Q384.6 215.4 411 222Q384.6 228.6 378 255Q371.4 228.6 345 222Q371.4 215.4 378 189Z" fill="#f0b448"/></svg>`;
+document.querySelectorAll('i[data-logo]').forEach(el => el.outerHTML = LOGO.replace('<svg', `<svg class="${el.className}"`));
 const icon = (name, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 document.querySelectorAll('i[data-icon]').forEach(el => el.outerHTML = icon(el.dataset.icon, el.className));
 
