@@ -238,6 +238,12 @@
   dialog input:focus, dialog select:focus { outline: none; border-color: var(--accent); }
   dialog small { display: block; margin-top: 6px; color: var(--muted); font-weight: 400; line-height: 1.5; }
   #setupFromSettings { margin-top: 12px; }
+  .mcp-box { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .mcp-box .check { display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; }
+  .mcp-box .check input { display: inline; width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .mcp-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .mcp-msg { color: var(--accent-text) !important; }
+  .mcp-msg.error { color: var(--danger) !important; }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
 
   /* ---------- Search ---------- */
@@ -440,6 +446,15 @@
     <label><span data-i18n="model"></span>
       <input name="model" dir="ltr">
     </label>
+    <div class="mcp-box" id="mcpBox">
+      <label class="check"><input type="checkbox" name="mcp"><span data-i18n="mcpToggle"></span></label>
+      <small data-i18n="mcpHelp"></small>
+      <div class="mcp-actions">
+        <button class="btn small" type="button" id="mcpClaude"><i data-icon="plug"></i><span data-i18n="mcpClaude"></span></button>
+        <button class="btn small" type="button" id="mcpCopy"><i data-icon="copy"></i><span data-i18n="mcpCopy"></span></button>
+      </div>
+      <small class="mcp-msg" id="mcpMsg" hidden></small>
+    </div>
     <div class="row">
       <button class="btn" value="cancel" formnovalidate data-i18n="cancel"></button>
       <button class="btn primary" value="save" data-i18n="save"></button>
@@ -476,7 +491,7 @@ const tauri = window.__TAURI__; // set when running as the installed app
 const $ = s => document.querySelector(s);
 const store = {
   get(k, d) { try { const v = localStorage.getItem('siyaq:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('siyaq:' + k, JSON.stringify(v)); } catch {} }
+  set(k, v) { try { localStorage.setItem('siyaq:' + k, JSON.stringify(v)); } catch {} if (k === 'vocab') setTimeout(queueShare); }
 };
 // The app was briefly called Glint; carry over settings, saved words and answers stored under that name.
 try {
@@ -498,6 +513,8 @@ const ICONS = {
   lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+  plug: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
   key: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
   alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
@@ -547,7 +564,7 @@ const STRINGS = {
     busy: 'خدمة الذكاء الاصطناعي مشغولة هلق. جرّب كمان شوي.', badReply: 'النموذج رجّع رد مش مفهوم',
     sentence: 'الجملة', sentenceTr: 'ترجمة الجملة', sentenceSimple: 'الجملة بكلمات أبسط', others: 'معاني تانية للكلمة',
     vocabEmpty: 'الكلمات اللي بتبحث عنها بتنحفظ هون تلقائياً.', export: 'تصدير لـ Anki', count: n => `${n} كلمة`, remove: 'احذف',
-    setupHelp: 'مساعدة بإعداد مفتاح Gemini', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
+    setupHelp: 'مساعدة بإعداد مفتاح Gemini', mcpToggle: 'الربط مع تطبيقات الذكاء الاصطناعي (MCP)', mcpHelp: 'بيخلّي Claude وغيره يشوفوا الصفحة اللي عم تقراها وكلماتك المحفوظة، ويضيفوا كلمات لبطاقاتك. ما بيوصلهم شي إلا لما تسألهم.', mcpClaude: 'ضيفه على Claude Desktop', mcpCopy: 'انسخ الإعداد لتطبيق تاني', mcpDone: 'تمام. سكّر Claude وافتحه من جديد، وبعدين اسأله عن كتابك.', mcpCopied: 'انتسخ. الصقه بإعدادات MCP بالتطبيق التاني.', mcpNotInstalled: 'انقل سياق لمجلد Applications أول، وافتحه من هونيك.', mcpAdded: 'انضافت {n} كلمة لكلماتك من تطبيق ذكاء اصطناعي', tabContents: 'الفهرس', noToc: 'هالكتاب ما فيه فهرس.', noBook: 'افتح كتاب لتشوف فهرسه.',
     search: 'بحث بالكتاب (⌘F)', searchPh: 'ابحث بالكتاب…', searchNone: 'ما في نتائج', searching: 'عم يدوّر…', prev: 'السابق', next: 'التالي', close: 'سكّر',
     speak: 'اسمع النطق', savedMeaning: 'من بحث سابق بجملة تانية.', explainHere: 'اشرحها بهالجملة',
     review: 'راجع', reveal: 'اكشف المعنى', again: 'ما عرفتها', good: 'عرفتها', reviewDone: 'خلصت مراجعة الكلمات لهلق 🎉',
@@ -579,7 +596,7 @@ const STRINGS = {
     busy: 'The AI service is busy right now. Try again in a moment.', badReply: 'The model sent back an answer we couldn’t read',
     sentence: 'Sentence', sentenceTr: 'Sentence translation', sentenceSimple: 'In simpler words', others: 'Other meanings',
     vocabEmpty: 'Words you look up are saved here automatically.', export: 'Export for Anki', count: n => `${n} ${n === 1 ? 'word' : 'words'}`, remove: 'Delete',
-    setupHelp: 'Help me set up a Gemini key', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
+    setupHelp: 'Help me set up a Gemini key', mcpToggle: 'Connect to AI apps (MCP)', mcpHelp: 'Lets Claude and similar apps see the page you’re reading and your saved words, and add words to your flashcards. They only see it when you ask them.', mcpClaude: 'Add to Claude Desktop', mcpCopy: 'Copy setup for another app', mcpDone: 'Done. Quit and reopen Claude, then ask it about your book.', mcpCopied: 'Copied. Paste it into the other app’s MCP settings.', mcpNotInstalled: 'Move Siyaq to the Applications folder first and open it from there.', mcpAdded: 'An AI app added {n} to My words', tabContents: 'Contents', noToc: 'This book has no table of contents.', noBook: 'Open a book to see its contents.',
     search: 'Search in book (⌘F)', searchPh: 'Search the book…', searchNone: 'No results', searching: 'Searching…', prev: 'Previous', next: 'Next', close: 'Close',
     speak: 'Hear it', savedMeaning: 'From an earlier lookup in another sentence.', explainHere: 'Explain it in this sentence',
     review: 'Review', reveal: 'Show meaning', again: 'Didn’t know', good: 'Knew it', reviewDone: 'You’re done reviewing for now 🎉',
@@ -611,7 +628,7 @@ const STRINGS = {
     busy: 'Yapay zekâ hizmeti şu anda yoğun. Biraz sonra tekrar deneyin.', badReply: 'Model okunamayan bir yanıt verdi',
     sentence: 'Cümle', sentenceTr: 'Cümlenin çevirisi', sentenceSimple: 'Daha basit sözcüklerle', others: 'Diğer anlamları',
     vocabEmpty: 'Aradığınız kelimeler burada otomatik olarak saklanır.', export: 'Anki için dışa aktar', count: n => `${n} kelime`, remove: 'Sil',
-    setupHelp: 'Gemini anahtarı kurulumu', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
+    setupHelp: 'Gemini anahtarı kurulumu', mcpToggle: 'Yapay zekâ uygulamalarına bağlan (MCP)', mcpHelp: 'Claude ve benzeri uygulamalar okuduğunuz sayfayı ve kayıtlı kelimelerinizi görür, kartlarınıza kelime ekleyebilir. Yalnızca siz sorduğunuzda görürler.', mcpClaude: 'Claude Desktop’a ekle', mcpCopy: 'Başka uygulama için kopyala', mcpDone: 'Tamam. Claude’u kapatıp yeniden açın, sonra ona kitabınızı sorun.', mcpCopied: 'Kopyalandı. Diğer uygulamanın MCP ayarlarına yapıştırın.', mcpNotInstalled: 'Önce Siyaq’ı Uygulamalar klasörüne taşıyın ve oradan açın.', mcpAdded: 'Bir yapay zekâ uygulaması Kelimelerim’e {n} kelime ekledi', tabContents: 'İçindekiler', noToc: 'Bu kitapta içindekiler yok.', noBook: 'İçindekileri görmek için bir kitap açın.',
     search: 'Kitapta ara (⌘F)', searchPh: 'Kitapta ara…', searchNone: 'Sonuç yok', searching: 'Aranıyor…', prev: 'Önceki', next: 'Sonraki', close: 'Kapat',
     speak: 'Dinle', savedMeaning: 'Başka bir cümlede daha önce aranmıştı.', explainHere: 'Bu cümlede açıkla',
     review: 'Tekrar et', reveal: 'Anlamı göster', again: 'Bilemedim', good: 'Bildim', reviewDone: 'Şimdilik tekrar bitti 🎉',
@@ -835,6 +852,7 @@ function currentPage() {
 function updatePageLabel() {
   const input = $('#pageInput');
   if (pdfDoc && document.activeElement !== input) input.value = currentPage();
+  queueShare();
 }
 
 function goToPage(n) {
@@ -1867,6 +1885,82 @@ function showToast(text, action) {
   if (!action) showToast.timer = setTimeout(() => { el.hidden = true; }, 4000);
 }
 
+// ---------- AI apps (MCP) ----------
+// With "Connect to AI apps" on, Claude Desktop and similar apps can read the open page and My words
+// through `siyaq --mcp` (src-tauri/src/mcp.rs), and add words. Nothing is shared while it is off.
+let shareTimer = null;
+function queueShare() {
+  if (!tauri || !settings.mcp) return;
+  clearTimeout(shareTimer);
+  shareTimer = setTimeout(shareState, 800);
+}
+
+async function pageText(n) {
+  try { return (await (await pdfDoc.getPage(n)).getTextContent()).items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim(); }
+  catch { return ''; }
+}
+
+async function shareState() {
+  let book = null;
+  if (pdfDoc) {
+    const page = currentPage(), text = [];
+    for (let n = page; n <= Math.min(page + 2, pdfDoc.numPages); n++) text.push({ page: n, text: await pageText(n) });
+    book = { title: bookName.replace(/\.(pdf|epub)$/i, ''), format: bookType, page, pages: pdfDoc.numPages, language: LANGS[bookLang]?.english || null, text };
+  }
+  const words = vocab.map(v => ({ word: v.word, translation: v.translation, explanation: v.explanation, sentence: v.sentence,
+    book: v.book, date: v.date, saved: Date.parse(v.date) || 0, box: v.box || 0, due: v.due || 0 }));
+  tauri.core.invoke('mcp_share', { state: { lang: LANGS[settings.lang].english, book, words } }).catch(() => {});
+}
+
+function setSharing(on) {
+  if (!tauri || on === !!settings.mcp) return;
+  settings.mcp = on;
+  if (on) shareState();
+  else tauri.core.invoke('mcp_share', { state: null }).catch(() => {});
+}
+
+// Words an AI app saved while Siyaq was open (or since it was last open).
+async function takeInbox() {
+  if (!tauri || !settings.mcp || document.hidden) return;
+  const added = await tauri.core.invoke('mcp_take_inbox').catch(() => []);
+  if (!added.length) return;
+  for (const w of added) {
+    vocab = vocab.filter(v => !(v.word.toLowerCase() === w.word.toLowerCase() && v.sentence === w.sentence));
+    vocab.unshift({ word: w.word, translation: w.translation, explanation: w.explanation, sentence: w.sentence, book: bookName, date: new Date().toISOString() });
+  }
+  store.set('vocab', vocab);
+  updateVocabCount();
+  refreshKnown();
+  if (!$('#vocab').hidden && !reviewQueue) renderVocab();
+  showToast(t('mcpAdded').replace('{n}', added.length));
+}
+setInterval(takeInbox, 4000);
+document.addEventListener('visibilitychange', takeInbox);
+
+function mcpMessage(text, error = false) {
+  const el = $('#mcpMsg');
+  el.textContent = text;
+  el.classList.toggle('error', error);
+  el.hidden = false;
+}
+$('#mcpClaude').onclick = async () => {
+  try {
+    await tauri.core.invoke('mcp_add_to_claude');
+    form.mcp.checked = true;
+    setSharing(true);
+    store.set('settings', settings);
+    mcpMessage(t('mcpDone'));
+  } catch (err) {
+    mcpMessage(String(err) === 'not-installed' ? t('mcpNotInstalled') : String(err), true);
+  }
+};
+$('#mcpCopy').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(await tauri.core.invoke('mcp_config'));
+    mcpMessage(t('mcpCopied'));
+  } catch (err) { mcpMessage(String(err), true); }
+};
+
 // ---------- First-run setup ----------
 const AI_STUDIO = 'https://aistudio.google.com/apikey';
 
@@ -1942,6 +2036,9 @@ function syncProviderFields() {
 }
 function openSettings() {
   for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
+  form.mcp.checked = !!settings.mcp;
+  $('#mcpBox').hidden = !tauri || /Android|iPhone|iPad/.test(navigator.userAgent); // AI desktop apps only
+  $('#mcpMsg').hidden = true;
   syncProviderFields();
   $('#settings').showModal();
 }
@@ -1950,6 +2047,7 @@ $('#settings').addEventListener('close', () => {
   if ($('#settings').returnValue !== 'save') return;
   const uiChanged = form.uiLang.value !== settings.uiLang;
   for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) settings[k] = form[k].value.trim();
+  setSharing(form.mcp.checked);
   store.set('settings', settings);
   applyTheme();
   if (uiChanged) {

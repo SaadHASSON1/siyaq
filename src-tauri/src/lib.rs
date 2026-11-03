@@ -4,6 +4,8 @@ use std::sync::Mutex;
 
 use tauri::{ipc::Response, Emitter, Manager};
 
+pub mod mcp;
+
 /// A book the OS asked us to open before the page was ready to receive it.
 #[derive(Default)]
 struct PendingFile(Mutex<Option<PathBuf>>);
@@ -112,7 +114,11 @@ pub fn run() {
             take_pending_file,
             open_link,
             check_update,
-            install_update
+            install_update,
+            mcp::mcp_share,
+            mcp::mcp_take_inbox,
+            mcp::mcp_config,
+            mcp::mcp_add_to_claude
         ])
         .setup(|app| {
             #[cfg(desktop)]

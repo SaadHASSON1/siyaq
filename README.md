@@ -54,6 +54,7 @@ When you read a book in a language you're still learning, every unknown word mea
 **Remembering**
 - 📝 **Every word you look up is saved** and underlined wherever it appears again
 - 🃏 **Flashcards** with spaced repetition, or export to Anki
+- 🤖 **Works with Claude** and other MCP apps: ask about your book and your words
 
 **Respect**
 - 🔒 **Your books never leave your device.** Only the sentence you ask about is sent to the AI.
@@ -81,6 +82,15 @@ The easiest way: **[saadhasson1.github.io/siyaq](https://saadhasson1.github.io/s
 3. Click any word.
 
 You can also use [Ollama](https://ollama.com), any OpenAI-compatible service, or Anthropic, from **Settings**.
+
+## Use it with Claude and other AI apps (MCP)
+
+Siyaq can talk to AI apps that support [MCP](https://modelcontextprotocol.io), such as Claude Desktop. Then you can ask things like *"Quiz me on the words I saved this week"* or *"Explain the page I'm on"*, and add words to your flashcards from the chat.
+
+1. In Siyaq, open **Settings** and turn on **Connect to AI apps**.
+2. Click **Add to Claude Desktop**, then quit and reopen Claude. For another app, click **Copy setup** and paste it into that app's MCP settings.
+
+Nothing is shared until you turn it on. The AI app sees the page you're on and your saved words only when you ask it something, and it uses your own account with that app. Word lookups inside Siyaq keep using your own API key, as before.
 
 ## Build from source
 
