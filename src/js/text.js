@@ -50,7 +50,7 @@ function caretAt(x, y) {
 // ---------- Reading order ----------
 // PDF text comes piece by piece in the order it sits on the page, left to right. Arabic (and Hebrew) lines read
 // right to left, with English and numbers inside them still left to right: put each line's pieces in reading order.
-const RTL = '\\u0590-\\u08FF\\uFB1D-\\uFDFF\\uFE70-\\uFEFF', LTR = 'A-Za-z0-9\\u00C0-\\u024F';
+const RTL = '\\u0590-\\u08FF\\uFB1D-\\uFDFF\\uFE70-\\uFEFF', LTR = 'A-Za-z0-9\\u00C0-\\u024F', LTR_LETTERS = 'A-Za-z\\u00C0-\\u024F';
 const isRtl = t => new RegExp(`[${RTL}]`).test(t), isLtr = t => new RegExp(`[${LTR}]`).test(t);
 const countOf = (texts, chars) => texts.reduce((n, t) => n + (t.match(new RegExp(`[${chars}]`, 'g')) || []).length, 0);
 function readingOrder(texts) {
@@ -70,7 +70,8 @@ function readingOrder(texts) {
     }
     return list;
   };
-  return countOf(texts, RTL) >= countOf(texts, LTR) ? flipRuns(order.reverse(), 'L') : flipRuns(order, 'R');
+  // The line's direction comes from its letters; digits have none of their own ("سنة 2026" is right to left).
+  return countOf(texts, RTL) >= countOf(texts, LTR_LETTERS) ? flipRuns(order.reverse(), 'L') : flipRuns(order, 'R');
 }
 
 // A text layer as lines: each with its pieces in reading order, the line's text, and where each piece starts in it.
