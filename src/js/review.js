@@ -28,7 +28,7 @@ function showCard(revealed) {
             ${wordHead(v.word)}
             ${v.sentence ? `<blockquote class="sentence" dir="auto">${markWord(v.sentence, v.word)}</blockquote>` : ''}
           </div>
-          <div class="card face back">
+          <div class="card face rcard-back">
             ${wordHead(v.word)}
             <div class="answer"><p class="tr" ${d}>${esc(v.translation)}</p><p class="explain" ${d}>${esc(v.explanation || '')}</p></div>
           </div>

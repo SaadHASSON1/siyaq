@@ -443,8 +443,8 @@ dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24
 .rcard.on { cursor: default; }
 .rcard-in { display: grid; transition: transform .6s cubic-bezier(.3, .7, .3, 1); transform-style: preserve-3d; }
 .rcard-in > .face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.rcard-in > .back { transform: rotateY(180deg); display: flex; flex-direction: column; justify-content: center; }
-.rcard-in > .back .answer { border-top: 0; margin-top: 8px; padding-top: 0; }
+.rcard-in > .rcard-back { transform: rotateY(180deg); display: flex; flex-direction: column; justify-content: center; }
+.rcard-in > .rcard-back .answer { border-top: 0; margin-top: 8px; padding-top: 0; }
 .rcard.on .rcard-in { transform: rotateY(180deg); }
 @media (prefers-reduced-motion: reduce) { .rcard-in { transition: none; } }
 .review-actions { display: flex; gap: 8px; }

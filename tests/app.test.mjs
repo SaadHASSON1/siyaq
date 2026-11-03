@@ -99,6 +99,10 @@ test('My words: a tab per language pair, and the arrow back to the page', async 
 test('review cards turn over to show the answer', async () => {
   await page.eval(`vocab.forEach(v => v.due = 0); showTab('vocab'); document.querySelector('#reviewBtn').click(); document.querySelector('#revealBtn').click()`);
   assert.ok(await page.eval(`document.querySelector('#rcard').classList.contains('on') && !!document.querySelector('#goodBtn')`));
+  await page.sleep(700); // the turn takes .6 s
+  // The back must sit exactly where the front does (it once took the Back button's styles from a shared class name).
+  const [front, back] = await page.eval(`['#rcard', '#rcard .rcard-back'].map(s => { const b = document.querySelector(s).getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(Math.round); })`);
+  assert.deepEqual(back, front);
   await page.eval(`document.querySelector('#listBtn').click()`);
 });
 
