@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سياق · Siyaq — اقرأ بأي لغة دون أن تغادر الصفحة</title>
+<meta name="description" content="قارئ PDF وEPUB مجاني ومفتوح المصدر: اضغط على أي كلمة ويظهر معناها حسب الجملة التي وردت فيها. عربي، إنجليزي، تركي.">
+<meta property="og:title" content="سياق · Siyaq">
+<meta property="og:description" content="Click any word in a PDF or EPUB and see what it means in that sentence. Free and open source.">
+<meta property="og:image" content="https://saadhasson1.github.io/siyaq/screenshot-en-dark.png">
+<meta name="theme-color" content="#0c1e33">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Literata:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfaf7; --bg-2: #f3f1ec; --surface: #ffffff; --text: #0f1b2d; --muted: #5d6573;
+    --border: #e6e2da; --navy: #0c1e33; --green: #1fb08c; --green-dark: #17786c; --gold: #c9a45a;
+    --accent-soft: #e4f3ee; --mark: rgba(242, 201, 76, .55); --shadow: 0 24px 60px -24px rgba(12, 30, 51, .28);
+    --logo: url("logo.svg");
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1320; --bg-2: #101a2a; --surface: #142033; --text: #eef1f6; --muted: #9aa5b5;
+      --border: #22304a; --accent-soft: #123a35; --mark: rgba(242, 201, 76, .35); --shadow: 0 24px 60px -24px rgba(0, 0, 0, .7);
+      --logo: url("logo-dark.svg");
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.65 "IBM Plex Sans Arabic", "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+  }
+  :lang(en) body, :lang(tr) body { font-family: "Inter", system-ui, sans-serif; }
+  a { color: inherit; }
+  img { max-width: 100%; display: block; }
+  .wrap { width: min(1120px, 100% - 40px); margin-inline: auto; }
+  .logo { width: 44px; height: 30px; background: var(--logo) center / contain no-repeat; flex: none; }
+
+  /* ---------- Nav ---------- */
+  .nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid transparent; transition: border-color .2s; }
+  .nav.scrolled { border-bottom-color: var(--border); }
+  .nav .wrap { display: flex; align-items: center; gap: 24px; height: 68px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; text-decoration: none; }
+  .nav-links { display: flex; gap: 22px; margin-inline-start: auto; font-size: 15px; }
+  .nav-links a { text-decoration: none; color: var(--muted); transition: color .15s; }
+  .nav-links a:hover { color: var(--text); }
+  .langs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; }
+  .langs button { border: 0; background: none; color: var(--muted); font: 600 13px "Inter", sans-serif; padding: 5px 11px; border-radius: 999px; cursor: pointer; }
+  .langs button.on { background: var(--text); color: var(--bg); }
+
+  /* ---------- Buttons ---------- */
+  .btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 24px; border-radius: 14px; font-weight: 600; font-size: 16px; text-decoration: none; transition: transform .15s, box-shadow .15s, background .15s; }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .btn.primary { background: var(--navy); color: #fff; box-shadow: 0 10px 30px -10px rgba(12, 30, 51, .6); }
+  @media (prefers-color-scheme: dark) { .btn.primary { background: var(--green); color: #06231c; box-shadow: 0 10px 30px -10px rgba(31, 176, 140, .5); } }
+  .btn.primary:hover { transform: translateY(-2px); }
+  .btn.ghost { border: 1px solid var(--border); background: var(--surface); }
+  .btn.ghost:hover { background: var(--bg-2); }
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; overflow: hidden; padding: 72px 0 96px; isolation: isolate; }
+  .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; z-index: -1; }
+  .hero::before { width: 520px; height: 520px; background: var(--green); top: 60px; inset-inline-end: -180px; }
+  .hero::after { width: 420px; height: 420px; background: var(--gold); bottom: -200px; inset-inline-start: -140px; opacity: .25; }
+  .hero .wrap { display: grid; grid-template-columns: 1fr 1.05fr; gap: 56px; align-items: center; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--green-dark); font-size: 14px; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { .pill { color: #7fe0c4; } }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(31, 176, 140, .2); }
+  h1 { font-size: clamp(38px, 5.2vw, 62px); line-height: 1.12; margin: 20px 0 18px; letter-spacing: -.02em; }
+  h1 .hl { background: linear-gradient(transparent 62%, var(--mark) 62%); padding: 0 4px; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 520px; margin: 0 0 32px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .cta-note { width: 100%; margin-top: 10px; font-size: 14px; color: var(--muted); }
+
+  /* The demo: a book page where a cursor clicks a word and the meaning appears. */
+  .demo { position: relative; direction: ltr; }
+  .page { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 40px 46px; box-shadow: var(--shadow); min-height: 360px; }
+  .page .chapter { font: 500 12px "Inter", sans-serif; letter-spacing: .2em; color: var(--muted); margin-bottom: 18px; }
+  .lines span.bar { display: block; height: 11px; border-radius: 6px; background: var(--bg-2); margin: 13px 0; }
+  .sentence { font: 25px/1.5 "Literata", Georgia, serif; margin: 22px 0; min-height: 76px; }
+  .sentence .w { display: inline-block; opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s; }
+  .sentence.in .w { opacity: 1; transform: none; }
+  .sentence .w.target { position: relative; border-radius: 6px; transition: opacity .35s, transform .35s, background .3s; padding: 0 2px; margin: 0 -2px; }
+  .sentence .w.target.lit { background: var(--mark); }
+  .cursor { position: absolute; top: 0; left: 0; width: 26px; height: 26px; z-index: 3; pointer-events: none; transition: transform .9s cubic-bezier(.65, 0, .35, 1), opacity .3s; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .25)); }
+  .ripple { position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; border: 2px solid var(--green); opacity: 0; pointer-events: none; z-index: 2; }
+  .ripple.go { animation: ripple .6s ease-out; }
+  @keyframes ripple { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+  .card {
+    position: absolute; z-index: 4; width: 290px; padding: 18px 20px 16px; border-radius: 16px; background: var(--surface);
+    border: 1px solid var(--border); box-shadow: 0 18px 50px -12px rgba(12, 30, 51, .35); text-align: start;
+    opacity: 0; transform: translateY(10px) scale(.97); transition: opacity .3s, transform .35s cubic-bezier(.2, .9, .3, 1.2); pointer-events: none;
+  }
+  .card.show { opacity: 1; transform: none; }
+  .card .head { display: flex; align-items: baseline; gap: 10px; direction: ltr; }
+  .card .word { font: 700 22px "Inter", sans-serif; }
+  .card .pos { font-size: 12px; color: var(--muted); background: var(--bg-2); padding: 1px 8px; border-radius: 6px; }
+  .card .meaning { font-size: 22px; font-weight: 700; color: var(--green-dark); margin: 6px 0 4px; }
+  @media (prefers-color-scheme: dark) { .card .meaning { color: #6fdcbc; } }
+  .card .note { font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .card .spark { position: absolute; top: -12px; inset-inline-end: 14px; width: 26px; height: 26px; color: var(--gold); opacity: 0; transform: scale(.4) rotate(-20deg); transition: opacity .3s .15s, transform .45s .15s cubic-bezier(.2, 1.4, .4, 1); }
+  .card.show .spark { opacity: 1; transform: none; }
+  .demo .tag { position: absolute; bottom: -16px; inset-inline-start: 28px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--navy); color: #fff; font: 600 13px "Inter", sans-serif; box-shadow: var(--shadow); }
+  .demo .tag b { color: var(--gold); font-weight: 600; }
+
+  /* ---------- Sections ---------- */
+  section.block { padding: 96px 0; }
+  section.alt { background: var(--bg-2); }
+  .eyebrow { color: var(--green-dark); font-weight: 700; font-size: 14px; letter-spacing: .04em; }
+  @media (prefers-color-scheme: dark) { .eyebrow { color: #6fdcbc; } }
+  h2 { font-size: clamp(30px, 3.6vw, 42px); line-height: 1.2; margin: 8px 0 14px; letter-spacing: -.015em; }
+  .sub { color: var(--muted); max-width: 620px; margin: 0 0 48px; font-size: 18px; }
+  .center { text-align: center; }
+  .center .sub { margin-inline: auto; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+  .step { position: relative; padding: 28px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); }
+  .step::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--navy); color: #fff; font: 700 17px "Inter", sans-serif; margin-bottom: 16px; }
+  @media (prefers-color-scheme: dark) { .step::before { background: var(--green); color: #06231c; } }
+  .step h3 { margin: 0 0 6px; font-size: 19px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15.5px; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .feature { padding: 24px; border-radius: 18px; background: var(--surface); border: 1px solid var(--border); transition: transform .2s, box-shadow .2s; }
+  .feature:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+  .feature .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--green-dark); margin-bottom: 14px; }
+  @media (prefers-color-scheme: dark) { .feature .ico { color: #6fdcbc; } }
+  .feature .ico svg { width: 22px; height: 22px; }
+  .feature h3 { margin: 0 0 4px; font-size: 17px; }
+  .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .shots { position: relative; }
+  .shot-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); margin-bottom: 24px; }
+  .shot-tabs button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; padding: 7px 18px; border-radius: 999px; cursor: pointer; }
+  .shot-tabs button.on { background: var(--navy); color: #fff; }
+  .frame { border-radius: 18px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--surface); }
+  .frame .chrome { display: flex; gap: 7px; padding: 12px 16px; border-bottom: 1px solid var(--border); direction: ltr; }
+  .frame .chrome i { width: 11px; height: 11px; border-radius: 50%; background: var(--border); }
+  .frame img { width: 100%; }
+
+  .privacy { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .privacy ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .privacy li { display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
+  .privacy li svg { width: 22px; height: 22px; flex: none; color: var(--green); margin-top: 2px; }
+  .privacy li b { display: block; }
+  .privacy li span { color: var(--muted); font-size: 15px; }
+
+  .download { position: relative; overflow: hidden; border-radius: 28px; padding: 64px 48px; background: var(--navy); color: #fff; text-align: center; }
+  .download::before { content: ""; position: absolute; width: 480px; height: 480px; border-radius: 50%; background: var(--green); filter: blur(110px); opacity: .35; top: -220px; inset-inline-start: -100px; }
+  .download > * { position: relative; }
+  .download h2 { color: #fff; }
+  .download .sub { color: #b9c4d6; }
+  .download .btn.primary { background: #fff; color: var(--navy); box-shadow: none; }
+  .download .others { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  .download .others a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .18); color: #dfe6f1; text-decoration: none; font-size: 15px; }
+  .download .others a:hover { background: rgba(255, 255, 255, .08); }
+  .download .others svg { width: 18px; height: 18px; }
+  .download .fine { margin: 26px auto 0; max-width: 560px; font-size: 14px; color: #9fb0c8; }
+  .version { font: 500 13px "Inter", sans-serif; color: #9fb0c8; margin-top: 12px; }
+
+  footer { padding: 40px 0 56px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  footer .brand { font-size: 16px; color: var(--text); }
+  footer nav { margin-inline-start: auto; display: flex; gap: 18px; }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s, transform .7s; }
+  .reveal.seen { opacity: 1; transform: none; }
+
+  @media (max-width: 960px) {
+    .hero .wrap, .privacy { grid-template-columns: 1fr; }
+    .hero { padding-top: 40px; }
+    .features { grid-template-columns: 1fr 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .langs { margin-inline-start: auto; }
+  }
+  @media (max-width: 620px) {
+    body { font-size: 16px; }
+    .hero::before { width: 320px; height: 320px; top: 120px; }
+    .features { grid-template-columns: 1fr; }
+    .page { padding: 28px 24px 36px; min-height: 330px; }
+    .sentence { font-size: 21px; }
+    .card { width: 250px; }
+    .download { padding: 48px 22px; border-radius: 22px; }
+    section.block { padding: 72px 0; }
+    .btn { height: 50px; padding: 0 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#"><span class="logo" role="img" aria-label="Siyaq"></span><span data-t="brand"></span></a>
+    <nav class="nav-links">
+      <a href="#how" data-t="navHow"></a>
+      <a href="#features" data-t="navFeatures"></a>
+      <a href="#download" data-t="navDownload"></a>
+      <a href="https://github.com/SaadHASSON1/siyaq">GitHub</a>
+    </nav>
+    <div class="langs" role="group" aria-label="Language">
+      <button data-lang="ar">ع</button><button data-lang="en">EN</button><button data-lang="tr">TR</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="pill"><i></i><span data-t="pill"></span></span>
+        <h1 data-t="heroTitle"></h1>
+        <p class="lead" data-t="heroLead"></p>
+        <div class="cta">
+          <a class="btn primary" data-dl href="https://github.com/SaadHASSON1/siyaq/releases/latest"><span data-os-icon></span><span data-dl-label></span></a>
+          <a class="btn ghost" href="https://github.com/SaadHASSON1/siyaq"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg><span data-t="source"></span></a>
+          <div class="cta-note" data-t="ctaNote"></div>
+        </div>
+      </div>
+
+      <div class="demo" id="demo" aria-hidden="true">
+        <div class="page" id="demoPage">
+          <div class="chapter">CHAPTER ONE</div>
+          <div class="lines"><span class="bar" style="width:92%"></span><span class="bar" style="width:84%"></span></div>
+          <div class="sentence" id="sentence"></div>
+          <div class="lines"><span class="bar" style="width:96%"></span><span class="bar" style="width:88%"></span><span class="bar" style="width:62%"></span></div>
+          <div class="ripple" id="ripple"></div>
+          <svg class="cursor" id="cursor" viewBox="0 0 24 24"><path d="M5 3l14 7.5-6.2 1.7L10 18.5z" fill="#fff" stroke="#0c1e33" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <div class="card" id="card">
+            <svg class="spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1c.9 5.6 2.4 7.1 11 8.5-8.6 1.4-10.1 2.9-11 13.5C11.1 12.4 9.6 10.9 1 9.5 9.6 8.1 11.1 6.6 12 1z"/></svg>
+            <div class="head"><span class="word" id="cardWord"></span><span class="pos" id="cardPos"></span></div>
+            <div class="meaning" id="cardMeaning"></div>
+            <div class="note" id="cardNote"></div>
+          </div>
+        </div>
+        <div class="tag">English <span>→</span> <b id="demoTarget"></b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block alt" id="how">
+    <div class="wrap">
+      <div class="center reveal">
+        <div class="eyebrow" data-t="howEyebrow"></div>
+        <h2 data-t="howTitle"></h2>
+        <p class="sub" data-t="howSub"></p>
+      </div>
+      <div class="steps">
+        <div class="step reveal"><h3 data-t="s1t"></h3><p data-t="s1p"></p></div>
+        <div class="step reveal"><h3 data-t="s2t"></h3><p data-t="s2p"></p></div>
+        <div class="step reveal"><h3 data-t="s3t"></h3><p data-t="s3p"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="eyebrow" data-t="featEyebrow"></div>
+        <h2 data-t="featTitle"></h2>
+        <p class="sub" data-t="featSub"></p>
+      </div>
+      <div class="features" id="featureGrid"></div>
+    </div>
+  </section>
+
+  <section class="block alt">
+    <div class="wrap center shots">
+      <div class="reveal">
+        <div class="eyebrow" data-t="shotEyebrow"></div>
+        <h2 data-t="shotTitle"></h2>
+      </div>
+      <div class="shot-tabs reveal" role="tablist">
+        <button class="on" data-shot="screenshot-ar-light.png" data-t="shotLight"></button>
+        <button data-shot="screenshot-en-dark.png" data-t="shotDark"></button>
+      </div>
+      <div class="frame reveal"><div class="chrome"><i></i><i></i><i></i></div><img id="shot" src="screenshot-ar-light.png" alt="" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap privacy">
+      <div class="reveal">
+        <div class="eyebrow" data-t="privEyebrow"></div>
+        <h2 data-t="privTitle"></h2>
+        <p class="sub" data-t="privSub" style="margin-bottom:0"></p>
+      </div>
+      <ul class="reveal" id="privacyList"></ul>
+    </div>
+  </section>
+
+  <section class="block" id="download" style="padding-top:0">
+    <div class="wrap">
+      <div class="download reveal">
+        <h2 data-t="dlTitle"></h2>
+        <p class="sub" data-t="dlSub" style="margin-inline:auto"></p>
+        <a class="btn primary" data-dl href="https://github.com/SaadHASSON1/siyaq/releases/latest"><span data-os-icon></span><span data-dl-label></span></a>
+        <div class="version" id="version"></div>
+        <div class="others" id="others"></div>
+        <p class="fine" data-t="dlFine"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#"><span class="logo" role="img" aria-label="Siyaq"></span><span data-t="brand"></span></a>
+    <span data-t="footer"></span>
+    <nav>
+      <a href="https://github.com/SaadHASSON1/siyaq">GitHub</a>
+      <a href="https://github.com/SaadHASSON1/siyaq/releases" data-t="releases"></a>
+      <a href="https://github.com/SaadHASSON1/siyaq/blob/main/LICENSE">MIT</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+const REPO = 'SaadHASSON1/siyaq';
+const ICONS = {
+  mac: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.24 1.83-3.32 1.91-3.37-1.04-1.52-2.66-1.73-3.24-1.75-1.38-.14-2.69.81-3.39.81-.7 0-1.78-.79-2.92-.77-1.5.02-2.89.87-3.66 2.21-1.56 2.71-.4 6.72 1.12 8.92.75 1.07 1.63 2.28 2.79 2.24 1.12-.05 1.54-.72 2.9-.72 1.35 0 1.74.72 2.92.7 1.21-.02 1.97-1.09 2.71-2.17.85-1.25 1.2-2.46 1.22-2.52-.03-.01-2.34-.9-2.36-3.58zM14.14 6.03c.62-.75 1.04-1.79.92-2.83-.89.04-1.97.59-2.61 1.34-.57.66-1.07 1.72-.94 2.74 1 .08 2.01-.5 2.63-1.25z"/></svg>',
+  windows: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.5v7H3zM11.5 4.4 21 3v8.5h-9.5zM3 12.5h7.5v7L3 18.5zM11.5 12.5H21V21l-9.5-1.4z"/></svg>',
+  linux: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-2 0-3 1.8-3 4 0 1.5-.6 2.6-1.6 4C6 12.8 5 14.5 5 16.5 5 19 7.5 21 12 21s7-2 7-4.5c0-2-1-3.7-2.4-5.5C15.6 9.6 15 8.5 15 7c0-2.2-1-4-3-4z"/><path d="M10 8h.01M14 8h.01"/><path d="M11 10.5h2"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>',
+};
+const FEATURE_ICONS = {
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18"/>',
+  scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+  book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  cards: '<rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/>',
+  volume: '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+};
+const svg = (name, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra}>${FEATURE_ICONS[name]}</svg>`;
+
+const T = {
+  ar: {
+    brand: 'سياق', navHow: 'كيف يعمل', navFeatures: 'المميزات', navDownload: 'التحميل', source: 'الكود المصدري',
+    pill: 'مجاني ومفتوح المصدر', heroTitle: 'اقرأ بأي لغة،<br>دون أن <span class="hl">تغادر الصفحة</span>.',
+    heroLead: 'اضغط على أي كلمة في كتاب PDF أو EPUB، ويظهر معناها كما وردت في تلك الجملة بالذات، لا معناها الأشهر في القاموس.',
+    ctaNote: 'لـ Mac وWindows وLinux · بالعربية والإنجليزية والتركية', dlFor: { mac: 'حمّل لـ Mac', windows: 'حمّل لـ Windows', linux: 'حمّل لـ Linux', other: 'حمّل سياق' },
+    howEyebrow: 'كيف يعمل', howTitle: 'ثلاث خطوات، ولا شيء غيرها', howSub: 'لا حسابات، ولا نسخ ولصق، ولا تنقّل بين النوافذ.',
+    s1t: 'افتح كتابك', s1p: 'أي ملف PDF أو EPUB على جهازك، حتى الكتب الممسوحة ضوئياً.',
+    s2t: 'اضغط على الكلمة', s2p: 'أو ظلّل عبارة كاملة. يقرأ سياق الجملة كلها قبل أن يجيب.',
+    s3t: 'افهمها وتابع', s3p: 'المعنى الصحيح وسببه بجانب الصفحة، والكلمة تُحفظ لتراجعها لاحقاً.',
+    featEyebrow: 'المميزات', featTitle: 'كل ما يحتاجه قارئ بلغة ثانية', featSub: 'صُمّم لمن يقرأ ليتعلّم، ولمن يتعلّم ليقرأ.',
+    features: [
+      ['target', 'المعنى حسب السياق', 'الترجمة التي تناسب الجملة، مع شرح قصير وترجمة الجملة كاملة.'],
+      ['globe', 'ثلاث لغات', 'ترجم إلى العربية أو الإنجليزية أو التركية، ولغة الكتاب تُكتشف تلقائياً.'],
+      ['scan', 'الكتب الممسوحة ضوئياً', 'الصفحات التي هي صور تُقرأ على جهازك، دون إنترنت.'],
+      ['book', 'PDF وEPUB', 'فهرس جانبي، وبحث، وروابط تعمل، ويتذكّر أين توقفت.'],
+      ['cards', 'بطاقات مراجعة', 'كل كلمة تُحفظ، وتعود إليك للمراجعة في الوقت المناسب.'],
+      ['bookmark', 'كلماتك في الكتاب', 'الكلمات التي بحثت عنها يوضع تحتها خط، ومعناها يظهر فوراً.'],
+      ['volume', 'النطق', 'استمع إلى أي كلمة بضغطة واحدة.'],
+      ['moon', 'وضع داكن حقيقي', 'الصفحات نفسها تصبح داكنة، والصور تبقى بألوانها.'],
+      ['refresh', 'يحدّث نفسه', 'كل نسخة جديدة تصلك من داخل التطبيق.'],
+    ],
+    shotEyebrow: 'من داخل التطبيق', shotTitle: 'هادئ، ومرتّب، ومصمّم للقراءة الطويلة', shotLight: 'فاتح · العربية', shotDark: 'داكن · English',
+    privEyebrow: 'الخصوصية', privTitle: 'كتبك تبقى لك', privSub: 'سياق لا يملك خوادم، ولا يطلب حساباً، ولا يتتبّعك.',
+    privacy: [
+      ['lock', 'الكتاب لا يغادر جهازك', 'يُفتح ويُقرأ على جهازك، ولا يُرفع إلى أي مكان.'],
+      ['check', 'جملة واحدة فقط', 'عند البحث تُرسل الكلمة وجملتها فقط إلى الذكاء الاصطناعي الذي تختاره.'],
+      ['check', 'مفتوح المصدر', 'كل سطر من الكود متاح لتقرأه وتتحقّق منه.'],
+    ],
+    dlTitle: 'ابدأ القراءة الآن', dlSub: 'مجاني بالكامل. ستحتاج فقط إلى مفتاح Gemini مجاني، والتطبيق يرشدك إليه في دقيقة.',
+    dlFine: 'التطبيق غير موقّع بشهادة مدفوعة بعد، لذلك قد يظهر تحذير عند أول تشغيل. على Mac: انقر بالزر الأيمن ثم «Open». على Windows: «More info» ثم «Run anyway».',
+    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `الإصدار ${v}`, releases: 'الإصدارات', footer: 'صُنع بحب للقرّاء · رخصة MIT',
+  },
+  en: {
+    brand: 'Siyaq', navHow: 'How it works', navFeatures: 'Features', navDownload: 'Download', source: 'Source code',
+    pill: 'Free and open source', heroTitle: 'Read any language<br>without <span class="hl">leaving the page</span>.',
+    heroLead: 'Click any word in a PDF or EPUB and see what it means in that exact sentence, not just its most common meaning in the dictionary.',
+    ctaNote: 'For Mac, Windows and Linux · in Arabic, English and Turkish', dlFor: { mac: 'Download for Mac', windows: 'Download for Windows', linux: 'Download for Linux', other: 'Download Siyaq' },
+    howEyebrow: 'How it works', howTitle: 'Three steps. That’s all.', howSub: 'No accounts, no copy and paste, no switching windows.',
+    s1t: 'Open your book', s1p: 'Any PDF or EPUB on your device, even scanned books.',
+    s2t: 'Click the word', s2p: 'Or select a whole phrase. Siyaq reads the whole sentence before it answers.',
+    s3t: 'Understand, keep reading', s3p: 'The right meaning and why, right beside the page. The word is saved for review.',
+    featEyebrow: 'Features', featTitle: 'Everything a second-language reader needs', featSub: 'Made for people who read to learn, and learn to read.',
+    features: [
+      ['target', 'Meaning in context', 'The translation that fits the sentence, a short explanation, and the sentence translated.'],
+      ['globe', 'Three languages', 'Translate into Arabic, English or Turkish; the book’s language is detected for you.'],
+      ['scan', 'Scanned books', 'Pages that are pictures are read on your device, with no internet needed.'],
+      ['book', 'PDF and EPUB', 'Contents sidebar, search, working links, and it remembers where you stopped.'],
+      ['cards', 'Flashcards', 'Every word is saved and comes back for review at the right time.'],
+      ['bookmark', 'Your words, in the book', 'Words you looked up are underlined, and their meaning shows instantly.'],
+      ['volume', 'Pronunciation', 'Hear any word with one click.'],
+      ['moon', 'Real dark mode', 'The pages themselves go dark, while pictures keep their colours.'],
+      ['refresh', 'Updates itself', 'Every new version arrives from inside the app.'],
+    ],
+    shotEyebrow: 'Inside the app', shotTitle: 'Calm, tidy, and made for long reading', shotLight: 'Light · Arabic', shotDark: 'Dark · English',
+    privEyebrow: 'Privacy', privTitle: 'Your books stay yours', privSub: 'Siyaq has no servers, needs no account, and doesn’t track you.',
+    privacy: [
+      ['lock', 'Books never leave your device', 'They’re opened and read on your device and never uploaded.'],
+      ['check', 'Just one sentence', 'A lookup sends only the word and its sentence to the AI you chose.'],
+      ['check', 'Open source', 'Every line of code is there for you to read and check.'],
+    ],
+    dlTitle: 'Start reading now', dlSub: 'Completely free. You only need a free Gemini key, and the app walks you through it in a minute.',
+    dlFine: 'Siyaq isn’t signed with a paid certificate yet, so the first launch may show a warning. On Mac: right-click → Open. On Windows: More info → Run anyway.',
+    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `Version ${v}`, releases: 'Releases', footer: 'Made with care for readers · MIT license',
+  },
+  tr: {
+    brand: 'Siyaq', navHow: 'Nasıl çalışır', navFeatures: 'Özellikler', navDownload: 'İndir', source: 'Kaynak kod',
+    pill: 'Ücretsiz ve açık kaynak', heroTitle: 'Her dilde okuyun,<br><span class="hl">sayfadan ayrılmadan</span>.',
+    heroLead: 'Bir PDF veya EPUB’daki herhangi bir kelimeye tıklayın; sözlükteki en yaygın anlamını değil, o cümledeki anlamını görün.',
+    ctaNote: 'Mac, Windows ve Linux için · Arapça, İngilizce ve Türkçe', dlFor: { mac: 'Mac için indir', windows: 'Windows için indir', linux: 'Linux için indir', other: 'Siyaq’ı indir' },
+    howEyebrow: 'Nasıl çalışır', howTitle: 'Üç adım. Hepsi bu.', howSub: 'Hesap yok, kopyala-yapıştır yok, pencereler arasında gezinmek yok.',
+    s1t: 'Kitabınızı açın', s1p: 'Cihazınızdaki herhangi bir PDF veya EPUB, taranmış kitaplar bile.',
+    s2t: 'Kelimeye tıklayın', s2p: 'Ya da bir ifadenin tamamını seçin. Siyaq cevap vermeden önce bütün cümleyi okur.',
+    s3t: 'Anlayın, okumaya devam edin', s3p: 'Doğru anlam ve nedeni sayfanın hemen yanında. Kelime tekrar için kaydedilir.',
+    featEyebrow: 'Özellikler', featTitle: 'İkinci dilde okuyan herkesin ihtiyacı olan her şey', featSub: 'Öğrenmek için okuyanlar ve okumak için öğrenenler için.',
+    features: [
+      ['target', 'Bağlamdaki anlam', 'Cümleye uyan çeviri, kısa bir açıklama ve cümlenin çevirisi.'],
+      ['globe', 'Üç dil', 'Arapça, İngilizce veya Türkçeye çevirin; kitabın dili otomatik algılanır.'],
+      ['scan', 'Taranmış kitaplar', 'Resim olan sayfalar internet gerekmeden cihazınızda okunur.'],
+      ['book', 'PDF ve EPUB', 'İçindekiler, arama, çalışan bağlantılar; kaldığınız yeri hatırlar.'],
+      ['cards', 'Kelime kartları', 'Her kelime kaydedilir ve doğru zamanda tekrar için geri gelir.'],
+      ['bookmark', 'Kelimeleriniz kitapta', 'Aradığınız kelimelerin altı çizilir, anlamı anında görünür.'],
+      ['volume', 'Telaffuz', 'Herhangi bir kelimeyi tek tıkla dinleyin.'],
+      ['moon', 'Gerçek koyu mod', 'Sayfaların kendisi kararır, resimler renklerini korur.'],
+      ['refresh', 'Kendini günceller', 'Her yeni sürüm uygulamanın içinden gelir.'],
+    ],
+    shotEyebrow: 'Uygulamanın içinden', shotTitle: 'Sakin, düzenli ve uzun okumalar için', shotLight: 'Açık · Arapça', shotDark: 'Koyu · English',
+    privEyebrow: 'Gizlilik', privTitle: 'Kitaplarınız sizde kalır', privSub: 'Siyaq’ın sunucusu yok, hesap istemez ve sizi izlemez.',
+    privacy: [
+      ['lock', 'Kitaplar cihazınızdan çıkmaz', 'Cihazınızda açılır ve okunur, hiçbir yere yüklenmez.'],
+      ['check', 'Yalnızca bir cümle', 'Arama yalnızca kelimeyi ve cümlesini seçtiğiniz yapay zekâya gönderir.'],
+      ['check', 'Açık kaynak', 'Kodun her satırı okumanız ve kontrol etmeniz için açık.'],
+    ],
+    dlTitle: 'Hemen okumaya başlayın', dlSub: 'Tamamen ücretsiz. Yalnızca ücretsiz bir Gemini anahtarı gerekir; uygulama bir dakikada yol gösterir.',
+    dlFine: 'Siyaq henüz ücretli bir sertifikayla imzalanmadı; ilk açılışta uyarı görebilirsiniz. Mac’te: sağ tık → Open. Windows’ta: More info → Run anyway.',
+    otherOs: { mac: 'Mac', windows: 'Windows', linux: 'Linux' }, versionLabel: v => `Sürüm ${v}`, releases: 'Sürümler', footer: 'Okurlar için özenle yapıldı · MIT lisansı',
+  },
+};
+
+// The hero demo: the same idea as the app, in three words that a dictionary gets wrong.
+const EXAMPLES = [
+  { words: ['She', 'sat', 'on', 'the', 'bank', 'of', 'the', 'river.'], at: 4,
+    pos: { ar: 'اسم', en: 'noun', tr: 'isim' },
+    meaning: { ar: 'ضفّة النهر', en: 'the side of a river', tr: 'nehir kıyısı' },
+    note: { ar: 'ليس البنك: هي جالسة بجانب النهر.', en: 'Not the money kind: she is beside a river.', tr: 'Para bankası değil: nehrin yanında oturuyor.' } },
+  { words: ['He', 'could', 'not', 'bear', 'the', 'noise', 'any', 'longer.'], at: 3,
+    pos: { ar: 'فعل', en: 'verb', tr: 'fiil' },
+    meaning: { ar: 'يتحمّل', en: 'to put up with', tr: 'katlanmak' },
+    note: { ar: 'فعل هنا، وليس حيوان الدبّ.', en: 'A verb here, not the animal.', tr: 'Burada fiil; hayvan olan ayı değil.' } },
+  { words: ['I', 'need', 'to', 'book', 'a', 'room', 'for', 'tonight.'], at: 3,
+    pos: { ar: 'فعل', en: 'verb', tr: 'fiil' },
+    meaning: { ar: 'يحجز', en: 'to reserve', tr: 'rezervasyon yapmak' },
+    note: { ar: 'بمعنى الحجز، وليس كتاباً يُقرأ.', en: 'To reserve, not something you read.', tr: 'Ayırtmak; okunan bir kitap değil.' } },
+];
+
+let lang = (() => {
+  const asked = new URLSearchParams(location.search).get('lang');
+  if (T[asked]) return asked;
+  try { const saved = localStorage.getItem('siyaq-site-lang'); if (T[saved]) return saved; } catch {}
+  const nav = (navigator.language || '').toLowerCase();
+  return nav.startsWith('ar') ? 'ar' : nav.startsWith('tr') ? 'tr' : 'en';
+})();
+const t = key => T[lang][key];
+
+// ---------- Platform and download links ----------
+const ua = navigator.userAgent, platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+const os = /android|iphone|ipad/i.test(ua) ? 'other' : /mac/.test(platform) || /Mac OS/.test(ua) ? 'mac' : /win/.test(platform) ? 'windows' : /linux/.test(platform) ? 'linux' : 'other';
+const ASSET = { mac: /_universal\.dmg$/, windows: /_x64-setup\.exe$/, linux: /\.AppImage$/ };
+const links = { mac: null, windows: null, linux: null };
+let version = '';
+
+function renderDownloads() {
+  document.querySelectorAll('[data-dl]').forEach(a => { if (links[os]) a.href = links[os]; });
+  document.querySelectorAll('[data-dl-label]').forEach(el => { el.textContent = t('dlFor')[os]; });
+  document.querySelectorAll('[data-os-icon]').forEach(el => { el.outerHTML = `<span data-os-icon style="display:contents">${ICONS[os] || ICONS.download}</span>`; });
+  $('#others').innerHTML = ['mac', 'windows', 'linux'].filter(o => o !== os)
+    .map(o => `<a href="${links[o] || `https://github.com/${REPO}/releases/latest`}">${ICONS[o]}${t('otherOs')[o]}</a>`).join('');
+  $('#version').textContent = version ? t('versionLabel')(version) : '';
+}
+
+fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then(r => r.ok ? r.json() : null).then(rel => {
+  if (!rel) return;
+  version = rel.tag_name.replace(/^v/, '');
+  for (const [o, re] of Object.entries(ASSET)) links[o] = rel.assets.find(a => re.test(a.name))?.browser_download_url || null;
+  renderDownloads();
+}).catch(() => {});
+
+// ---------- Language ----------
+const $ = s => document.querySelector(s);
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-t]').forEach(el => { el.innerHTML = t(el.dataset.t); });
+  document.querySelectorAll('.langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  $('#featureGrid').innerHTML = t('features').map(([icon, h, p]) => `<div class="feature reveal seen"><div class="ico">${svg(icon)}</div><h3>${h}</h3><p>${p}</p></div>`).join('');
+  $('#privacyList').innerHTML = t('privacy').map(([icon, b, s]) => `<li>${svg(icon)}<div><b>${b}</b><span>${s}</span></div></li>`).join('');
+  renderDownloads();
+}
+document.querySelectorAll('.langs button').forEach(b => b.onclick = () => {
+  lang = b.dataset.lang;
+  try { localStorage.setItem('siyaq-site-lang', lang); } catch {}
+  applyLang();
+});
+
+// ---------- Screenshots ----------
+document.querySelectorAll('[data-shot]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-shot]').forEach(x => x.classList.toggle('on', x === b));
+  $('#shot').src = b.dataset.shot;
+});
+
+// ---------- Hero demo ----------
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Arabic and Turkish pages answer in their own language; the English page shows all three in turn.
+const LANG_NAMES = { ar: 'العربية', en: 'English', tr: 'Türkçe' };
+const demoLang = i => lang === 'en' ? ['ar', 'tr', 'en'][i % 3] : lang;
+
+async function runDemo() {
+  const page = $('#demoPage'), sentence = $('#sentence'), cursor = $('#cursor'), card = $('#card'), ripple = $('#ripple');
+  for (let i = 0; ; i = (i + 1) % EXAMPLES.length) {
+    const ex = EXAMPLES[i];
+    sentence.classList.remove('in');
+    sentence.innerHTML = ex.words.map((w, k) => `<span class="w${k === ex.at ? ' target' : ''}" style="transition-delay:${k * 45}ms">${w}</span> `).join('');
+    const target = sentence.querySelector('.target');
+    await sleep(60);
+    sentence.classList.add('in');
+    if (!reduced) {
+      cursor.style.opacity = 1;
+      cursor.style.transform = `translate(${page.clientWidth - 70}px, ${page.clientHeight - 60}px)`;
+    }
+    await sleep(reduced ? 0 : 900);
+    const pr = page.getBoundingClientRect(), tr = target.getBoundingClientRect();
+    const x = tr.left - pr.left + tr.width * 0.55, y = tr.top - pr.top + tr.height * 0.6;
+    cursor.style.transform = `translate(${x}px, ${y}px)`;
+    await sleep(reduced ? 0 : 1000);
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    ripple.classList.remove('go');
+    void ripple.offsetWidth;
+    ripple.classList.add('go');
+    target.classList.add('lit');
+    await sleep(reduced ? 0 : 250);
+    $('#cardWord').textContent = ex.words[ex.at];
+    const to = demoLang(i);
+    $('#demoTarget').textContent = LANG_NAMES[to];
+    $('#cardPos').textContent = ex.pos[to];
+    $('#cardMeaning').textContent = ex.meaning[to];
+    $('#cardNote').textContent = ex.note[to];
+    card.dir = to === 'ar' ? 'rtl' : 'ltr';
+    const left = Math.min(Math.max(tr.left - pr.left - 40, 16), page.clientWidth - card.offsetWidth - 16);
+    card.style.left = left + 'px';
+    card.style.top = (tr.bottom - pr.top + 14) + 'px';
+    card.classList.add('show');
+    if (reduced) return;
+    await sleep(3600);
+    card.classList.remove('show');
+    target.classList.remove('lit');
+    await sleep(500);
+  }
+}
+
+// ---------- Small touches ----------
+const nav = $('#nav');
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), { passive: true });
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('seen'); io.unobserve(e.target); } }), { threshold: .12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+applyLang();
+runDemo();
+</script>
+</body>
+</html>
