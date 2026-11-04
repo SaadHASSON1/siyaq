@@ -15,6 +15,7 @@ function sentenceBlock(word, sentence) {
 
 async function lookup(word, sentence, fresh = false) {
   showTab('lookup');
+  revealPanel();
   const pane = $('#lookup');
   if (!settings.apiKey && settings.provider !== 'openai') {
     lastLookup = { word, sentence };

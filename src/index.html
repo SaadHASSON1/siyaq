@@ -23,6 +23,7 @@
     <label class="page-jump"><input id="pageInput" inputmode="numeric" data-i18n-title="page"><span>/</span><span id="pageTotal"></span></label>
     <span class="divider"></span>
     <button class="icon-btn" id="searchBtn" data-i18n-title="search"><i data-icon="search"></i></button>
+    <button class="icon-btn" id="readBtn" data-i18n-title="readingMode"><i data-icon="glasses"></i></button>
     <span class="divider"></span>
     <button class="ask-btn" id="askBtn" data-i18n-title="askBtnTitle"><i data-icon="sparkle"></i><span data-i18n="askBtn"></span></button>
   </div>
@@ -43,12 +44,16 @@
 </header>
 
 <main>
-  <aside class="panel">
+  <aside class="panel" id="panel">
+    <div class="panel-grip" id="panelGrip" role="separator" aria-orientation="vertical" data-i18n-title="resizePanel"></div>
+    <div class="panel-head">
     <div class="seg" role="tablist">
       <button class="on" data-tab="lookup" role="tab"><span data-i18n="tabMeaning"></span></button>
       <button data-tab="toc" role="tab"><span data-i18n="tabContents"></span></button>
       <button data-tab="vocab" role="tab"><span data-i18n="tabWords"></span><span class="badge" id="vocabCount"></span></button>
       <button data-tab="notes" role="tab"><span data-i18n="tabNotes"></span><span class="badge" id="notesCount"></span></button>
+    </div>
+    <button class="icon-btn" id="panelHide" type="button" data-i18n-title="hidePanel"><i data-icon="panelClose" class="flip"></i></button>
     </div>
     <div class="pane" id="lookup">
       <div class="state">
@@ -68,6 +73,8 @@
     <button class="icon-btn" id="searchNext" data-i18n-title="next"><i data-icon="chevDown"></i></button>
     <button class="icon-btn" id="searchClose" data-i18n-title="close"><i data-icon="x"></i></button>
   </div>
+  <button class="panel-show" id="panelShow" type="button" hidden data-i18n-title="showPanel"><i data-icon="panelOpen" class="flip"></i><span data-i18n="tabMeaning"></span></button>
+  <button class="read-exit" id="readExit" type="button" hidden><i data-icon="x"></i><span data-i18n="readingExit"></span><kbd>Esc</kbd></button>
   <div class="toast" id="toast" hidden></div>
 <div class="open-menu" id="openMenu" hidden></div>
 <div class="sel-bar" id="selBar" hidden>
@@ -249,10 +256,17 @@
       <p data-i18n="setupText"></p>
     </div>
     <ol class="steps">
-      <li><span data-i18n="setupStep1"></span><br>
-        <button class="btn small" id="setupOpen" type="button"><i data-icon="external"></i><span data-i18n="setupOpen"></span></button></li>
-      <li data-i18n="setupStep2"></li>
-      <li><span data-i18n="setupStep3"></span><input id="setupKey" dir="ltr" autocomplete="off" spellcheck="false" placeholder="AIza…"></li>
+      <!-- Each step has a small drawn picture of what the reader will see (made up: no account, no real key). -->
+      <li><div class="step"><div><span data-i18n="setupStep1"></span><br>
+        <button class="btn small" id="setupOpen" type="button"><i data-icon="external"></i><span data-i18n="setupOpen"></span></button></div>
+        <div class="shot" dir="ltr" aria-hidden="true"><div class="shot-url"><i data-icon="lock"></i>aistudio.google.com</div>
+          <div class="shot-body shot-signin"><span class="shot-avatar"></span><span class="shot-line"></span><span class="shot-btn hot" data-i18n="shotSignIn"></span></div></div></div></li>
+      <li><div class="step"><div data-i18n="setupStep2"></div>
+        <div class="shot" dir="ltr" aria-hidden="true"><div class="shot-url"><i data-icon="lock"></i>aistudio.google.com/apikey</div>
+          <div class="shot-body shot-create"><span class="shot-line"></span><span class="shot-line short"></span><span class="shot-btn hot">+ Create API key</span></div></div></div></li>
+      <li><div class="step"><div data-i18n="setupStep3"></div>
+        <div class="shot shot-key" dir="ltr" aria-hidden="true"><div class="shot-body"><code>AIza••••••••</code><span class="shot-copy hot"><i data-icon="copy"></i></span></div></div></div>
+        <input id="setupKey" dir="ltr" autocomplete="off" spellcheck="false" placeholder="AIza…"></li>
     </ol>
     <p class="tour-note"><i data-icon="lock"></i><span data-i18n="tourKeyNote"></span></p>
     <p class="tour-other"><button class="link-btn" id="setupOther" type="button" data-i18n="setupOther"></button></p>
@@ -295,6 +309,7 @@
 <script src="js/review.js"></script>
 <script src="js/ocr.js"></script>
 <script src="js/toast.js"></script>
+<script src="js/layout.js"></script>
 <script src="js/mcp.js"></script>
 <script src="js/notes.js"></script>
 <script src="js/settings.js"></script>

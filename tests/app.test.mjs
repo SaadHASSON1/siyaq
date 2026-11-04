@@ -265,6 +265,99 @@ test('demo book: dotted words have ready meanings without a key', async () => {
   assert.equal(await page.eval(`document.querySelector('#lookup .state p').textContent`), await page.eval(`t('demoOnly')`));
 });
 
+test('demo button: on the start screen for new readers only', async () => {
+  await fresh({ toured: true, setupSkipped: true, settings: { uiLang: 'en', lang: 'ar' } });
+  assert.equal(await page.eval(`document.querySelector('#empty [data-demo]').offsetParent !== null`), true, 'shown to someone new');
+  await openPdf();
+  await page.eval(`document.querySelector('#homeBtn').click()`);
+  assert.equal(await page.eval(`document.querySelector('#empty [data-demo]').offsetParent`), null, 'gone once a book was opened');
+  assert.ok(await page.eval(`!!document.querySelector('#setup [data-demo]')`), 'still at the end of the tour');
+});
+
+test('side panel: hidden and back, wider and narrower, remembered', async () => {
+  await fresh();
+  await openPdf();
+  const width = () => page.eval(`Math.round(document.querySelector('#panel').getBoundingClientRect().width)`);
+  assert.equal(await width(), 380);
+  // the keyboard on its edge: right arrow widens it in English (it is on the left)
+  await page.eval(`{ const g = document.querySelector('#panelGrip'); for (let i = 0; i < 3; i++) g.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); }`);
+  assert.equal(await width(), 440);
+  assert.equal(await page.eval(`store.get('panelWidth')`), 440);
+  // the book follows: pages are drawn again to fit the new width
+  const fit = await page.eval(`fitScale`);
+  await page.eval(`document.querySelector('#panelHide').click()`);
+  await page.waitFor(`Math.abs(fitWidthScale() - fitScale) < 0.01 && fitScale !== ${fit}`, 3000);
+  assert.ok(await page.eval(`document.querySelector('#panel').classList.contains('closed') && !document.querySelector('#panelShow').hidden && store.get('panelHidden')`));
+  // a word brings it back
+  await page.eval(`clickWord('bank')`);
+  await page.waitFor(`document.querySelector('#lookup .tr')`);
+  assert.ok(await page.eval(`!document.querySelector('#panel').classList.contains('closed') && document.querySelector('#panelShow').hidden`));
+  await page.eval(`document.querySelector('#panelGrip').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`);
+  assert.equal(await width(), 380, 'a double-click puts it back');
+});
+
+test('reading mode: only the page, a word over it, Esc to leave', async () => {
+  await fresh();
+  await openPdf();
+  await page.eval(`document.querySelector('#readBtn').click()`);
+  await page.sleep(450);
+  assert.ok(await page.eval(`document.body.classList.contains('reading') && !document.querySelector('#readExit').hidden`));
+  assert.ok(await page.eval(`document.querySelector('.bar').getBoundingClientRect().bottom <= 1`), 'the top bar is out of sight');
+  assert.ok(await page.eval(`Math.abs(viewer.getBoundingClientRect().width - innerWidth) < 2`), 'the page has the whole width');
+  // the bar comes down at the top of the window
+  await page.eval(`document.dispatchEvent(new PointerEvent('pointermove', { clientX: 300, clientY: 4, bubbles: true }))`);
+  await page.sleep(400);
+  assert.ok(await page.eval(`Math.round(document.querySelector('.bar').getBoundingClientRect().top) === 0`));
+  await page.eval(`clickWord('bank')`);
+  await page.waitFor(`document.querySelector('#lookup .tr')`);
+  await page.sleep(400);
+  assert.ok(await page.eval(`document.querySelector('#panel').classList.contains('float') && getComputedStyle(document.querySelector('#panel')).opacity === '1'`), 'the meaning floats over the page');
+  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+  assert.ok(await page.eval(`!document.querySelector('#panel').classList.contains('float') && document.body.classList.contains('reading')`), 'first Esc: the meaning goes');
+  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+  assert.ok(await page.eval(`!document.body.classList.contains('reading') && document.querySelector('#readExit').hidden`), 'second Esc: back to normal');
+});
+
+// Nothing on top of anything else, and no label cut off: the bar, the panel and the key steps, in every language,
+// from a wide window to a phone.
+const LAYOUT_CHECK = `window.overlaps = root => {
+  const shown = el => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
+  const name = e => e.id || (typeof e.className === 'string' && e.className) || e.tagName, out = [];
+  for (const g of [root, ...root.querySelectorAll('*')]) {
+    if (g.closest('svg') || g.children.length < 2) continue;
+    const kids = [...g.children].filter(k => !(k instanceof SVGElement) && shown(k) && !['absolute', 'fixed'].includes(getComputedStyle(k).position));
+    for (let i = 0; i < kids.length; i++) for (let j = i + 1; j < kids.length; j++) {
+      const a = kids[i].getBoundingClientRect(), b = kids[j].getBoundingClientRect();
+      if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1.5) out.push(name(kids[i]) + ' × ' + name(kids[j]));
+    }
+  }
+  for (const el of root.querySelectorAll('button, .btn, select, .seg button > span')) if (shown(el) && el.scrollWidth > el.clientWidth + 1) out.push('cut off: ' + (el.id || el.textContent.trim().slice(0, 30)));
+  return out;
+}; 1`;
+test('layout: nothing overlaps or is cut off, in every language and width', async () => {
+  await fresh();
+  await openPdf();
+  await page.eval(LAYOUT_CHECK);
+  const found = [];
+  for (const width of [1400, 1024, 860, 700, 420]) {
+    await page.size(width, 900);
+    for (const lang of ['ar', 'en', 'tr']) {
+      await page.eval(`{ settings.uiLang = '${lang}'; applyUiLanguage(); }`);
+      await page.sleep(150);
+      for (const part of ['.bar', '#panel']) for (const o of await page.eval(`overlaps(document.querySelector('${part}'))`)) found.push(`${width}px ${lang} ${part}: ${o}`);
+    }
+  }
+  await page.size(1400, 900);
+  for (const lang of ['ar', 'en', 'tr']) {
+    await page.eval(`{ settings.uiLang = '${lang}'; applyUiLanguage(); openSetup(); }`);
+    await page.sleep(350);
+    assert.equal(await page.eval(`document.querySelectorAll('#setup .steps .shot').length`), 3, 'a picture for each key step');
+    for (const o of await page.eval(`overlaps(document.querySelector('#setup .slide.on'))`)) found.push(`${lang} key steps: ${o}`);
+    await page.eval(`document.querySelector('#setup').close()`);
+  }
+  assert.deepEqual(found, []);
+});
+
 test('no JavaScript errors anywhere above', () => {
   assert.deepEqual(page.errors, []);
 });

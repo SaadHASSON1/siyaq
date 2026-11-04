@@ -4,6 +4,7 @@ const STRINGS = {
   ar: {
     brand: 'سياق', title: 'سياق — قارئ كتب', open: 'افتح كتاب', settings: 'الإعدادات', uiLang: 'لغة التطبيق', theme: 'المظهر', themeSystem: 'حسب الجهاز', themeLight: 'فاتح', themeDark: 'داكن', toggleTheme: 'الوضع الداكن', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
     langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
+    readingMode: 'وضع القراءة', readingExit: 'الخروج من وضع القراءة', hidePanel: 'إخفاء اللوحة', showPanel: 'إظهار اللوحة', resizePanel: 'اسحب لتغيير العرض، وانقر مرتين لإرجاعه', shotSignIn: 'تسجيل الدخول',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
     panelTitle: 'اضغط على أي كلمة',
     hint: 'بيطلعلك معناها <b>حسب الجملة</b> اللي هي فيها. وظلّل أي نص لتشوف معناه، أو تسأل عنه، أو تلوّنه وتكتب عليه ملاحظة.',
@@ -36,6 +37,7 @@ const STRINGS = {
   en: {
     brand: 'Siyaq', title: 'Siyaq — book reader', open: 'Open a book', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
     langPair: 'Book language → translation language', auto: 'Auto',
+    readingMode: 'Reading mode', readingExit: 'Exit reading mode', hidePanel: 'Hide panel', showPanel: 'Show panel', resizePanel: 'Drag to resize; double-click to reset', shotSignIn: 'Sign in',
     tabMeaning: 'Meaning', tabWords: 'My words',
     panelTitle: 'Click any word',
     hint: 'You’ll see what it means <b>in its sentence</b>. Select any text to see its meaning, ask about it, or highlight it and add a note.',
@@ -68,6 +70,7 @@ const STRINGS = {
   tr: {
     brand: 'Siyaq', title: 'Siyaq — kitap okuyucu', open: 'Kitap aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
     langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
+    readingMode: 'Okuma modu', readingExit: 'Okuma modundan çık', hidePanel: 'Paneli gizle', showPanel: 'Paneli göster', resizePanel: 'Genişliği değiştirmek için sürükleyin, sıfırlamak için çift tıklayın', shotSignIn: 'Oturum aç',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',
     panelTitle: 'Herhangi bir kelimeye tıklayın',
     hint: '<b>Cümledeki</b> anlamını göreceksiniz. Anlamını görmek, sormak ya da vurgulayıp not eklemek için herhangi bir metni seçin.',

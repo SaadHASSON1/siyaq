@@ -148,6 +148,7 @@ main { flex: 1; display: flex; min-height: 0; position: relative; }
 .welcome p { margin: 0 auto; color: var(--muted); max-width: 340px; }
 .welcome .btn.lg { margin: 24px 0 10px; }
 .welcome .demo-btn { display: flex; margin: 0 auto 8px; }
+.welcome .demo-btn[hidden] { display: none; }
 .demo-word { text-decoration: underline dotted var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; cursor: pointer; }
 .demo-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 18px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-text); font-size: 12.5px; }
 .demo-note svg { width: 14px; height: 14px; }
@@ -242,8 +243,63 @@ mark.hl { color: inherit; border-radius: 2px; }
 .epub-chapter ::selection { background: rgba(47, 111, 94, .3); }
 
 /* ---------- Side panel ---------- */
-.panel { width: 380px; flex: none; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
-.seg { display: flex; gap: 2px; margin: 12px 12px 4px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
+.panel {
+  width: var(--panel-w, 380px); flex: none; background: var(--surface); border-inline-end: 1px solid var(--border);
+  display: flex; flex-direction: column; min-height: 0; position: relative; z-index: 4;
+  transition: margin .34s cubic-bezier(.3, .8, .3, 1), transform .34s cubic-bezier(.3, .8, .3, 1), box-shadow .34s;
+}
+/* Hidden: it slides out past the window's edge and the book takes its room. */
+.panel.closed { margin-inline-start: calc(-1 * var(--panel-w, 380px) - 1px); visibility: hidden; transition: margin .34s cubic-bezier(.3, .8, .3, 1), visibility 0s .34s; }
+.panel-head { display: flex; align-items: center; gap: 4px; margin: 12px 8px 4px 12px; }
+[dir="rtl"] .panel-head { margin: 12px 12px 4px 8px; }
+.panel-head .icon-btn { width: 30px; height: 30px; flex: none; }
+/* The edge that resizes it: a thin line that lights up under the pointer */
+.panel-grip { position: absolute; top: 0; bottom: 0; inset-inline-end: -4px; width: 8px; cursor: col-resize; z-index: 2; touch-action: none; }
+.panel-grip::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; border-radius: 1px; background: var(--accent); opacity: 0; transition: opacity .15s; }
+.panel-grip:hover::after, .panel-grip:focus-visible::after, body.resizing .panel-grip::after { opacity: .7; }
+.panel-grip:focus-visible { outline: none; }
+body.resizing { cursor: col-resize; user-select: none; }
+body.resizing .panel, body.resizing #viewer { transition: none; }
+/* Brings a hidden panel back */
+.panel-show {
+  position: absolute; top: 12px; inset-inline-start: 12px; z-index: 6; display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 12px 0 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+  color: var(--text); font: inherit; font-size: 13px; box-shadow: var(--shadow-pop); cursor: pointer; animation: pane-in .3s ease both;
+}
+[dir="rtl"] .panel-show { padding: 0 10px 0 12px; }
+.panel-show:hover { background: var(--surface-2); }
+.panel-show svg { width: 16px; height: 16px; color: var(--accent-text); }
+.panel-show[hidden] { display: none; }
+
+/* ---------- Reading mode ---------- */
+/* The top bar rests above the window and slides down over the page when the pointer reaches the top. */
+body.reading .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; transform: translateY(-100%); transition: transform .3s cubic-bezier(.3, .8, .3, 1), box-shadow .3s; }
+body.reading.peek .bar, body.reading .bar:focus-within { transform: none; box-shadow: var(--shadow-pop); }
+body:not(.reading) .bar { transition: none; }
+/* The panel floats over the page, shown for a word and gone again */
+body.reading .panel {
+  position: absolute; top: 12px; bottom: 12px; inset-inline-start: 12px; margin: 0; visibility: visible;
+  width: min(var(--panel-w, 380px), calc(100% - 24px)); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: var(--shadow-pop); transform: translateX(calc(-100% - 24px)); opacity: 0; pointer-events: none;
+  transition: transform .34s cubic-bezier(.3, .8, .3, 1), opacity .25s ease;
+}
+[dir="rtl"] body.reading .panel { transform: translateX(calc(100% + 24px)); }
+body.reading .panel.float { transform: none !important; opacity: 1; pointer-events: auto; }
+body.reading .panel-grip { display: none; }
+body.reading #viewer { padding-top: 32px; }
+#readBtn.on { background: var(--accent-soft); color: var(--accent-text); }
+.read-exit {
+  position: absolute; bottom: 20px; inset-inline-end: 20px; z-index: 6; display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 8px 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+  color: var(--text); font: inherit; font-size: 13px; box-shadow: var(--shadow-pop); cursor: pointer; transition: opacity .4s ease;
+}
+[dir="rtl"] .read-exit { padding: 0 12px 0 8px; }
+.read-exit svg { width: 15px; height: 15px; }
+.read-exit kbd { font: inherit; font-size: 11px; color: var(--muted); padding: 1px 6px; border: 1px solid var(--border); border-radius: 5px; }
+.read-exit.idle:not(:hover):not(:focus-visible) { opacity: 0; }
+.read-exit[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .panel, body.reading .bar, body.reading .panel { transition: none; } }
+.seg { display: flex; gap: 2px; flex: 1; min-width: 0; padding: 3px; border-radius: 10px; background: var(--surface-2); }
 .seg button {
   flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 6px;
   height: 30px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; font-weight: 500;
@@ -493,7 +549,7 @@ dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24
 .btn .badge { background: rgba(255,255,255,.25); color: inherit; }
 
 /* ---------- First-run setup ---------- */
-dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; overflow: hidden; }
+dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; overflow: hidden auto; }
 .tour-skip { position: absolute; top: 14px; inset-inline-end: 16px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; padding: 4px 6px; }
 .tour-skip:hover { color: var(--text); }
 .slide { display: none; min-height: 368px; text-align: center; }
@@ -564,6 +620,29 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
 .steps { display: grid; gap: 14px; margin: 20px 0 0; padding-inline-start: 22px; }
 .steps li::marker { color: var(--accent); font-weight: 700; }
 .steps .btn { margin-top: 8px; }
+/* The key steps' pictures: drawn, not screenshots (no account and no real key in them) */
+.steps .step { display: grid; grid-template-columns: 1fr 150px; gap: 14px; align-items: center; }
+.shot { border: 1px solid var(--border); border-radius: 9px; background: var(--surface); overflow: hidden; font-size: 10px; line-height: 1.2; color: var(--muted); box-shadow: 0 1px 3px rgba(0,0,0,.06); text-align: left; }
+.shot-url { display: flex; align-items: center; gap: 4px; padding: 5px 7px; background: var(--surface-2); border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shot-url svg { width: 9px; height: 9px; flex: none; }
+.shot-body { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px 11px; }
+.shot-line { display: block; width: 80%; height: 5px; border-radius: 3px; background: var(--surface-2); }
+.shot-line.short { width: 55%; }
+.shot-avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--surface-2); }
+.shot-create { align-items: flex-start; }
+.shot-create .shot-btn { align-self: flex-end; }
+.shot-btn { padding: 4px 9px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; white-space: nowrap; }
+.shot .hot { position: relative; }
+/* a ring that pulses where to press */
+.shot .hot::after { content: ''; position: absolute; inset: -4px; border-radius: inherit; border: 2px solid var(--accent); opacity: 0; animation: shot-ring 2.2s ease-out infinite; }
+@keyframes shot-ring { 0% { opacity: .8; transform: scale(.9); } 70%, 100% { opacity: 0; transform: scale(1.15); } }
+.shot-key { align-self: center; }
+.shot-key .shot-body { flex-direction: row; justify-content: space-between; padding: 7px 8px 7px 10px; }
+.shot-key code { font: 11px ui-monospace, Menlo, monospace; color: var(--text); letter-spacing: .02em; }
+.shot-copy { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-text); }
+.shot-copy svg { width: 12px; height: 12px; }
+@media (prefers-reduced-motion: reduce) { .shot .hot::after { animation: none; opacity: .6; } }
+@media (max-width: 520px), (max-height: 700px) { .steps .step { grid-template-columns: 1fr; } .steps .shot { display: none; } }
 .steps input {
   display: block; width: 100%; height: 38px; margin-top: 8px; padding: 0 10px;
   border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text);
@@ -586,5 +665,10 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
   .langpair { margin-inline-start: auto; }
   main { flex-direction: column-reverse; }
   .panel { width: 100%; height: 45vh; border-inline-end: 0; border-top: 1px solid var(--border); }
+  .panel.closed { margin: 0 0 calc(-45vh - 1px); }
+  .panel-grip { display: none; }
+  .panel-show { top: auto; bottom: 16px; }
+  body.reading .panel { top: auto; height: 55vh; width: auto; inset-inline: 8px; bottom: 8px; transform: translateY(calc(100% + 16px)) !important; }
+  body.reading .panel.float { transform: none !important; }
   #viewer { padding: 12px; }
 }

@@ -31,11 +31,16 @@ function bookItem(b, current = false) {
   </li>`;
 }
 
+const newReader = () => !store.get('demoDone', false) && !library().length && !vocab.length;
+
 function renderRecent() {
   const box = $('#recent');
   if (!box) return; // the start screen is gone once a book is open
   const books = desktopApp ? library().slice(0, 5) : [];
   box.hidden = !books.length;
+  // The demo book is for a first look: once someone has opened a book (the demo included), it leaves the start
+  // screen. (It is still at the end of the tour, under Settings.)
+  document.querySelectorAll('#empty [data-demo]').forEach(b => b.hidden = !newReader());
   box.innerHTML = books.length ? `<h3>${t('recentBooks')}</h3><ul>${books.map(b => bookItem(b)).join('')}</ul>` : '';
 }
 

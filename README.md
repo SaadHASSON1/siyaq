@@ -54,6 +54,8 @@ When you read a book in a language you're still learning, every unknown word mea
 - 🔍 **Scanned books too**: picture-only pages are read on your device (OCR), in all three languages
 - 📍 **Picks up where you left off** in every book, with your recent books on the start screen
 - 🧭 **Contents sidebar, search** (`⌘F` / `Ctrl+F`) and working links
+- 👓 **Reading mode** (`⌘⇧F` / `Ctrl+Shift+F`): only the page; a word's meaning slides in over it, and `Esc` brings everything back
+- ↔️ **A side panel your size**: drag its edge to make it wider or narrower, or hide it (`⌘\` / `Ctrl+\`) and it comes back when you click a word
 - 🌙 **Dark mode** that darkens pages but keeps pictures in their real colours
 
 **Remembering**
@@ -84,7 +86,7 @@ The easiest way: **[saadhasson1.github.io/siyaq](https://saadhasson1.github.io/s
 
 ## Getting started
 
-1. Open Siyaq. A short tour shows how it works (or click **Try a demo book** to see it first, no key needed), then walks you through getting a **free Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey) and tests it.
+1. Open Siyaq. A short tour shows how it works (or click **Try a demo book** to see it first, no key needed), then walks you through getting a **free Gemini API key**, with a picture of each step, from [Google AI Studio](https://aistudio.google.com/apikey) and tests it.
 2. Open a PDF or EPUB, or drop it on the window.
 3. Click any word.
 

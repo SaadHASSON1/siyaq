@@ -10,7 +10,9 @@ const isZip = data => data[0] === 0x50 && data[1] === 0x4b; // EPUB files are zi
 
 async function openBook(data, name) {
   try {
-    return await (isZip(data) ? openEpub(data, name) : openPdf(data, name));
+    const opened = await (isZip(data) ? openEpub(data, name) : openPdf(data, name));
+    store.set('demoDone', true);
+    return opened;
   } catch (err) {
     console.error(err);
     showToast(t('openFailed') + (err?.message || err), { label: t('fbBug'), run: () => reportProblem(`${t('openFailed')}${err?.message || err}`) });
@@ -320,7 +322,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomStep(1); }
   else if (e.key === '-') { e.preventDefault(); zoomStep(-1); }
   else if (e.key === '0') { e.preventDefault(); setZoom(1); }
-  else if (e.key.toLowerCase() === 'f' && pdfDoc) { e.preventDefault(); openSearch(); }
+  else if (e.key.toLowerCase() === 'f' && !e.shiftKey && pdfDoc) { e.preventDefault(); openSearch(); }
 });
 
 // Keep "100%" meaning "fits the width" when the window is resized. While it is being resized, the pages
@@ -333,8 +335,9 @@ const keepScrollPlace = change => {
   viewer.scrollTop = at * viewer.scrollHeight;
 };
 // One CSS variable for every page, at most once a frame: touching each page of a long book on every resize
-// event kept the main thread too busy for the window to redraw while it was being dragged.
-window.addEventListener('resize', () => {
+// event kept the main thread too busy for the window to redraw while it was being dragged. Watched on the
+// viewer itself, so the side panel's width, hiding it and reading mode count too, not just the window.
+new ResizeObserver(() => {
   if (!pdfDoc || bookType === 'epub') return; // EPUB text reflows by itself
   if (!resizeFrame) resizeFrame = requestAnimationFrame(() => {
     resizeFrame = 0;
@@ -347,7 +350,7 @@ window.addEventListener('resize', () => {
     keepScrollPlace(() => viewer.style.removeProperty('--live-zoom'));
     if (Math.abs(fit - fitScale) > 0.01) { fitScale = fit; setZoom(zoom, true); }
   }, 200);
-});
+}).observe(viewer);
 
 // ---------- Opening files ----------
 document.querySelectorAll('.file-input').forEach(input => input.addEventListener('change', async e => {
