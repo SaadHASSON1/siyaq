@@ -66,36 +66,125 @@ async function postJson(url, headers, body) {
   return r;
 }
 
-// ----- Gemini: when one model is busy or retired, move straight on to another -----
+// ----- Gemini: the fastest model that answers, chosen by itself -----
+// Google's models are often busy (503), retired for new keys (404), or slow for minutes at a time; which ones
+// changes from day to day. So the app keeps a note of how each model did (how long it took to start answering, and
+// when it last failed), asks the best one first, and if that hasn't started answering after a moment, asks the
+// next one too: whichever answers first is used. A busy or retired model costs well under a second.
 const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/';
-let geminiModels = null; // Flash models this key can use, newest first
-let geminiWorking = store.get('geminiWorking', null); // the Flash-Lite model that answered last, tried first
+const MAX_MODELS = 6;
+// How long to wait for a model before asking the next one too: a little longer than it usually takes.
+const hedgeAfter = model => Math.max(1200, Math.min(2500, (geminiStats[model]?.ms ?? 2500) * 1.5));
+let geminiModels = null; // Flash and Flash-Lite models this key can use
+let geminiStats = store.get('geminiStats', {}); // model → { ms: time to first text, failedAt, think }
 
 async function listGeminiModels() {
   if (geminiModels) return geminiModels;
   const r = await requestJson('GET', GEMINI + 'models?pageSize=1000', { 'x-goog-api-key': settings.apiKey });
-  const version = n => parseFloat(n.match(/gemini-([\d.]+)/)[1]);
   geminiModels = (r.json?.models || [])
     .filter(m => m.supportedGenerationMethods?.includes('generateContent') && /^models\/gemini-[\d.]+-flash(-lite)?$/.test(m.name))
-    .map(m => m.name.slice(7))
-    .sort((a, b) => b.endsWith('-lite') - a.endsWith('-lite') || version(b) - version(a));
+    .map(m => m.name.slice(7));
   return geminiModels;
 }
 
-async function geminiCall(model, prompt, noThinking) {
-  const generationConfig = { responseMimeType: 'application/json', temperature: 0.2 };
-  // A word lookup needs no step-by-step reasoning, and skipping it saves seconds.
-  if (noThinking) generationConfig.thinkingConfig = /gemini-2\./.test(model) ? { thinkingBudget: 0 } : { thinkingLevel: 'minimal' };
-  return requestJson('POST', `${GEMINI}models/${encodeURIComponent(model)}:generateContent`,
-    { 'x-goog-api-key': settings.apiKey }, { contents: [{ parts: [{ text: prompt }] }], generationConfig });
+const today = () => new Date().toISOString().slice(0, 10);
+// Best first: a model out of today's free quota goes last, then one that failed in the last ten minutes; then the fastest seen lately; models not
+// tried yet get a fair guess (Flash-Lite is meant to be quick, newer versions first).
+function rankGemini(models) {
+  const now = Date.now(), version = n => parseFloat(n.match(/gemini-([\d.]+)/)?.[1] || 0);
+  const score = m => {
+    const st = geminiStats[m] || {};
+    return (st.outFor === today() ? 1e7 : 0) + (st.failedAt && now - st.failedAt < 600000 ? 1e6 : 0) + (st.ms ?? (m.endsWith('-lite') ? 3000 : 3500) - version(m) * 50);
+  };
+  return [...new Set(models)].filter(m => !geminiStats[m]?.gone).sort((a, b) => score(a) - score(b));
+}
+function noteGemini(model, ms) {
+  const st = geminiStats[model] ||= {};
+  if (ms == null) st.failedAt = Date.now();
+  else { st.ms = st.ms == null ? ms : Math.round(st.ms * 0.6 + ms * 0.4); delete st.failedAt; }
+  store.set('geminiStats', geminiStats);
+}
+
+// One answer from Gemini, streamed. onText gets the answer so far, from whichever model is answering.
+async function askGemini(prompt, onText) {
+  const listing = listGeminiModels().catch(() => []);
+  // Start at once with the best model known from before; the list is only needed if that one fails.
+  let order = rankGemini(Object.keys(geminiStats));
+  if (!order.length) order = rankGemini(await listing);
+  listing.then(all => { if (all.length) order = [...order, ...rankGemini(all).filter(m => !order.includes(m))]; });
+  return new Promise((resolve, reject) => {
+    let next = 0, live = 0, winner = null, finished = false, lastError = t('busy');
+    const running = new Map(); // model → when it was asked, while it has said nothing
+    const give = (fn, v) => { if (!finished) { finished = true; fn(v); } };
+    const start = async () => {
+      if (finished || winner) return;
+      if (next >= order.length) await listing; // a moment for the full list, if it isn't in yet
+      if (next >= Math.min(order.length, MAX_MODELS)) { if (!live) give(reject, new Error(lastError)); return; }
+      const model = order[next++], t0 = performance.now();
+      live++;
+      running.set(model, t0);
+      // nothing yet: ask the next one too (two at most at once: each costs a little of the free quota)
+      const hedge = setTimeout(() => { if (!winner && live < 2) start(); }, hedgeAfter(model));
+      let first = 0;
+      geminiStream(model, prompt, text => {
+        if (!first) { first = performance.now() - t0; clearTimeout(hedge); running.delete(model); }
+        if (!winner) winner = model;
+        if (winner === model) onText?.(text);
+      }).then(text => {
+        if (!/\{[\s\S]*\}/.test(text)) throw new Error(t('badReply')); // not the JSON asked for: try another
+        live--;
+        noteGemini(model, Math.round(first || performance.now() - t0));
+        if (!winner || winner === model) {
+          winner = model; lastModel = model; give(resolve, text);
+          // the ones still silent lost the race: at least this slow, so they go after the winner next time
+          for (const [m, at] of running) if (m !== model) noteGemini(m, Math.round(performance.now() - at));
+        }
+      }).catch(err => {
+        live--;
+        clearTimeout(hedge);
+        running.delete(model);
+        noteGemini(model, null);
+        const { status, message } = geminiError(err);
+        if (!lastFailed.includes(model)) lastFailed.push(model);
+        lastWhy[model] = status || message.slice(0, 60);
+        if (status === 404) { geminiStats[model].gone = true; store.set('geminiStats', geminiStats); } // retired: not asked again
+        if (status === 429 && /PerDay|per day|daily/i.test(message)) { geminiStats[model].outFor = today(); store.set('geminiStats', geminiStats); } // out of today's quota
+        // A wrong or blocked key fails every model: say so now.
+        if (status === 400 && /API key|API_KEY/i.test(message) || status === 401 || status === 403) { give(reject, new Error(message)); return; }
+        lastError = quotaMessage(status, { error: { message, status: status === 429 ? 'RESOURCE_EXHAUSTED' : '' } }) || (BUSY.includes(status) ? t('busy') : message);
+        if (winner === model) winner = null;
+        start();
+      });
+    };
+    start();
+  });
+}
+// What a failed stream said: Gemini's JSON error, or the plain message.
+function geminiError(err) {
+  const text = String(err?.message ?? err);
+  try { const e = JSON.parse(text.slice(text.indexOf('{'))).error; return { status: e.code, message: e.message || text }; }
+  catch { return { status: 0, message: text }; }
 }
 
 // ----- Streaming: the answer shows while it is still being written -----
 // Reads Gemini's server-sent events and calls onText with all of the answer so far; returns the whole answer.
+// A word lookup needs no step-by-step reasoning, and skipping it saves seconds. Models take different settings
+// for that ("minimal" isn't allowed on some): the first one a model accepts is remembered for it.
+const THINK = [{ thinkingLevel: 'minimal' }, { thinkingLevel: 'low' }, null];
 async function geminiStream(model, prompt, onText) {
+  const st = geminiStats[model] ||= {};
+  let level = /gemini-2\./.test(model) ? -1 : st.think ?? 0;
+  for (;;) {
+    try { return await geminiStreamOnce(model, prompt, onText, level < 0 ? { thinkingBudget: 0 } : THINK[level]); }
+    catch (err) {
+      if (level < 0 || level >= THINK.length - 1 || !/thinking/i.test(geminiError(err).message)) throw err;
+      st.think = ++level;
+    }
+  }
+}
+async function geminiStreamOnce(model, prompt, onText, thinkingConfig) {
   const url = `${GEMINI}models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`;
-  const thinkingConfig = /gemini-2\./.test(model) ? { thinkingBudget: 0 } : { thinkingLevel: 'minimal' };
-  const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2, thinkingConfig } };
+  const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2, ...(thinkingConfig ? { thinkingConfig } : {}) } };
   const headers = { 'x-goog-api-key': settings.apiKey, 'content-type': 'application/json' };
   let buffer = '', text = '';
   const feed = chunk => {
@@ -154,47 +243,7 @@ function partialFields(text) {
   return out;
 }
 
-// People type names like "Gemini Flash Lite": turn that into an id, or match it to a model the key has.
-async function resolveGeminiModel(name) {
-  const id = name.trim().toLowerCase().replace(/^models\//, '').replace(/\s+/g, '-');
-  if (/^gemini-\d[\w.-]*$/.test(id)) return id;
-  const words = id.split('-').filter(w => w && w !== 'gemini');
-  return (await listGeminiModels()).find(m => words.every(w => m.split('-').includes(w))) || null;
-}
-
-let lastModel = '', lastFailed = []; // the model that gave the last answer, and any that failed first: shown under it
-async function askGemini(prompt, skip) {
-  const chosen = settings.model && await resolveGeminiModel(settings.model);
-  const queue = [chosen, geminiWorking].filter(Boolean);
-  const tried = new Set(skip ? [skip] : []); // a model whose stream just failed isn't asked again
-  let listed = false, lastError = t('busy');
-  while (tried.size < 5 + !!skip) {
-    const model = queue.find(m => !tried.has(m));
-    if (!model) {
-      if (listed) break;
-      listed = true;
-      queue.push(...await listGeminiModels());
-      continue;
-    }
-    tried.add(model);
-    let r = await geminiCall(model, prompt, true);
-    if (r.status === 400 && /thinking/i.test(r.json?.error?.message || '')) r = await geminiCall(model, prompt, false);
-    if (r.ok) {
-      // Only remember Flash-Lite: a stand-in Flash model would burn its much smaller daily quota.
-      if (model.endsWith('-lite') && geminiWorking !== model) store.set('geminiWorking', geminiWorking = model);
-      lastModel = model;
-      return (r.json.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
-    }
-    const msg = r.json?.error?.message || String(r.status);
-    const suggested = msg.match(/\buse\s+models\/(gemini-[\w.-]*\w)/i)?.[1];
-    if (suggested) queue.unshift(suggested);
-    // A wrong key is worth stopping for; a model we can't use just means trying the next one.
-    else if (!BUSY.includes(r.status) && r.status !== 404 && !/model/i.test(msg)) throw new Error(msg);
-    lastFailed.push(model);
-    lastError = quotaMessage(r.status, r.json) || (BUSY.includes(r.status) ? t('busy') : msg);
-  }
-  throw new Error(lastError);
-}
+let lastModel = '', lastFailed = [], lastWhy = {}; // the model that gave the last answer, and any that failed first: shown under it
 
 async function askAI(word, sentence, onPartial) {
   return askModel(buildPrompt(word, sentence), 800, onPartial);
@@ -206,15 +255,10 @@ async function askAI(word, sentence, onPartial) {
 async function askModel(prompt, maxTokens = 800, onPartial) {
   const model = settings.model || DEFAULT_MODELS[settings.provider];
   lastModel = model;
-  lastFailed = [];
+  lastFailed = []; lastWhy = {};
   let r, text;
   if (settings.provider === 'gemini') {
-    const streamModel = onPartial && ((settings.model && await resolveGeminiModel(settings.model)) || geminiWorking);
-    if (streamModel) {
-      try { text = await geminiStream(streamModel, prompt, onPartial); lastModel = streamModel; }
-      catch { text = null; lastFailed.push(streamModel); }
-    }
-    if (!text) text = await askGemini(prompt, streamModel);
+    text = await askGemini(prompt, onPartial);
   } else if (settings.provider === 'anthropic') {
     r = await postJson('https://api.anthropic.com/v1/messages',
       { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },

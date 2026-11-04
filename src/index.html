@@ -184,7 +184,8 @@
       <small data-i18n="keyHelp"></small>
     </label>
     <button class="btn small" id="setupFromSettings" type="button" data-for="gemini"><i data-icon="key"></i><span data-i18n="setupHelp"></span></button>
-    <label><span data-i18n="model"></span>
+    <!-- Gemini picks its own model (the fastest that answers); other providers need theirs named. -->
+    <label id="modelField"><span data-i18n="model"></span>
       <input name="model" dir="ltr">
     </label>
     <div class="mcp-box usage">

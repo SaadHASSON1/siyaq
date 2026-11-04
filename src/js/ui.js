@@ -35,6 +35,7 @@ function syncProviderFields() {
   form.querySelector('[data-for="openai"]').hidden = form.provider.value !== 'openai';
   form.querySelectorAll('[data-for="gemini"]').forEach(el => el.hidden = form.provider.value !== 'gemini');
   form.model.placeholder = DEFAULT_MODELS[form.provider.value] || t('autoModel');
+  $('#modelField').hidden = form.provider.value === 'gemini';
 }
 function showSettingsPane(name) {
   document.querySelectorAll('#settings .set-tabs button').forEach(b => { b.classList.toggle('on', b.dataset.pane === name); b.setAttribute('aria-selected', b.dataset.pane === name); });

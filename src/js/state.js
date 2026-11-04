@@ -7,7 +7,8 @@ if (!LANGS[settings.lang]) settings.lang = 'ar'; // earlier versions stored free
 if (!LANGS[settings.uiLang]) settings.uiLang = store.get('settings', null) ? settings.lang : systemLang;
 const t = key => STRINGS[settings.uiLang][key] ?? STRINGS.en[key];
 // Earlier versions saved these as the model; they have tiny free quotas, so go back to automatic.
-if (/^gemini-(2\.5|3\.8)-flash$/.test(settings.model)) { settings.model = ''; store.set('settings', settings); }
+// Gemini now picks its own model, the fastest that answers: a name typed in earlier versions is dropped.
+if (settings.provider === 'gemini' && settings.model) { settings.model = ''; store.set('settings', settings); }
 let vocab = store.get('vocab', []);
 let pdfDoc = null, scale = 1, bookName = ''; // pdfDoc: the open book (a PDF.js document, or an EPUB that looks like one)
 let bookType = 'pdf';

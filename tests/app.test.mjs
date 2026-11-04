@@ -225,7 +225,7 @@ test('streaming: the meaning shows before the whole answer has arrived', async (
   // Gemini's streaming endpoint, faked: the reply comes in four pieces, 250 ms apart.
   await page.eval(`{
     askModel = __realAskModel; // the app's own, which streams
-    settings.provider = 'gemini'; geminiWorking = 'gemini-test-flash-lite';
+    settings.provider = 'gemini'; geminiStats = { 'gemini-test-flash-lite': { ms: 100 } }; geminiModels = ['gemini-test-flash-lite'];
     const reply = '{"translation": "ضفّة النهر", "explanation": "Here it is the land by a river.", "base_form": "bank", "part_of_speech": "noun", "other_meanings": ["بنك"], "sentence_translation": "جلست على ضفّة النهر."}';
     const pieces = [reply.slice(0, 40), reply.slice(40, 90), reply.slice(90, 150), reply.slice(150)];
     window.__seen = [];
@@ -246,6 +246,33 @@ test('streaming: the meaning shows before the whole answer has arrived', async (
   assert.ok(seen.some(([streaming, tr]) => streaming && tr === 'ضفّة النهر'), 'the meaning appeared while the answer was still streaming');
   assert.equal(await page.eval(`document.querySelector('#lookup .tr').textContent`), 'ضفّة النهر');
   assert.ok(await page.eval(`[...document.querySelectorAll('#lookup .chip')].some(c => c.textContent === 'بنك')`), 'the full answer, other meanings included, arrives at the end');
+});
+
+test('Gemini: a busy model is skipped, a slow one is raced, a model that wants another thinking level gets it', async () => {
+  await fresh();
+  const answer = await page.eval(`await (async () => {
+    settings.provider = 'gemini'; lastFailed = [];
+    geminiModels = ['m-busy-flash-lite', 'm-slow-flash-lite', 'm-quick-flash-lite'];
+    geminiStats = { 'm-busy-flash-lite': { ms: 100 }, 'm-slow-flash-lite': { ms: 200 }, 'm-quick-flash-lite': { ms: 300 } };
+    const reply = '{"translation": "ok"}', asked = [];
+    window.fetch = async (url, init) => {
+      const model = String(url).match(/models\\/([^:]+):/)?.[1], think = JSON.parse(init.body).generationConfig.thinkingConfig;
+      asked.push(model + ' ' + JSON.stringify(think));
+      if (model === 'm-busy-flash-lite') return new Response(JSON.stringify({ error: { code: 503, message: 'high demand' } }), { status: 503 });
+      if (model === 'm-quick-flash-lite' && think?.thinkingLevel === 'minimal') return new Response(JSON.stringify({ error: { code: 400, message: 'Thinking level MINIMAL is not supported for this model.' } }), { status: 400 });
+      await new Promise(r => setTimeout(r, model === 'm-slow-flash-lite' ? 6000 : 200));
+      return new Response('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text: reply }] } }] }) + '\\n\\n', { status: 200 });
+    };
+    const t0 = performance.now(), text = await askGemini('prompt', () => {});
+    return { text, ms: performance.now() - t0, model: lastModel, failed: lastFailed, asked, think: geminiStats['m-quick-flash-lite'].think, busyMarked: !!geminiStats['m-busy-flash-lite'].failedAt };
+  })()`);
+  assert.equal(answer.text, '{"translation": "ok"}', JSON.stringify(answer));
+  assert.equal(answer.model, 'm-quick-flash-lite', 'the quick one answered');
+  assert.ok(answer.ms > 1000 && answer.ms < 3000, `raced after a moment, not after the slow one (${Math.round(answer.ms)} ms)`);
+  assert.deepEqual(answer.failed, ['m-busy-flash-lite']);
+  assert.equal(answer.think, 1, 'remembered: this model takes "low"');
+  assert.ok(answer.busyMarked, 'the busy one is tried last for a while');
+  assert.equal(await page.eval(`rankGemini(geminiModels)[0]`), 'm-quick-flash-lite', 'next time the quick one goes first');
 });
 
 test('demo book: dotted words have ready meanings without a key', async () => {
@@ -337,7 +364,8 @@ test('reading mode: only the page, the meaning in a card over the word, Esc to l
   assert.equal(await page.eval(`/tint-(sepia|sage)/.test(document.body.className)`), false, 'no colour by default');
   await page.eval(`document.querySelector('#readBar [data-tint="sepia"]').click()`);
   assert.ok(await page.eval(`document.body.classList.contains('tint-sepia') && store.get('settings').readTint === 'sepia'`));
-  assert.notEqual(await page.eval(`getComputedStyle(document.querySelector('.page canvas')).filter`), 'none', 'the pages are tinted');
+  await page.sleep(500); // it fades in
+  assert.equal(await page.eval(`getComputedStyle(document.querySelector('.page'), '::before').backgroundColor`), 'rgb(243, 227, 195)', 'the page itself is tinted, not just around it');
   await page.eval(`document.querySelector('#readExit').click()`);
   assert.equal(await page.eval(`/tint-(sepia|sage)/.test(document.body.className)`), false, 'gone outside reading mode');
   await page.eval(`document.querySelector('#readBtn').click()`);

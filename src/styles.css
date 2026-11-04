@@ -301,14 +301,15 @@ body.reading .panel { display: none; }
 .read-exit:hover { background: var(--surface-2); }
 .read-exit svg { width: 15px; height: 15px; }
 .read-exit kbd { font: inherit; font-size: 11px; color: var(--muted); padding: 1px 6px; border: 1px solid var(--border); border-radius: 5px; }
-/* Reading colours: the page tinted like paper (PDF pages are pictures, so a filter; EPUB text gets real colours) */
+/* Reading colours: the page tinted like paper. A PDF page is a picture: a layer of colour over it, multiplied in like
+   ink on tinted paper (white becomes the colour, black text stays black). EPUB text gets real colours. */
+.page:not(.epub-chapter)::before { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: 2px; pointer-events: none; mix-blend-mode: multiply; background: transparent; opacity: 0; transition: opacity .4s ease, background-color .4s ease; }
+body.tint-sepia .page:not(.epub-chapter)::before { background: #f3e3c3; opacity: 1; }
+body.tint-sage .page:not(.epub-chapter)::before { background: #d9e9d1; opacity: 1; }
 body.tint-sepia #viewer { background: #e9dcc0; }
-body.tint-sepia .page canvas { filter: sepia(.32) saturate(1.15) brightness(.97); }
 body.tint-sepia .page.epub-chapter { background: #f6ecd6; color: #3b2f22; }
 body.tint-sage #viewer { background: #d3e0cc; }
-body.tint-sage .page canvas { filter: sepia(.25) hue-rotate(45deg) saturate(.85) brightness(.97); }
 body.tint-sage .page.epub-chapter { background: #e5efdf; color: #26331f; }
-body.tint-sepia .page canvas.stand-in, body.tint-sage .page canvas.stand-in { filter: invert(1) hue-rotate(180deg) sepia(.3); }
 /* in dark mode, the same warmth, dimmed */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) body.tint-sepia #viewer { background: #2a241b; }
@@ -324,7 +325,7 @@ body.tint-sepia .page canvas.stand-in, body.tint-sage .page canvas.stand-in { fi
 body.tint-sepia .word-card, body.tint-sepia .word-card::before { background: #fbf4e4; }
 body.tint-sage .word-card, body.tint-sage .word-card::before { background: #f1f6ee; }
 :root[data-theme="dark"] body.tint-sepia .word-card, :root[data-theme="dark"] body.tint-sepia .word-card::before, :root[data-theme="dark"] body.tint-sage .word-card, :root[data-theme="dark"] body.tint-sage .word-card::before { background: var(--surface); }
-.tint-ease #viewer, .tint-ease .page canvas, .tint-ease .page.epub-chapter { transition: background-color .4s ease, color .4s ease, filter .4s ease; }
+.tint-ease #viewer, .tint-ease .page.epub-chapter { transition: background-color .4s ease, color .4s ease, filter .4s ease; }
 /* A word's meaning in reading mode: just the word and what it means here, in a card that points at it */
 .word-card {
   position: fixed; z-index: 35; width: max-content; min-width: 160px; max-width: min(320px, calc(100vw - 24px));
