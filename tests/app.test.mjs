@@ -413,6 +413,22 @@ test('layout: nothing overlaps or is cut off, in every language and width', asyn
   assert.deepEqual(found, []);
 });
 
+test('updates: found from Settings, it stays in Settings; found on its own, it is offered at the bottom', async () => {
+  const desktop = FAKE_DESKTOP.replace("if (cmd === 'mcp_take_inbox') return [];", "if (cmd === 'mcp_take_inbox') return []; if (cmd === 'check_update') return '9.9.10';");
+  await fresh(undefined, FAKE_AI + desktop);
+  // on its own, a few seconds after starting
+  await page.waitFor(`!document.querySelector('#toast').hidden && document.querySelector('#toast').textContent.includes('9.9.10')`, 6000);
+  await page.eval(`document.querySelector('#toast').hidden = true`);
+  await page.eval(`{ openSettings('about'); document.querySelector('#updateCheck').click(); }`);
+  await page.waitFor(`document.querySelector('#updateNowBtn')`);
+  assert.ok(await page.eval(`document.querySelector('#settings').open && document.querySelector('#toast').hidden`), 'Settings stays open, no toast');
+  assert.ok(await page.eval(`document.querySelector('#updateMsg').textContent.includes('9.9.10')`));
+  await page.eval(`document.querySelector('#updateNowBtn').click()`);
+  await page.waitFor(`__calls.some(([c]) => c === 'install_update')`);
+  assert.ok(await page.eval(`document.querySelector('#settings').open && document.querySelector('#updateMsg').textContent === t('updating')`), 'and it updates from there');
+  await page.eval(`document.querySelector('#settings').close()`);
+});
+
 test('no JavaScript errors anywhere above', () => {
   assert.deepEqual(page.errors, []);
 });

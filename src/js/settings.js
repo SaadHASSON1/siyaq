@@ -188,14 +188,14 @@ appVersion().then(v => {
   showVersion();
 });
 
+// Installs the update; `say` shows how it goes (a toast, or the line in Settings).
+async function installUpdate(say = text => showToast(text)) {
+  say(t('updating'));
+  try { await tauri.core.invoke('install_update'); } catch (err) { say(t('updateFailed') + err, 'error'); }
+}
+// An update found on its own, while reading: offered at the bottom of the window.
 function offerUpdate(version) {
-  showToast(t('updateAvail')(version), {
-    label: t('updateNow'),
-    run: async () => {
-      showToast(t('updating'));
-      try { await tauri.core.invoke('install_update'); } catch (err) { showToast(t('updateFailed') + err); }
-    },
-  });
+  showToast(t('updateAvail')(version), { label: t('updateNow'), run: () => installUpdate() });
 }
 
 // On its own a few seconds after starting (installed app only), and from Settings whenever asked.
@@ -214,9 +214,11 @@ $('#updateCheck').onclick = async () => {
   try {
     const version = await tauri.core.invoke('check_update');
     if (!version) { say(t('updateNone'), 'ok'); return; }
+    // Asked for here: the answer stays here, with its button, and Settings stays open.
     say(t('updateAvail')(version), 'ok');
-    $('#settings').close('cancel');
-    offerUpdate(version);
+    const btn = Object.assign(document.createElement('button'), { type: 'button', className: 'btn small primary', id: 'updateNowBtn', textContent: t('updateNow') });
+    btn.onclick = () => { btn.remove(); installUpdate(say); };
+    msg.append(' ', btn);
   } catch (err) {
     say(t('updateCheckFailed') + err, 'error');
   }

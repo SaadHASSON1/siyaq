@@ -507,6 +507,7 @@ dialog#settings { width: min(480px, calc(100vw - 32px)); }
 .update-msg { flex-basis: 100%; margin: 0 !important; }
 .update-msg.ok { color: var(--accent-text); }
 .update-msg.error { color: var(--danger); }
+.update-msg .btn { margin-inline-start: 8px; vertical-align: middle; }
 .mcp-msg.error { color: var(--danger) !important; }
 dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
 
