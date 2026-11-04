@@ -21,7 +21,7 @@ function setPanelHidden(hidden, save = true) {
   if (!hidden) requestAnimationFrame(() => window.movePill?.(document.querySelector('.seg')));
 }
 setPanelHidden(store.get('panelHidden', false), false);
-$('#panelHide').onclick = () => (reading ? closeFloat() : setPanelHidden(true));
+$('#panelHide').onclick = () => setPanelHidden(true);
 $('#panelShow').onclick = () => setPanelHidden(false);
 
 // Dragging the panel's edge. The panel is on the reading side's start: on the left in English, the right in Arabic.
@@ -37,6 +37,7 @@ grip.addEventListener('pointerdown', e => {
     grip.removeEventListener('pointermove', move);
     document.body.classList.remove('resizing');
     setPanelWidth(parseFloat(panel.style.getPropertyValue('--panel-w')), true);
+    if (pdfDoc && bookType !== 'epub' && fitWidthScale() < fitScale - 0.01) refit(); // pages wider than the room left
     grip.releasePointerCapture(ev.pointerId);
   };
   grip.addEventListener('pointermove', move);
@@ -55,34 +56,101 @@ grip.addEventListener('keydown', e => {
 
 // ---------- Reading mode ----------
 // The bars and the panel step aside and the pages take the whole window. The top bar comes back when the pointer
-// reaches the top; a word's meaning slides in over the page and goes again with Esc or ✕.
+// reaches the top. A word's meaning in its sentence, and nothing else, shows in a small card over the word.
+// Leaving puts everything back as it was: the same pages at the same size, at the same place.
 let reading = false, idleTimer = 0;
 function setReading(on) {
   if (on === reading || (on && !pdfDoc)) return;
+  // The viewer moves up or down by the bar's height: keep the page where the reader's eyes are.
+  const top = viewer.getBoundingClientRect().top;
   reading = on;
   document.body.classList.toggle('reading', on);
   document.body.classList.remove('peek');
-  closeFloat();
+  viewer.scrollTop -= top - viewer.getBoundingClientRect().top;
+  hideWordCard();
   panel.inert = on || panel.classList.contains('closed');
   $('#panelShow').hidden = on || !panel.classList.contains('closed');
-  $('#readExit').hidden = !on;
+  $('#readBar').hidden = !on;
+  applyTint();
   $('#readBtn').classList.toggle('on', on);
   if (on) wakeExit();
 }
-const closeFloat = () => { panel.classList.remove('float'); if (reading) panel.inert = true; };
-// Shows the panel for a word that was just looked up: over the page in reading mode, or back in its place.
-function revealPanel() {
-  if (reading) { panel.inert = false; panel.classList.add('float'); }
+// A word was just looked up: its card in reading mode, or the panel back in its place.
+function revealPanel(word) {
+  if (reading) showWordCard(word);
   else if (panel.classList.contains('closed')) setPanelHidden(false);
 }
+
+// The card: the word, then its meaning here, flowing in as the answer arrives. It mirrors the panel (which still
+// gets the whole answer, and saves the word), so every way an answer can come (streamed, saved, the demo, an
+// error) shows the same here.
+const card = Object.assign(document.createElement('div'), { id: 'wordCard', className: 'word-card', hidden: true });
+card.setAttribute('role', 'status');
+document.body.append(card);
+let clickPoint = null;
+document.addEventListener('click', e => {
+  clickPoint = { x: e.clientX, y: e.clientY };
+  if (!card.hidden && !card.contains(e.target)) hideWordCard(); // a click elsewhere closes it (a word opens a new one)
+}, true);
+function showWordCard(word) {
+  card.innerHTML = `<div class="wc-word" dir="auto">${esc(word)}</div><p class="wc-tr" dir="${LANGS[settings.lang].dir}"></p><div class="wc-wait"><span></span></div>`;
+  card.hidden = false;
+  card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
+  // Only what the lookup writes from now on: the panel still shows the last word (or the hint) until then.
+  mirror.observe($('#lookup'), { childList: true, subtree: true, characterData: true });
+  placeWordCard();
+}
+function hideWordCard() { card.hidden = true; mirror.disconnect(); }
+const mirror = new MutationObserver(() => syncWordCard());
+function syncWordCard() {
+  const pane = $('#lookup'), tr = pane.querySelector('.tr'), state = pane.querySelector('.state p');
+  const out = card.querySelector('.wc-tr');
+  if (tr) {
+    const streaming = !!pane.querySelector('.result.streaming');
+    flowText(out, streaming ? (tr.dataset.shown ?? tr.textContent) : tr.textContent, !streaming);
+    if (out.textContent) card.querySelector('.wc-wait')?.remove();
+  } else if (state && !pane.querySelector('.skeleton')) {
+    out.textContent = state.textContent; // no key, or the AI couldn't answer: say so, briefly
+    out.classList.add('wc-note');
+    card.querySelector('.wc-wait')?.remove();
+  }
+  placeWordCard();
+}
+// Under the word, or over it when there's no room below; never past the window's edges.
+function placeWordCard() {
+  if (card.hidden || !clickPoint) return;
+  const w = card.offsetWidth, h = card.offsetHeight, gap = 18;
+  const x = Math.max(12, Math.min(innerWidth - w - 12, clickPoint.x - w / 2));
+  const below = clickPoint.y + gap + h < innerHeight - 12;
+  card.style.left = x + 'px';
+  card.style.top = (below ? clickPoint.y + gap : Math.max(12, clickPoint.y - gap - h)) + 'px';
+  card.classList.toggle('above', !below);
+  card.style.setProperty('--tail', Math.max(14, Math.min(w - 14, clickPoint.x - x)) + 'px');
+}
+viewer.addEventListener('scroll', () => { if (!card.hidden) hideWordCard(); }, { passive: true });
+
 // The exit button fades while the pointer rests, so it doesn't sit on the page.
 function wakeExit() {
-  $('#readExit').classList.remove('idle');
+  $('#readBar').classList.remove('idle');
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => $('#readExit').classList.add('idle'), 2500);
+  idleTimer = setTimeout(() => $('#readBar').classList.add('idle'), 2500);
 }
 $('#readBtn').onclick = () => setReading(!reading);
 $('#readExit').onclick = () => setReading(false);
+
+// The reading colour: the reader's choice, kept for next time, and only on while reading mode is.
+function applyTint() {
+  const tint = settings.readTint || 'none';
+  for (const c of ['sepia', 'sage']) document.body.classList.toggle('tint-' + c, reading && tint === c);
+  document.querySelectorAll('#readBar .tint').forEach(b => { b.classList.toggle('on', b.dataset.tint === tint); b.setAttribute('aria-checked', b.dataset.tint === tint); });
+}
+document.querySelectorAll('#readBar .tint').forEach(b => b.onclick = () => {
+  settings.readTint = b.dataset.tint;
+  store.set('settings', settings);
+  document.body.classList.add('tint-ease');
+  applyTint();
+  setTimeout(() => document.body.classList.remove('tint-ease'), 500);
+});
 document.addEventListener('pointermove', e => {
   if (!reading) return;
   wakeExit();
@@ -91,7 +159,7 @@ document.addEventListener('pointermove', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && reading && !document.querySelector('dialog[open]') && $('#hlPop').hidden && !askMode && $('#searchBar').hidden) {
-    if (panel.classList.contains('float')) closeFloat(); else setReading(false);
+    if (!card.hidden) hideWordCard(); else setReading(false);
   }
   // ⌘/Ctrl + Shift + F: reading mode ("focus"; Ctrl+Shift+R would reload on Windows); ⌘/Ctrl + \: the panel.
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'f' && pdfDoc) { e.preventDefault(); setReading(!reading); }

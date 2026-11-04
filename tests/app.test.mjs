@@ -283,10 +283,12 @@ test('side panel: hidden and back, wider and narrower, remembered', async () => 
   await page.eval(`{ const g = document.querySelector('#panelGrip'); for (let i = 0; i < 3; i++) g.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); }`);
   assert.equal(await width(), 440);
   assert.equal(await page.eval(`store.get('panelWidth')`), 440);
-  // the book follows: pages are drawn again to fit the new width
-  const fit = await page.eval(`fitScale`);
-  await page.eval(`document.querySelector('#panelHide').click()`);
-  await page.waitFor(`Math.abs(fitWidthScale() - fitScale) < 0.01 && fitScale !== ${fit}`, 3000);
+  // hiding it leaves the pages as they are: no redrawing, no blur, the same place on the page
+  const fit = await page.eval(`fitScale`), drawn = await page.eval(`document.querySelector('.page[data-page="1"] canvas')`);
+  await page.eval(`window.__canvas = document.querySelector('.page[data-page="1"] canvas'); document.querySelector('#panelHide').click()`);
+  await page.sleep(900);
+  assert.equal(await page.eval(`fitScale`), fit, 'the same size');
+  assert.ok(await page.eval(`document.querySelector('.page[data-page="1"] canvas') === __canvas && !viewer.style.getPropertyValue('--live-zoom')`), 'not drawn again');
   assert.ok(await page.eval(`document.querySelector('#panel').classList.contains('closed') && !document.querySelector('#panelShow').hidden && store.get('panelHidden')`));
   // a word brings it back
   await page.eval(`clickWord('bank')`);
@@ -294,28 +296,53 @@ test('side panel: hidden and back, wider and narrower, remembered', async () => 
   assert.ok(await page.eval(`!document.querySelector('#panel').classList.contains('closed') && document.querySelector('#panelShow').hidden`));
   await page.eval(`document.querySelector('#panelGrip').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`);
   assert.equal(await width(), 380, 'a double-click puts it back');
+  // a panel so wide the pages no longer fit across: they are drawn again, smaller, once
+  await page.eval(`{ setPanelWidth(720, true); }`);
+  await page.waitFor(`fitScale < ${fit} - 0.01 && Math.abs(fitWidthScale() - fitScale) < 0.01`, 3000);
+  await page.eval(`setPanelWidth(380, true)`);
 });
 
-test('reading mode: only the page, a word over it, Esc to leave', async () => {
+test('reading mode: only the page, the meaning in a card over the word, Esc to leave', async () => {
   await fresh();
   await openPdf();
+  await page.sleep(600); // the book settles at its page first
+  await page.eval(`{ viewer.scrollTop = 120; window.__before = [fitScale, document.querySelector('.page[data-page="1"]').getBoundingClientRect().top]; }`);
   await page.eval(`document.querySelector('#readBtn').click()`);
   await page.sleep(450);
-  assert.ok(await page.eval(`document.body.classList.contains('reading') && !document.querySelector('#readExit').hidden`));
-  assert.ok(await page.eval(`document.querySelector('.bar').getBoundingClientRect().bottom <= 1`), 'the top bar is out of sight');
+  assert.ok(await page.eval(`document.body.classList.contains('reading') && !document.querySelector('#readBar').hidden`));
+  assert.ok(await page.eval(`document.querySelector('.bar').getBoundingClientRect().bottom <= 1 && document.querySelector('#panel').offsetParent === null`), 'no bar, no panel');
   assert.ok(await page.eval(`Math.abs(viewer.getBoundingClientRect().width - innerWidth) < 2`), 'the page has the whole width');
+  assert.deepEqual(await page.eval(`[fitScale, Math.round(document.querySelector('.page[data-page="1"]').getBoundingClientRect().top)]`), [await page.eval(`__before[0]`), Math.round(await page.eval(`__before[1]`))], 'the page stays where it was');
   // the bar comes down at the top of the window
   await page.eval(`document.dispatchEvent(new PointerEvent('pointermove', { clientX: 300, clientY: 4, bubbles: true }))`);
   await page.sleep(400);
   assert.ok(await page.eval(`Math.round(document.querySelector('.bar').getBoundingClientRect().top) === 0`));
+  await page.eval(`document.dispatchEvent(new PointerEvent('pointermove', { clientX: 300, clientY: 400, bubbles: true }))`);
+  // a word: its card, under it, with the meaning only
   await page.eval(`clickWord('bank')`);
-  await page.waitFor(`document.querySelector('#lookup .tr')`);
+  await page.waitFor(`document.querySelector('#wordCard .wc-tr')?.textContent === 'T-ar'`);
+  const card = await page.eval(`(() => { const c = document.querySelector('#wordCard').getBoundingClientRect(), w = spanWith('bank').getBoundingClientRect();
+    return { below: c.top > w.top, near: c.top - w.bottom < 30, small: c.width <= 330 && c.height < 120, text: document.querySelector('#wordCard').innerText.trim().split(/\\n+/) }; })()`);
+  assert.deepEqual(card, { below: true, near: true, small: true, text: ['bank', 'T-ar'] });
+  assert.ok(await page.eval(`vocab.some(v => v.word === 'bank')`), 'still saved to My words');
+  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+  assert.ok(await page.eval(`document.querySelector('#wordCard').hidden && document.body.classList.contains('reading')`), 'first Esc: the card goes');
+  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
   await page.sleep(400);
-  assert.ok(await page.eval(`document.querySelector('#panel').classList.contains('float') && getComputedStyle(document.querySelector('#panel')).opacity === '1'`), 'the meaning floats over the page');
-  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
-  assert.ok(await page.eval(`!document.querySelector('#panel').classList.contains('float') && document.body.classList.contains('reading')`), 'first Esc: the meaning goes');
-  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
-  assert.ok(await page.eval(`!document.body.classList.contains('reading') && document.querySelector('#readExit').hidden`), 'second Esc: back to normal');
+  assert.ok(await page.eval(`!document.body.classList.contains('reading') && document.querySelector('#readBar').hidden`), 'second Esc: back to normal');
+  assert.ok(await page.eval(`Math.abs(document.querySelector('.page[data-page="1"]').getBoundingClientRect().top - __before[1]) < 2 && fitScale === __before[0] && document.querySelector('#panel').offsetParent !== null`), 'everything as it was');
+  // the reading colour: off unless chosen; once chosen, on whenever reading mode is, and only then
+  assert.equal(await page.eval(`settings.readTint || 'none'`), 'none');
+  await page.eval(`document.querySelector('#readBtn').click()`);
+  assert.equal(await page.eval(`/tint-(sepia|sage)/.test(document.body.className)`), false, 'no colour by default');
+  await page.eval(`document.querySelector('#readBar [data-tint="sepia"]').click()`);
+  assert.ok(await page.eval(`document.body.classList.contains('tint-sepia') && store.get('settings').readTint === 'sepia'`));
+  assert.notEqual(await page.eval(`getComputedStyle(document.querySelector('.page canvas')).filter`), 'none', 'the pages are tinted');
+  await page.eval(`document.querySelector('#readExit').click()`);
+  assert.equal(await page.eval(`/tint-(sepia|sage)/.test(document.body.className)`), false, 'gone outside reading mode');
+  await page.eval(`document.querySelector('#readBtn').click()`);
+  assert.ok(await page.eval(`document.body.classList.contains('tint-sepia')`), 'back with reading mode');
+  await page.eval(`{ document.querySelector('#readBar [data-tint="none"]').click(); document.querySelector('#readExit').click(); }`);
 });
 
 // Nothing on top of anything else, and no label cut off: the bar, the panel and the key steps, in every language,

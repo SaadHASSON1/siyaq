@@ -74,7 +74,15 @@
     <button class="icon-btn" id="searchClose" data-i18n-title="close"><i data-icon="x"></i></button>
   </div>
   <button class="panel-show" id="panelShow" type="button" hidden data-i18n-title="showPanel"><i data-icon="panelOpen" class="flip"></i><span data-i18n="tabMeaning"></span></button>
-  <button class="read-exit" id="readExit" type="button" hidden><i data-icon="x"></i><span data-i18n="readingExit"></span><kbd>Esc</kbd></button>
+  <div class="read-bar" id="readBar" hidden>
+    <div class="tints" role="radiogroup" data-i18n-title="readTint">
+      <button type="button" class="tint t-none" role="radio" data-tint="none" data-i18n-title="tintNone"></button>
+      <button type="button" class="tint t-sepia" role="radio" data-tint="sepia" data-i18n-title="tintSepia"></button>
+      <button type="button" class="tint t-sage" role="radio" data-tint="sage" data-i18n-title="tintSage"></button>
+    </div>
+    <span class="sep"></span>
+    <button class="read-exit" id="readExit" type="button"><i data-icon="x"></i><span data-i18n="readingExit"></span><kbd>Esc</kbd></button>
+  </div>
   <div class="toast" id="toast" hidden></div>
 <div class="open-menu" id="openMenu" hidden></div>
 <div class="sel-bar" id="selBar" hidden>
@@ -139,6 +147,14 @@
         <option value="light" data-i18n="themeLight"></option>
         <option value="dark" data-i18n="themeDark"></option>
       </select>
+    </label>
+    <label><span data-i18n="readTint"></span>
+      <select name="readTint">
+        <option value="none" data-i18n="tintNone"></option>
+        <option value="sepia" data-i18n="tintSepia"></option>
+        <option value="sage" data-i18n="tintSage"></option>
+      </select>
+      <small data-i18n="readTintHelp"></small>
     </label>
     <div class="mcp-box">
       <b data-i18n="backupTitle"></b>

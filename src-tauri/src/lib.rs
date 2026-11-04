@@ -16,22 +16,34 @@ struct AiResponse {
     body: serde_json::Value,
 }
 
-/// Sends the lookup request from the app itself, so AI servers don't need to
-/// allow browser (CORS) requests. That is what makes local Ollama just work.
 /// One client for every AI call, so the connection (and its TLS handshake) is reused from one lookup to the next.
 /// A server that doesn't connect in 8 s, or goes 20 s without sending anything, fails, and the app moves on to
-/// another model instead of waiting.
+/// another model instead of waiting. Idle connections are let go after 30 s, before servers drop them unseen.
 fn client() -> &'static reqwest::Client {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
     CLIENT.get_or_init(|| {
         reqwest::Client::builder()
             .connect_timeout(std::time::Duration::from_secs(8))
             .read_timeout(std::time::Duration::from_secs(20))
+            .pool_idle_timeout(std::time::Duration::from_secs(30))
+            .tcp_keepalive(std::time::Duration::from_secs(15))
             .build()
             .unwrap_or_default()
     })
 }
 
+/// Sends a request; if a kept connection turns out to be closed already (nothing was answered), once more on a
+/// fresh one, instead of failing the lookup and falling back to a slower way.
+async fn send(req: reqwest::RequestBuilder) -> Result<reqwest::Response, String> {
+    let again = req.try_clone();
+    match req.send().await {
+        Err(e) if (e.is_connect() || e.is_request()) && again.is_some() => again.unwrap().send().await.map_err(|e| e.to_string()),
+        r => r.map_err(|e| e.to_string()),
+    }
+}
+
+/// Sends the lookup request from the app itself, so AI servers don't need to
+/// allow browser (CORS) requests. That is what makes local Ollama just work.
 #[tauri::command]
 async fn ai_request(
     method: String,
@@ -47,7 +59,7 @@ async fn ai_request(
     for (k, v) in headers {
         req = req.header(k, v);
     }
-    let res = req.send().await.map_err(|e| e.to_string())?;
+    let res = send(req).await?;
     let status = res.status().as_u16();
     let text = res.text().await.map_err(|e| e.to_string())?;
     let body = serde_json::from_str(&text).unwrap_or(serde_json::Value::String(text));
@@ -68,7 +80,7 @@ async fn ai_stream(
     for (k, v) in headers {
         req = req.header(k, v);
     }
-    let res = req.send().await.map_err(|e| e.to_string())?;
+    let res = send(req).await?;
     let status = res.status().as_u16();
     if !res.status().is_success() {
         return Err(res.text().await.unwrap_or_default());

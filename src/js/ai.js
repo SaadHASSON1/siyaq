@@ -44,7 +44,9 @@ function quotaMessage(status, json) {
 }
 
 // In the app, requests go through Rust so AI servers needn't allow browser (CORS) calls.
+let lastRequest = 0;
 async function requestJson(method, url, headers, body) {
+  lastRequest = performance.now();
   if (tauri) {
     const r = await tauri.core.invoke('ai_request', { method, url, headers, body: body ?? null });
     return { ok: r.status >= 200 && r.status < 300, status: r.status, json: r.body };
@@ -109,6 +111,7 @@ async function geminiStream(model, prompt, onText) {
       } catch {} // a keep-alive or an unfinished line
     }
   };
+  lastRequest = performance.now();
   if (tauri) {
     // In the app, through Rust (no CORS); pieces come over a channel, ending with a NUL.
     const channel = new tauri.core.Channel();
@@ -129,6 +132,15 @@ async function geminiStream(model, prompt, onText) {
   if (!text) throw new Error(t('badReply'));
   return text;
 }
+
+// A connection to Gemini, opened (and its TLS handshake done) while the reader's pointer is over the book, so the
+// next lookup doesn't wait for one. Kept connections are dropped after 30 s idle: open one again after 25 s.
+// The models list is free: it costs no quota.
+function warmUp() {
+  if (!tauri || settings.provider !== 'gemini' || !settings.apiKey || performance.now() - lastRequest < 25000) return;
+  requestJson('GET', GEMINI + 'models?pageSize=1', { 'x-goog-api-key': settings.apiKey }).catch(() => {});
+}
+viewer.addEventListener('pointermove', () => { if (pdfDoc) warmUp(); }, { passive: true });
 
 // The string fields an unfinished JSON reply already has: {"translation": "…", "explanation": "half a sen…
 function partialFields(text) {

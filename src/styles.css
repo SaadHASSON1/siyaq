@@ -276,29 +276,74 @@ body.resizing .panel, body.resizing #viewer { transition: none; }
 body.reading .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; transform: translateY(-100%); transition: transform .3s cubic-bezier(.3, .8, .3, 1), box-shadow .3s; }
 body.reading.peek .bar, body.reading .bar:focus-within { transform: none; box-shadow: var(--shadow-pop); }
 body:not(.reading) .bar { transition: none; }
-/* The panel floats over the page, shown for a word and gone again */
-body.reading .panel {
-  position: absolute; top: 12px; bottom: 12px; inset-inline-start: 12px; margin: 0; visibility: visible;
-  width: min(var(--panel-w, 380px), calc(100% - 24px)); border: 1px solid var(--border); border-radius: 16px;
-  box-shadow: var(--shadow-pop); transform: translateX(calc(-100% - 24px)); opacity: 0; pointer-events: none;
-  transition: transform .34s cubic-bezier(.3, .8, .3, 1), opacity .25s ease;
-}
-[dir="rtl"] body.reading .panel { transform: translateX(calc(100% + 24px)); }
-body.reading .panel.float { transform: none !important; opacity: 1; pointer-events: auto; }
-body.reading .panel-grip { display: none; }
-body.reading #viewer { padding-top: 32px; }
+/* The panel steps aside; a small card shows a word's meaning over the page */
+body.reading .panel { display: none; }
 #readBtn.on { background: var(--accent-soft); color: var(--accent-text); }
-.read-exit {
-  position: absolute; bottom: 20px; inset-inline-end: 20px; z-index: 6; display: inline-flex; align-items: center; gap: 8px;
-  height: 36px; padding: 0 8px 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
-  color: var(--text); font: inherit; font-size: 13px; box-shadow: var(--shadow-pop); cursor: pointer; transition: opacity .4s ease;
+.read-bar {
+  position: absolute; bottom: 20px; inset-inline-end: 20px; z-index: 6; display: flex; align-items: center; gap: 4px;
+  padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-pop);
+  transition: opacity .4s ease;
 }
-[dir="rtl"] .read-exit { padding: 0 12px 0 8px; }
+.read-bar.idle:not(:hover):not(:focus-within) { opacity: 0; }
+.read-bar[hidden] { display: none; }
+.read-bar .sep { width: 1px; height: 18px; background: var(--border); }
+.tints { display: flex; gap: 4px; padding: 0 4px; }
+.tint { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border); cursor: pointer; padding: 0; }
+.tint.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.t-none { background: linear-gradient(135deg, #fff 45%, #d9d9d9 45% 55%, #fff 55%); }
+.t-sepia { background: #f1e4c8; }
+.t-sage { background: #dbe8d4; }
+.read-exit {
+  display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 6px 0 10px; border: 0; border-radius: 999px;
+  background: none; color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+}
+[dir="rtl"] .read-exit { padding: 0 10px 0 6px; }
+.read-exit:hover { background: var(--surface-2); }
 .read-exit svg { width: 15px; height: 15px; }
 .read-exit kbd { font: inherit; font-size: 11px; color: var(--muted); padding: 1px 6px; border: 1px solid var(--border); border-radius: 5px; }
-.read-exit.idle:not(:hover):not(:focus-visible) { opacity: 0; }
-.read-exit[hidden] { display: none; }
-@media (prefers-reduced-motion: reduce) { .panel, body.reading .bar, body.reading .panel { transition: none; } }
+/* Reading colours: the page tinted like paper (PDF pages are pictures, so a filter; EPUB text gets real colours) */
+body.tint-sepia #viewer { background: #e9dcc0; }
+body.tint-sepia .page canvas { filter: sepia(.32) saturate(1.15) brightness(.97); }
+body.tint-sepia .page.epub-chapter { background: #f6ecd6; color: #3b2f22; }
+body.tint-sage #viewer { background: #d3e0cc; }
+body.tint-sage .page canvas { filter: sepia(.25) hue-rotate(45deg) saturate(.85) brightness(.97); }
+body.tint-sage .page.epub-chapter { background: #e5efdf; color: #26331f; }
+body.tint-sepia .page canvas.stand-in, body.tint-sage .page canvas.stand-in { filter: invert(1) hue-rotate(180deg) sepia(.3); }
+/* in dark mode, the same warmth, dimmed */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.tint-sepia #viewer { background: #2a241b; }
+  :root:not([data-theme="light"]) body.tint-sage #viewer { background: #1f271c; }
+  :root:not([data-theme="light"]) body.tint-sepia .page.epub-chapter { background: #2e271e; color: #e8dcc6; }
+  :root:not([data-theme="light"]) body.tint-sage .page.epub-chapter { background: #222b1f; color: #dbe6d3; }
+  :root:not([data-theme="light"]) body:is(.tint-sepia, .tint-sage) .word-card, :root:not([data-theme="light"]) body:is(.tint-sepia, .tint-sage) .word-card::before { background: var(--surface); }
+}
+:root[data-theme="dark"] body.tint-sepia #viewer { background: #2a241b; }
+:root[data-theme="dark"] body.tint-sage #viewer { background: #1f271c; }
+:root[data-theme="dark"] body.tint-sepia .page.epub-chapter { background: #2e271e; color: #e8dcc6; }
+:root[data-theme="dark"] body.tint-sage .page.epub-chapter { background: #222b1f; color: #dbe6d3; }
+body.tint-sepia .word-card, body.tint-sepia .word-card::before { background: #fbf4e4; }
+body.tint-sage .word-card, body.tint-sage .word-card::before { background: #f1f6ee; }
+:root[data-theme="dark"] body.tint-sepia .word-card, :root[data-theme="dark"] body.tint-sepia .word-card::before, :root[data-theme="dark"] body.tint-sage .word-card, :root[data-theme="dark"] body.tint-sage .word-card::before { background: var(--surface); }
+.tint-ease #viewer, .tint-ease .page canvas, .tint-ease .page.epub-chapter { transition: background-color .4s ease, color .4s ease, filter .4s ease; }
+/* A word's meaning in reading mode: just the word and what it means here, in a card that points at it */
+.word-card {
+  position: fixed; z-index: 35; width: max-content; min-width: 160px; max-width: min(320px, calc(100vw - 24px));
+  padding: 10px 14px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+  box-shadow: var(--shadow-pop); text-align: start;
+}
+.word-card[hidden] { display: none; }
+.word-card.in { animation: card-in .24s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes card-in { from { opacity: 0; transform: translateY(-4px) scale(.97); } }
+.word-card.above.in { animation-name: card-in-above; }
+@keyframes card-in-above { from { opacity: 0; transform: translateY(4px) scale(.97); } }
+/* the little point towards the word */
+.word-card::before { content: ''; position: absolute; left: calc(var(--tail, 50%) - 6px); top: -7px; width: 12px; height: 12px; background: var(--surface); border: solid var(--border); border-width: 1px 0 0 1px; transform: rotate(45deg); }
+.word-card.above::before { top: auto; bottom: -7px; border-width: 0 1px 1px 0; }
+.wc-word { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.wc-tr { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.4; color: var(--accent-text); }
+.wc-tr.wc-note { font-size: 14px; font-weight: 500; color: var(--muted); }
+.wc-wait span { display: block; width: 120px; height: 12px; margin-top: 6px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .panel, body.reading .bar { transition: none; } .word-card.in, .wc-wait span { animation: none; } }
 .seg { display: flex; gap: 2px; flex: 1; min-width: 0; padding: 3px; border-radius: 10px; background: var(--surface-2); }
 .seg button {
   flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 6px;
@@ -668,7 +713,6 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
   .panel.closed { margin: 0 0 calc(-45vh - 1px); }
   .panel-grip { display: none; }
   .panel-show { top: auto; bottom: 16px; }
-  body.reading .panel { top: auto; height: 55vh; width: auto; inset-inline: 8px; bottom: 8px; transform: translateY(calc(100% + 16px)) !important; }
-  body.reading .panel.float { transform: none !important; }
+
   #viewer { padding: 12px; }
 }

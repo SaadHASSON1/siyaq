@@ -335,9 +335,8 @@ const keepScrollPlace = change => {
   viewer.scrollTop = at * viewer.scrollHeight;
 };
 // One CSS variable for every page, at most once a frame: touching each page of a long book on every resize
-// event kept the main thread too busy for the window to redraw while it was being dragged. Watched on the
-// viewer itself, so the side panel's width, hiding it and reading mode count too, not just the window.
-new ResizeObserver(() => {
+// event kept the main thread too busy for the window to redraw while it was being dragged.
+addEventListener('resize', () => {
   if (!pdfDoc || bookType === 'epub') return; // EPUB text reflows by itself
   if (!resizeFrame) resizeFrame = requestAnimationFrame(() => {
     resizeFrame = 0;
@@ -345,11 +344,24 @@ new ResizeObserver(() => {
     keepScrollPlace(() => viewer.style.setProperty('--live-zoom', Math.abs(ratio - 1) > 0.01 ? ratio : 1));
   });
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    const fit = fitWidthScale();
-    keepScrollPlace(() => viewer.style.removeProperty('--live-zoom'));
-    if (Math.abs(fit - fitScale) > 0.01) { fitScale = fit; setZoom(zoom, true); }
-  }, 200);
+  resizeTimer = setTimeout(refit, 200);
+});
+function refit() {
+  const fit = fitWidthScale();
+  keepScrollPlace(() => viewer.style.removeProperty('--live-zoom'));
+  if (Math.abs(fit - fitScale) > 0.01) { fitScale = fit; setZoom(zoom, true); }
+}
+// The room beside the panel changes too: hiding it, reading mode, dragging its edge. Then the pages keep their
+// size (redrawing them flickers and blurs, and the place on the page moves), unless they no longer fit across;
+// those are drawn again once, after the change.
+let roomTimer;
+new ResizeObserver(() => {
+  if (!pdfDoc || bookType === 'epub') return;
+  clearTimeout(roomTimer);
+  roomTimer = setTimeout(() => {
+    if (document.body.classList.contains('resizing')) return; // after the drag
+    if (fitWidthScale() < fitScale - 0.01) refit();
+  }, 400);
 }).observe(viewer);
 
 // ---------- Opening files ----------

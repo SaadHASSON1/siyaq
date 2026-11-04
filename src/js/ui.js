@@ -47,6 +47,7 @@ document.querySelectorAll('#settings .set-tabs button').forEach(b => b.onclick =
 function openSettings(pane = 'general') {
   showSettingsPane(pane);
   for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) form[k].value = settings[k] || '';
+  form.readTint.value = settings.readTint || 'none';
   form.mcp.checked = !!settings.mcp;
   showUsage();
   $('#backupMsg').hidden = true;
@@ -61,6 +62,8 @@ $('#settings').addEventListener('close', () => {
   if ($('#settings').returnValue !== 'save') return;
   const uiChanged = form.uiLang.value !== settings.uiLang;
   for (const k of ['uiLang', 'theme', 'provider', 'baseUrl', 'apiKey', 'model']) settings[k] = form[k].value.trim();
+  settings.readTint = form.readTint.value;
+  applyTint();
   setSharing(form.mcp.checked);
   store.set('settings', settings);
   applyTheme();
