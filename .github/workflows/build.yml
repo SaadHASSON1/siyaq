@@ -24,8 +24,29 @@ jobs:
       - run: npm ci
       - run: npm test
 
-  build:
+  # A tag's draft release, made once before the builds. (Left to each build, builds finishing together each made
+  # their own draft, and the installers ended up split between them.)
+  draft:
+    if: startsWith(github.ref, 'refs/tags/')
     needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      id: ${{ steps.make.outputs.id }}
+    steps:
+      - id: make
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id" | head -1)
+          [ -n "$id" ] || id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" -f tag_name="$GITHUB_REF_NAME" -f name="Siyaq $GITHUB_REF_NAME" -F draft=true --jq .id)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [test, draft]
+    # Every push builds; the draft job only runs for tags.
+    if: ${{ !failure() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -75,10 +96,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           args: ${{ matrix.args }}
-          # Only tag pushes create a release; other pushes just build.
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-          releaseName: Siyaq ${{ github.ref_name }}
-          releaseDraft: true
+          # Tag pushes upload to their draft release; other pushes just build.
+          releaseId: ${{ needs.draft.outputs.id }}
           # latest.json is written once by the release-notes job, after every build has uploaded.
           uploadUpdaterJson: false
 
