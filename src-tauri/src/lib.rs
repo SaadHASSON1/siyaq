@@ -18,6 +18,20 @@ struct AiResponse {
 
 /// Sends the lookup request from the app itself, so AI servers don't need to
 /// allow browser (CORS) requests. That is what makes local Ollama just work.
+/// One client for every AI call, so the connection (and its TLS handshake) is reused from one lookup to the next.
+/// A server that doesn't connect in 8 s, or goes 20 s without sending anything, fails, and the app moves on to
+/// another model instead of waiting.
+fn client() -> &'static reqwest::Client {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .connect_timeout(std::time::Duration::from_secs(8))
+            .read_timeout(std::time::Duration::from_secs(20))
+            .build()
+            .unwrap_or_default()
+    })
+}
+
 #[tauri::command]
 async fn ai_request(
     method: String,
@@ -26,7 +40,7 @@ async fn ai_request(
     body: Option<serde_json::Value>,
 ) -> Result<AiResponse, String> {
     let method = reqwest::Method::from_bytes(method.as_bytes()).map_err(|e| e.to_string())?;
-    let mut req = reqwest::Client::new().request(method, &url);
+    let mut req = client().request(method, &url);
     if let Some(body) = body {
         req = req.json(&body);
     }
@@ -50,7 +64,7 @@ async fn ai_stream(
     on_chunk: tauri::ipc::Channel<String>,
 ) -> Result<u16, String> {
     use futures_util::StreamExt;
-    let mut req = reqwest::Client::new().post(&url).json(&body);
+    let mut req = client().post(&url).json(&body);
     for (k, v) in headers {
         req = req.header(k, v);
     }

@@ -150,13 +150,13 @@ async function resolveGeminiModel(name) {
   return (await listGeminiModels()).find(m => words.every(w => m.split('-').includes(w))) || null;
 }
 
-let lastModel = ''; // the model that gave the last answer, shown under it
-async function askGemini(prompt) {
+let lastModel = '', lastFailed = []; // the model that gave the last answer, and any that failed first: shown under it
+async function askGemini(prompt, skip) {
   const chosen = settings.model && await resolveGeminiModel(settings.model);
   const queue = [chosen, geminiWorking].filter(Boolean);
-  const tried = new Set();
+  const tried = new Set(skip ? [skip] : []); // a model whose stream just failed isn't asked again
   let listed = false, lastError = t('busy');
-  while (tried.size < 5) {
+  while (tried.size < 5 + !!skip) {
     const model = queue.find(m => !tried.has(m));
     if (!model) {
       if (listed) break;
@@ -178,6 +178,7 @@ async function askGemini(prompt) {
     if (suggested) queue.unshift(suggested);
     // A wrong key is worth stopping for; a model we can't use just means trying the next one.
     else if (!BUSY.includes(r.status) && r.status !== 404 && !/model/i.test(msg)) throw new Error(msg);
+    lastFailed.push(model);
     lastError = quotaMessage(r.status, r.json) || (BUSY.includes(r.status) ? t('busy') : msg);
   }
   throw new Error(lastError);
@@ -193,14 +194,15 @@ async function askAI(word, sentence, onPartial) {
 async function askModel(prompt, maxTokens = 800, onPartial) {
   const model = settings.model || DEFAULT_MODELS[settings.provider];
   lastModel = model;
+  lastFailed = [];
   let r, text;
   if (settings.provider === 'gemini') {
     const streamModel = onPartial && ((settings.model && await resolveGeminiModel(settings.model)) || geminiWorking);
     if (streamModel) {
       try { text = await geminiStream(streamModel, prompt, onPartial); lastModel = streamModel; }
-      catch { text = null; }
+      catch { text = null; lastFailed.push(streamModel); }
     }
-    if (!text) text = await askGemini(prompt);
+    if (!text) text = await askGemini(prompt, streamModel);
   } else if (settings.provider === 'anthropic') {
     r = await postJson('https://api.anthropic.com/v1/messages',
       { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },

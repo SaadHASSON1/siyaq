@@ -37,7 +37,9 @@ function showPageError(div, err) {
 }
 
 async function openPdf(data, name) {
-  const doc = await pdfjsLib.getDocument({ data, cMapUrl: 'vendor/cmaps/', cMapPacked: true, standardFontDataUrl: 'vendor/standard_fonts/' }).promise;
+  const lib = await pdfjsReady;
+  const doc = await lib.getDocument({ data, cMapUrl: vendorUrl('cmaps/'), standardFontDataUrl: vendorUrl('standard_fonts/'),
+    iccUrl: vendorUrl('iccs/'), wasmUrl: vendorUrl('wasm/') }).promise;
   pdfDoc = doc;
   bookType = 'pdf';
   viewer.style.removeProperty('--epub-zoom');
@@ -111,7 +113,7 @@ async function renderPage(div) {
   div.appendChild(canvas);
   div.classList.add('loading'); // heavy pages (scans) can take a while on older computers
   try {
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+    await page.render({ canvas, viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
   } catch (err) {
     // Say so on the page instead of leaving it blank, with the reason, so it can be reported.
     div.classList.remove('loading');
@@ -125,9 +127,11 @@ async function renderPage(div) {
   const layer = document.createElement('div');
   layer.className = 'textLayer';
   layer.style.setProperty('--scale-factor', s);
+  layer.style.setProperty('--total-scale-factor', s);
   div.appendChild(layer);
-  const textContent = await page.getTextContent();
-  await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: layer, viewport: vp, textDivs: [] }).promise;
+  const textContent = await page.getTextContent(TEXT_OPTIONS);
+  await new pdfjsLib.TextLayer({ textContentSource: textContent, container: layer, viewport: vp }).render();
+  layer.dataset.ready = '1'; // all its text is in place (PDF.js adds it in batches)
   if (s !== scale || !layer.isConnected) return;
   markKnownWords(layer);
   highlightSearch(div);
@@ -187,7 +191,7 @@ async function recolorPages() {
     const vp = page.getViewport({ scale: s }), canvas = document.createElement('canvas');
     canvas.width = old.width; canvas.height = old.height;
     canvas.style.width = old.style.width; canvas.style.height = old.style.height;
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+    await page.render({ canvas, viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
     if (isDark()) await darkenPage(canvas, page, vp, dpr);
     if (old.isConnected) old.replaceWith(canvas);
   }

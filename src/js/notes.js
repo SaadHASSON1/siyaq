@@ -56,7 +56,7 @@ $('#selBar').onclick = e => {
 // The sentence around the start of a selection, as for a clicked word.
 function sentenceForRange(range) {
   const node = range.startContainer, el = node.nodeType === 3 ? node.parentElement : node;
-  const span = el?.closest('.textLayer > span');
+  const span = el?.closest(PIECE);
   if (span) return sentenceAround(span, node.nodeType === 3 ? offsetIn(span, node, range.startOffset) : 0);
   const block = el?.closest(EPUB_BLOCKS);
   return block ? cutSentence(block.textContent, node.nodeType === 3 ? offsetIn(block, node, range.startOffset) : 0) : '';

@@ -210,8 +210,18 @@ mark.hl { color: inherit; border-radius: 2px; }
 .page-error > svg { width: 28px; height: 28px; color: var(--danger); }
 .page-error p { margin: 0; color: var(--text); font-weight: 600; }
 .page-error code { max-width: 90%; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); font-size: 12px; overflow-wrap: anywhere; }
-.textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 2; }
-.textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: pointer; transform-origin: 0% 0%; }
+.textLayer {
+  position: absolute; inset: 0; overflow: clip; z-index: 2; text-align: initial; line-height: 1; letter-spacing: normal; word-spacing: normal;
+  text-size-adjust: none; -webkit-text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; color-scheme: only light;
+  --min-font-size: 1; --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size)); --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: pointer; transform-origin: 0% 0%; user-select: text; -webkit-user-select: text; }
+/* PDF.js 6 sizes and places each piece with these variables */
+.textLayer > :not(.markedContent), .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1; --font-height: 0; font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1; --rotate: 0deg; transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.textLayer .markedContent { display: contents; }
 .textLayer ::selection { background: rgba(47, 111, 94, .3); }
 
 /* ---------- EPUB chapters: flowing text in the reader's own colours ---------- */

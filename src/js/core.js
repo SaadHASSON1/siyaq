@@ -1,9 +1,19 @@
 // Basics shared by everything: the app bridge, storage, icons and languages.
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+// PDF.js is an ES module; load it from here and wait for it before opening a PDF.
+const vendorUrl = path => new URL('vendor/pdfjs/' + path, document.baseURI).href;
+const pdfjsReady = import(vendorUrl('pdf.min.mjs')).then(lib => {
+  lib.GlobalWorkerOptions.workerSrc = vendorUrl('pdf.worker.min.mjs');
+  return (window.pdfjsLib = lib);
+});
 const tauri = window.__TAURI__; // set when running as the installed app
 
 const $ = s => document.querySelector(s);
+// A piece of PDF text in the text layer. Tagged PDFs group pieces in .markedContent spans, so not only direct children.
+const PIECE = '.textLayer span:not(.markedContent)';
+// Text as the PDF has it: PDF.js's own Unicode normalisation runs before it reorders right-to-left lines and
+// turned joined Arabic forms (ﳌ) into reversed letters ("مل" for "لم"). The app normalises after reordering.
+const TEXT_OPTIONS = { disableNormalization: true };
 const store = {
   get(k, d) { try { const v = localStorage.getItem('siyaq:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('siyaq:' + k, JSON.stringify(v)); } catch {} if (k === 'vocab') setTimeout(queueShare); }

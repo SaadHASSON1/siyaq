@@ -57,7 +57,7 @@ async function lookup(word, sentence, fresh = false) {
     if (!fromCache) countUse('words');
     const { _took, ...kept } = r;
     cache.set(key, kept); // a saved answer shows no time: it took none
-    if (!fromCache) r._took = { model: lastModel, ms: Math.round(performance.now() - started) };
+    if (!fromCache) r._took = { model: lastModel, failed: [...lastFailed], ms: Math.round(performance.now() - started) };
     store.set('cache', [...cache].slice(-500));
     if (id !== lookupId) return;
     renderResult(word, sentence, r);
@@ -135,7 +135,7 @@ function fillFlow(word, r, closed, final = false) {
   }
   pane.querySelector('[data-wait]')?.remove();
   pane.querySelector('.result')?.classList.remove('streaming');
-  if (r._took) pane.querySelector('.result').insertAdjacentHTML('beforeend', `<p class="took glide" dir="ltr">${esc(r._took.model.replace(/^models\//, ''))} · ${(r._took.ms / 1000).toFixed(1)}s</p>`);
+  if (r._took) pane.querySelector('.result').insertAdjacentHTML('beforeend', `<p class="took glide" dir="ltr">${(r._took.failed || []).map(m => `<s>${esc(m)}</s> → `).join('')}${esc(r._took.model.replace(/^models\//, ''))} · ${(r._took.ms / 1000).toFixed(1)}s</p>`);
 }
 
 // The whole answer at once (saved, from the demo, or from a provider that doesn't stream), flowing in the same way.

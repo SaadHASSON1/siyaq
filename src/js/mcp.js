@@ -15,7 +15,7 @@ async function readablePageText(doc, n) {
   const ocr = ocrCache.get(n);
   if (ocr) return ocr.map(line => line.map(w => w.text).join(' ')).join(' ');
   try {
-    const items = (await (await doc.getPage(n)).getTextContent()).items;
+    const items = (await (await doc.getPage(n)).getTextContent(TEXT_OPTIONS)).items;
     return itemsToText(items).replace(/-\n(?=\p{Ll})/gu, '').replace(/\s*\n\s*/g, ' ').replace(/ {2,}/g, ' ').trim();
   } catch { return ''; }
 }

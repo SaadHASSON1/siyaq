@@ -24,7 +24,7 @@ const HELPERS = `
 window.__realAskModel = window.__realAskModel || askModel;
 window.askModel = async prompt => /The reader asks/.test(prompt) ? { answer: 'An answer.\\n\\nSecond paragraph.' }
   : { translation: 'T-' + settings.lang, explanation: 'E', base_form: 'b', part_of_speech: 'noun', other_meanings: ['o1'], sentence_translation: 'ST' };
-window.spanWith = text => [...document.querySelectorAll('.textLayer > span')].find(s => s.textContent.includes(text));
+window.spanWith = text => [...document.querySelectorAll('.textLayer span:not(.markedContent)')].find(s => s.textContent.includes(text));
 window.clickAt = (el, frac = 0.5) => { const r = el.getBoundingClientRect(), x = r.left + r.width * frac, y = r.top + r.height / 2;
   document.elementFromPoint(x, y).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y })); };
 window.clickWord = (text, word = text) => { const sp = spanWith(text), node = [...sp.childNodes].find(n => n.textContent.includes(word)) || sp.firstChild;

@@ -118,7 +118,7 @@ async function pageText(doc, n) {
   if (!pageTexts.has(n)) {
     const ocr = ocrCache.get(n);
     const text = ocr ? ocr.flat().map(w => w.text).join(' ')
-      : (await (await doc.getPage(n)).getTextContent()).items.map(it => it.str).join(' ');
+      : (await (await doc.getPage(n)).getTextContent(TEXT_OPTIONS)).items.map(it => it.str).join(' ');
     pageTexts.set(n, normText(text));
   }
   return pageTexts.get(n);
@@ -185,7 +185,7 @@ function updateSearchCount(busy) {
 
 function highlightSearch(div) {
   if (div.classList.contains('epub-chapter')) { highlightEpub(div); return; }
-  for (const span of div.querySelectorAll('.textLayer > span')) {
+  for (const span of div.querySelectorAll(PIECE)) {
     span.classList.toggle('hit', !!search.query && normText(span.textContent).includes(search.query));
   }
 }
@@ -218,7 +218,7 @@ function refreshKnown() {
 }
 
 function markKnownWords(layer) {
-  for (const span of layer.querySelectorAll(':scope > span')) {
+  for (const span of layer.querySelectorAll('span:not(.markedContent)')) {
     if (span.querySelector('mark')) span.textContent = span.textContent; // back to plain text first
     if (!knownRe) continue;
     const text = span.textContent, matches = knownMatches(text);

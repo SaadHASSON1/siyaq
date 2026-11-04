@@ -72,7 +72,11 @@ export async function launch() {
     // Runs like the DevTools console: top-level await works, and the last expression's value comes back.
     // Tests put statements in { } so their consts stay out of the app's global scope.
     async eval(expression) {
-      const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, replMode: true });
+      let r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, replMode: true });
+      // In REPL mode a promise the expression returns isn't awaited: wait for it here.
+      if (!r.exceptionDetails && r.result?.subtype === 'promise' && r.result.objectId) {
+        r = await send('Runtime.awaitPromise', { promiseObjectId: r.result.objectId, returnByValue: true });
+      }
       if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
       return r.result?.value;
     },
