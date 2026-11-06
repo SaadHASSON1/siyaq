@@ -2,6 +2,16 @@
 // Every release adds its entry at the top (all three languages), before it is tagged.
 
 const CHANGES = [
+  { version: '0.7.6', ar: [
+    'قرصة التكبير صارت ناعمة: الصفحة بتلحق أصابعك بدون تقطيع، وبتنرسم واضحة لما توقف.',
+    'إخفاء وإظهار القائمة الجانبية صار ينزلق بنعومة، والصفحة ما بتنط.',
+  ], en: [
+    'Smooth pinch zoom: the page follows your fingers without stutter, and is drawn sharp when you stop.',
+    'Hiding and showing the side panel now slides smoothly, and the page no longer jumps.',
+  ], tr: [
+    'Akıcı sıkıştırarak yakınlaştırma: sayfa parmaklarınızı takılmadan izliyor ve durduğunuzda net çiziliyor.',
+    'Yan paneli gizleme ve gösterme artık akıcı şekilde kayıyor, sayfa da zıplamıyor.',
+  ] },
   { version: '0.7.5', ar: [
     'هالشباك: بعد كل تحديث بيطلعلك شو انصلح وشو الجديد.',
   ], en: [

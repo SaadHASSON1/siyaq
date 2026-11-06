@@ -14,13 +14,36 @@ setPanelWidth(store.get('panelWidth', PANEL_WIDTH));
 addEventListener('resize', () => setPanelWidth(store.get('panelWidth', PANEL_WIDTH)));
 
 function setPanelHidden(hidden, save = true) {
-  panel.classList.toggle('closed', hidden);
+  if (hidden !== panel.classList.contains('closed') && save && !matchMedia('(prefers-reduced-motion: reduce)').matches) slidePanel(hidden);
+  else panel.classList.toggle('closed', hidden);
   panel.inert = hidden;
   $('#panelShow').hidden = !hidden;
   if (save) store.set('panelHidden', hidden);
   if (!hidden) requestAnimationFrame(() => window.movePill?.(document.querySelector('.seg')));
 }
 setPanelHidden(store.get('panelHidden', false), false);
+
+// The slide: the layout jumps to its end at once (one reflow), then the panel and the book are drawn moving from
+// where they were to where they now are, as pictures: nothing is laid out again on the way, so every frame is smooth.
+let panelSlide = null;
+function slidePanel(hidden) {
+  panelSlide?.forEach(a => a.finish());
+  const main = panel.parentElement;
+  const mark = [...viewer.children].find(el => { const r = el.getBoundingClientRect(); return r.height && r.bottom > 0; }) || viewer;
+  const p0 = panel.getBoundingClientRect(), v0 = mark.getBoundingClientRect();
+  panel.classList.toggle('closed', hidden);
+  const p1 = panel.getBoundingClientRect(), v1 = mark.getBoundingClientRect();
+  // the room the panel leaves (or is about to take) shows the book's own background, not a gap
+  main.style.background = getComputedStyle(viewer).backgroundColor;
+  main.classList.add('sliding');
+  const opts = { duration: 340, easing: 'cubic-bezier(.3, .8, .3, 1)' };
+  panelSlide = [
+    panel.animate([{ transform: `translate(${p0.left - p1.left}px, ${p0.top - p1.top}px)`, visibility: 'visible' }, { transform: 'none', visibility: 'visible' }], opts),
+    viewer.animate([{ transform: `translate(${v0.left - v1.left}px, ${v0.top - v1.top}px)` }, { transform: 'none' }], opts),
+  ];
+  const done = panelSlide;
+  done[1].finished.catch(() => {}).then(() => { if (panelSlide !== done) return; panelSlide = null; main.classList.remove('sliding'); main.style.background = ''; });
+}
 $('#panelHide').onclick = () => setPanelHidden(true);
 $('#panelShow').onclick = () => setPanelHidden(false);
 

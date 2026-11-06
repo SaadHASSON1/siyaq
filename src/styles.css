@@ -251,10 +251,12 @@ mark.hl { color: inherit; border-radius: 2px; }
 .panel {
   width: var(--panel-w, 380px); flex: none; background: var(--surface); border-inline-end: 1px solid var(--border);
   display: flex; flex-direction: column; min-height: 0; position: relative; z-index: 4;
-  transition: margin .34s cubic-bezier(.3, .8, .3, 1), transform .34s cubic-bezier(.3, .8, .3, 1), box-shadow .34s;
 }
-/* Hidden: it slides out past the window's edge and the book takes its room. */
-.panel.closed { margin-inline-start: calc(-1 * var(--panel-w, 380px) - 1px); visibility: hidden; transition: margin .34s cubic-bezier(.3, .8, .3, 1), visibility 0s .34s; }
+/* Hidden: it is past the window's edge and the book takes its room. The slide itself is drawn by moving pictures
+   (layout.js), not by changing the layout on every frame. */
+.panel.closed { margin-inline-start: calc(-1 * var(--panel-w, 380px) - 1px); visibility: hidden; }
+main.sliding { overflow: hidden; }
+main.sliding .panel, main.sliding #viewer { will-change: transform; }
 .panel-head { display: flex; align-items: center; gap: 4px; margin: 12px 8px 4px 12px; }
 [dir="rtl"] .panel-head { margin: 12px 12px 4px 8px; }
 .panel-head .icon-btn { width: 30px; height: 30px; flex: none; }

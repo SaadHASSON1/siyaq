@@ -4,28 +4,48 @@ const ZOOM_MIN = ZOOM_STEPS[0], ZOOM_MAX = ZOOM_STEPS[ZOOM_STEPS.length - 1];
 const clampZoom = z => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 
 // ---------- Pinch ----------
-// While the fingers move, the pages are stretched as they are (no redrawing, so it follows at once) with the point
-// under the fingers kept still; when they stop, the pages are drawn again, sharp, at the new size.
-let pinch = null; // { zoom: where it is heading, anchor, done: timer }
+// While the fingers move, the pages are only stretched as pictures (a transform: nothing is laid out again, so it
+// keeps up with the fingers at full frame rate), with the point under the fingers kept under them; when they stop,
+// the pages are laid out and drawn again, sharp, at the new size.
+let pinch = null; // { zoom: where it is heading, x0, y0: where it began, x, y: the fingers now, pages, frame, done }
 function pinchTo(z, x, y) {
   if (!pdfDoc) return;
   z = clampZoom(z);
-  if (!pinch) pinch = { zoom: zoom, anchor: null, done: 0 };
-  if (bookType === 'epub') { pinch.zoom = z; zoomEpub(z); return; }
-  const anchor = anchorAt(x, y);
-  pinch.zoom = z;
-  viewer.style.setProperty('--live-zoom', z / zoom);
-  keepAnchor(anchor);
-  pinch.anchor = anchorAt(x, y);
-  $('#zoomLabel').textContent = Math.round(z * 100) + '%';
+  if (bookType === 'epub') { pinch ??= { zoom, done: 0 }; pinch.zoom = z; zoomEpub(z); return; }
+  if (!pinch) pinch = startPinch(x, y);
+  Object.assign(pinch, { zoom: z, x, y });
+  pinch.frame ||= requestAnimationFrame(drawPinch);
+}
+function startPinch(x, y) {
+  // the pages that can come into view while it lasts, each stretched around the fingers' first point
+  const vr = viewer.getBoundingClientRect(), reach = vr.height * 5, pages = [];
+  for (const div of viewer.children) {
+    const r = div.getBoundingClientRect();
+    if (r.bottom < vr.top - reach || r.top > vr.bottom + reach) continue;
+    div.style.transformOrigin = `${x - r.left}px ${y - r.top}px`;
+    div.style.willChange = 'transform';
+    pages.push(div);
+  }
+  return { zoom, x0: x, y0: y, x, y, pages, frame: 0, done: 0 };
+}
+function drawPinch() {
+  if (!pinch) return;
+  pinch.frame = 0;
+  const t = `translate(${pinch.x - pinch.x0}px, ${pinch.y - pinch.y0}px) scale(${pinch.zoom / zoom})`;
+  for (const div of pinch.pages) div.style.transform = t;
+  $('#zoomLabel').textContent = Math.round(pinch.zoom * 100) + '%';
 }
 function endPinch() {
   if (!pinch) return;
-  const { zoom: z, anchor } = pinch;
+  const p = pinch;
   pinch = null;
-  if (bookType === 'epub') return;
-  if (Math.abs(z - zoom) < 0.005) { viewer.style.removeProperty('--live-zoom'); updateZoomLabel(); return; }
-  setZoom(z, false, anchor);
+  if (bookType === 'epub' || !p.pages) return;
+  cancelAnimationFrame(p.frame);
+  if (p.frame) { p.frame = 0; pinch = p; drawPinch(); pinch = null; }
+  const anchor = Math.abs(p.zoom - zoom) < 0.005 ? null : anchorAt(p.x, p.y); // read while still stretched
+  for (const div of p.pages) { div.style.transform = div.style.transformOrigin = div.style.willChange = ''; }
+  if (!anchor) { updateZoomLabel(); return; }
+  setZoom(p.zoom, false, anchor);
 }
 
 // Chrome and Windows (and a mouse wheel with Ctrl or ⌘): a pinch comes as wheel events with Ctrl held.

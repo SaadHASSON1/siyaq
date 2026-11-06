@@ -543,8 +543,11 @@ test('trackpad: pinch zooms around the fingers; swiping sideways and the arrow k
   // a pinch (as Chrome sends it: wheel events with Ctrl) over a point on page 1
   const before = await page.eval(`(() => { const r = document.querySelector('.page[data-page="1"]').getBoundingClientRect(); window.__pt = [r.left + r.width * 0.7, r.top + r.height * 0.3]; return { zoom, x: (__pt[0] - r.left) / r.width, y: (__pt[1] - r.top) / r.height }; })()`);
   for (let i = 0; i < 6; i++) await page.eval(`viewer.dispatchEvent(new WheelEvent('wheel', { deltaY: -12, ctrlKey: true, clientX: __pt[0], clientY: __pt[1], bubbles: true, cancelable: true }))`);
-  assert.ok(await page.eval(`!!viewer.style.getPropertyValue('--live-zoom')`), 'the pages follow the fingers at once');
-  await page.waitFor(`!viewer.style.getPropertyValue('--live-zoom') && zoom > ${before.zoom}`, 2000);
+  // the pages follow the fingers as stretched pictures: nothing is laid out again until the fingers stop
+  const live = await page.eval(`await (async () => { const div = document.querySelector('.page[data-page="1"]'), w = div.offsetWidth;
+    await new Promise(r => requestAnimationFrame(r)); return { t: div.style.transform, same: div.offsetWidth === w, z: zoom }; })()`);
+  assert.ok(/scale\(/.test(live.t) && live.same && live.z === before.zoom, `the pages follow the fingers at once (${JSON.stringify(live)})`);
+  await page.waitFor(`!document.querySelector('.page[data-page="1"]').style.transform && zoom > ${before.zoom}`, 2000);
   const after = await page.eval(`(() => { const r = document.querySelector('.page[data-page="1"]').getBoundingClientRect(); return { x: (__pt[0] - r.left) / r.width, y: (__pt[1] - r.top) / r.height }; })()`);
   assert.ok(Math.abs(after.x - before.x) < 0.02 && Math.abs(after.y - before.y) < 0.02, `the point under the fingers stays put (${JSON.stringify([before, after])})`);
   await page.eval(`setZoom(1)`);
@@ -557,6 +560,25 @@ test('trackpad: pinch zooms around the fingers; swiping sideways and the arrow k
   await page.sleep(300);
   await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }))`);
   await page.waitFor(`currentPage() === ${from}`, 3000);
+});
+
+test('hiding and showing the panel slides as pictures: the page does not jump and is laid out once', async () => {
+  await fresh();
+  await openPdf();
+  await page.waitFor(`document.querySelector('.page[data-page="1"] canvas') && !document.querySelector('.page.loading')`);
+  for (const hide of [true, false]) {
+    const r = await page.eval(`await (async () => {
+      const div = document.querySelector('.page[data-page="1"]'), x0 = div.getBoundingClientRect().left;
+      ${hide ? "$('#panelHide').click()" : "$('#panelShow').click()"};
+      const x1 = div.getBoundingClientRect().left, moving = viewer.getAnimations().length;
+      await new Promise(r => setTimeout(r, 420));
+      return { jump: Math.abs(x1 - x0), moving, end: div.getBoundingClientRect().left - x0, closed: panel.classList.contains('closed'), left: +panel.parentElement.classList.contains('sliding') };
+    })()`);
+    assert.ok(r.jump < 1, `starts where it was (${JSON.stringify(r)})`);
+    assert.ok(r.moving >= 1, 'the book slides');
+    assert.equal(r.closed, hide);
+    assert.ok(Math.abs(r.end) > 20 && r.left === 0, `and ends in its new place (${JSON.stringify(r)})`);
+  }
 });
 
 test('zooming never leaves the page blank: the old picture stays until the new one is drawn', async () => {
