@@ -24,6 +24,8 @@
     <span class="divider"></span>
     <button class="icon-btn" id="searchBtn" data-i18n-title="search"><i data-icon="search"></i></button>
     <button class="icon-btn" id="readBtn" data-i18n-title="readingMode"><i data-icon="glasses"></i></button>
+    <button class="icon-btn" id="drawBtn" data-i18n-title="drawTitle"><i data-icon="pen"></i></button>
+    <button class="icon-btn" id="exportBtn" data-i18n-title="saveAs"><i data-icon="download"></i></button>
     <span class="divider"></span>
     <button class="ask-btn" id="askBtn" data-i18n-title="askBtnTitle"><i data-icon="sparkle"></i><span data-i18n="askBtn"></span></button>
   </div>
@@ -85,6 +87,36 @@
   </div>
   <div class="toast" id="toast" hidden></div>
 <div class="open-menu" id="openMenu" hidden></div>
+<div class="open-menu export-menu" id="exportMenu" hidden>
+  <h3 data-i18n="saveAs"></h3>
+  <button type="button" data-export="pdf"><b>PDF</b><small data-i18n="exportPdfHint"></small></button>
+  <button type="button" data-export="images"><b data-i18n="exportImages"></b><small data-i18n="exportImagesHint"></small></button>
+  <button type="button" data-export="word"><b>Word</b><small data-i18n="exportWordHint"></small></button>
+  <button type="button" data-export="text"><b data-i18n="exportText"></b><small data-i18n="exportTextHint"></small></button>
+</div>
+<!-- Writing and drawing on the page -->
+<div class="ink-bar" id="inkBar" hidden>
+  <div class="ink-tools">
+    <button type="button" data-tool="pen" data-i18n-title="inkPen"><i data-icon="pen"></i></button>
+    <button type="button" data-tool="text" data-i18n-title="inkText"><i data-icon="type"></i></button>
+    <button type="button" data-tool="eraser" data-i18n-title="inkEraser"><i data-icon="eraser"></i></button>
+  </div>
+  <span class="sep"></span>
+  <div class="ink-colors">
+    <button type="button" class="dot" data-ink-color="#1f2937" style="background:#1f2937"></button>
+    <button type="button" class="dot" data-ink-color="#dc2626" style="background:#dc2626"></button>
+    <button type="button" class="dot" data-ink-color="#2563eb" style="background:#2563eb"></button>
+    <button type="button" class="dot" data-ink-color="#16a34a" style="background:#16a34a"></button>
+  </div>
+  <div class="ink-sizes" data-i18n-title="inkSize">
+    <button type="button" data-size="0"><span style="width:4px;height:4px"></span></button>
+    <button type="button" data-size="1"><span style="width:7px;height:7px"></span></button>
+    <button type="button" data-size="2"><span style="width:11px;height:11px"></span></button>
+  </div>
+  <span class="sep"></span>
+  <button type="button" id="inkUndo" data-i18n-title="inkUndo"><i data-icon="undo"></i></button>
+  <button type="button" class="ink-done" id="inkDone" data-i18n="inkDone"></button>
+</div>
 <div class="sel-bar" id="selBar" hidden>
   <button type="button" data-act="meaning"><i data-icon="book"></i><span data-i18n="tabMeaning"></span></button>
   <button type="button" data-act="ask"><i data-icon="sparkle"></i><span data-i18n="askBtn"></span></button>
@@ -329,6 +361,8 @@
 <script src="js/layout.js"></script>
 <script src="js/mcp.js"></script>
 <script src="js/notes.js"></script>
+<script src="js/ink.js"></script>
+<script src="js/export.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/demo.js"></script>
 <script src="js/ui.js"></script>

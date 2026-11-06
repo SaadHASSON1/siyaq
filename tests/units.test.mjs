@@ -30,6 +30,17 @@ test('itemsToText: PDF.js items joined line by line in reading order', async () 
   assert.equal(text, 'مرحبا العالم\nHello');
 });
 
+test('arrangeLine: numbers with punctuation, and punctuation after English, in an Arabic line', async () => {
+  // As Chrome prints them: pieces left to right on the page, each in the order it shows.
+  const line = pieces => page.eval(`arrangeLine(${JSON.stringify(pieces)}).text`);
+  let x = 0;
+  const at = list => list.map(text => { const p = { text, left: x, right: x + 10 }; x += 10; return p; });
+  assert.equal(await line(at(['الأساسيات', ' ', ':1', ' ', 'الدرس'])), 'الدرس 1: الأساسيات');
+  assert.equal(await line(at(['بنتعلمه.', ' ', ';"', 'cout', ' ', '<<', ' ', '"Hello', ' ', ':', 'الشاشة'])), 'الشاشة: cout << "Hello"; بنتعلمه.');
+  assert.equal(await line(at(['(12)', ' ', 'الفقرة'])), 'الفقرة (12)', 'brackets face the right way');
+  assert.equal(await line(at(['2026', ' ', 'سنة'])), 'سنة 2026', 'numbers stay as they are');
+});
+
 test('presentation forms: shaped Arabic letters read as plain letters', async () => {
   const text = await call('itemsToText', [{ str: 'ﺑﻴﻄﺒﻊ', hasEOL: false }, { str: ' ', hasEOL: false }, { str: 'اﻷﻣﺮ', hasEOL: true }]);
   assert.equal(text, 'الأمر بيطبع');

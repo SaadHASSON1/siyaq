@@ -4,6 +4,8 @@ const STRINGS = {
   ar: {
     brand: 'سياق', title: 'سياق — قارئ كتب', open: 'افتح كتاب', settings: 'الإعدادات', uiLang: 'لغة التطبيق', theme: 'المظهر', themeSystem: 'حسب الجهاز', themeLight: 'فاتح', themeDark: 'داكن', toggleTheme: 'الوضع الداكن', zoomIn: 'تكبير', zoomOut: 'تصغير', page: 'الصفحة',
     langPair: 'لغة الكتاب ← لغة الترجمة', auto: 'تلقائي',
+    drawTitle: 'كتابة ورسم على الصفحة', inkPen: 'قلم (P)', inkText: 'نص (T)', inkEraser: 'ممحاة (E)', inkSize: 'السماكة', inkUndo: 'تراجع (⌘Z)', inkDone: 'تم',
+    saveAs: 'حفظ باسم', exportPdfHint: 'الصفحات متل ما هي، وفوقها التظليل والكتابة والرسم، والملاحظات كملاحظات لاصقة', exportImages: 'صور', exportImagesHint: 'كل صفحة صورة PNG، بملف مضغوط واحد', exportWordHint: 'نص الكتاب صفحة صفحة، مع التظليل والملاحظات، والرسم كصورة', exportText: 'نص (Markdown)', exportTextHint: 'النص مع التظليل والملاحظات والكتابة', exporting: (n, all) => `عم جهّز الصفحة ${n} من ${all}…`, exported: f => `انحفظ: ${f}`, exportCancelled: 'ما انحفظ شي', exportFailed: 'ما زبط الحفظ: ',
     readTint: 'لون القراءة', readTintHelp: 'لون مريح للعين على الصفحات، بوضع القراءة بس.', tintNone: 'بدون لون', tintSepia: 'دافئ', tintSage: 'أخضر هادئ',
     readingMode: 'وضع القراءة', readingExit: 'الخروج من وضع القراءة', hidePanel: 'إخفاء اللوحة', showPanel: 'إظهار اللوحة', resizePanel: 'اسحب لتغيير العرض، وانقر مرتين لإرجاعه', shotSignIn: 'تسجيل الدخول',
     tabMeaning: 'المعنى', tabWords: 'كلماتي',
@@ -38,6 +40,8 @@ const STRINGS = {
   en: {
     brand: 'Siyaq', title: 'Siyaq — book reader', open: 'Open a book', settings: 'Settings', uiLang: 'App language', theme: 'Appearance', themeSystem: 'Match system', themeLight: 'Light', themeDark: 'Dark', toggleTheme: 'Dark mode', zoomIn: 'Zoom in', zoomOut: 'Zoom out', page: 'Page',
     langPair: 'Book language → translation language', auto: 'Auto',
+    drawTitle: 'Write and draw on the page', inkPen: 'Pen (P)', inkText: 'Text (T)', inkEraser: 'Eraser (E)', inkSize: 'Thickness', inkUndo: 'Undo (⌘Z)', inkDone: 'Done',
+    saveAs: 'Save as', exportPdfHint: 'The pages as they are, with your highlights, writing and drawings, and notes as sticky notes', exportImages: 'Images', exportImagesHint: 'Every page as a PNG, in one ZIP file', exportWordHint: 'The text page by page, with highlights and notes; drawings as pictures', exportText: 'Text (Markdown)', exportTextHint: 'The text with highlights, notes and writing', exporting: (n, all) => `Preparing page ${n} of ${all}…`, exported: f => `Saved: ${f}`, exportCancelled: 'Nothing was saved', exportFailed: 'Couldn’t save: ',
     readTint: 'Reading colour', readTintHelp: 'A colour that is easy on the eyes, on the pages in reading mode only.', tintNone: 'No colour', tintSepia: 'Warm', tintSage: 'Soft green',
     readingMode: 'Reading mode', readingExit: 'Exit reading mode', hidePanel: 'Hide panel', showPanel: 'Show panel', resizePanel: 'Drag to resize; double-click to reset', shotSignIn: 'Sign in',
     tabMeaning: 'Meaning', tabWords: 'My words',
@@ -72,6 +76,8 @@ const STRINGS = {
   tr: {
     brand: 'Siyaq', title: 'Siyaq — kitap okuyucu', open: 'Kitap aç', settings: 'Ayarlar', uiLang: 'Uygulama dili', theme: 'Görünüm', themeSystem: 'Sistemle aynı', themeLight: 'Açık', themeDark: 'Koyu', toggleTheme: 'Koyu mod', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', page: 'Sayfa',
     langPair: 'Kitap dili → çeviri dili', auto: 'Otomatik',
+    drawTitle: 'Sayfaya yaz ve çiz', inkPen: 'Kalem (P)', inkText: 'Metin (T)', inkEraser: 'Silgi (E)', inkSize: 'Kalınlık', inkUndo: 'Geri al (⌘Z)', inkDone: 'Bitti',
+    saveAs: 'Farklı kaydet', exportPdfHint: 'Sayfalar olduğu gibi; vurgularınız, yazılarınız ve çizimlerinizle, notlar yapışkan not olarak', exportImages: 'Görseller', exportImagesHint: 'Her sayfa bir PNG, tek bir ZIP dosyasında', exportWordHint: 'Metin sayfa sayfa, vurgular ve notlarla; çizimler resim olarak', exportText: 'Metin (Markdown)', exportTextHint: 'Vurgular, notlar ve yazılarla metin', exporting: (n, all) => `Sayfa ${n} / ${all} hazırlanıyor…`, exported: f => `Kaydedildi: ${f}`, exportCancelled: 'Hiçbir şey kaydedilmedi', exportFailed: 'Kaydedilemedi: ',
     readTint: 'Okuma rengi', readTintHelp: 'Gözü yormayan bir renk, yalnızca okuma modunda sayfalarda.', tintNone: 'Renksiz', tintSepia: 'Sıcak', tintSage: 'Yumuşak yeşil',
     readingMode: 'Okuma modu', readingExit: 'Okuma modundan çık', hidePanel: 'Paneli gizle', showPanel: 'Paneli göster', resizePanel: 'Genişliği değiştirmek için sürükleyin, sıfırlamak için çift tıklayın', shotSignIn: 'Oturum aç',
     tabMeaning: 'Anlam', tabWords: 'Kelimelerim',

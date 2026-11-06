@@ -59,7 +59,9 @@ const countOf = (texts, chars) => texts.reduce((n, t) => n + (t.match(new RegExp
 function readingOrder(texts) {
   const types = texts.map(t => isRtl(t) ? 'R' : isLtr(t) ? 'L' : 'N');
   const order = texts.map((_, i) => i);
+  order.turned = new Set(); // pieces whose own characters read the other way (see below)
   if (!types.includes('R')) return order;
+  const inEnglish = new Set();
   // Turn every run of `kind` pieces (and the spaces between them) around.
   const flipRuns = (list, kind) => {
     for (let i = 0; i < list.length; i++) {
@@ -68,14 +70,24 @@ function readingOrder(texts) {
       for (; j < list.length && types[list[j]] !== (kind === 'R' ? 'L' : 'R'); j++) if (types[list[j]] === kind) end = j;
       // English at the end of a right-to-left line keeps its trailing punctuation with it ("Hello world!";).
       if (kind === 'L' && j === list.length) end = list.length - 1;
+      // (a run of numbers alone isn't English: "1:" in an Arabic line)
+      if (kind === 'L' && list.slice(i, end + 1).some(k => /[A-Za-z\u00C0-\u024F]/.test(texts[k]))) list.slice(i, end + 1).forEach(k => inEnglish.add(k));
       list.splice(i, end - i + 1, ...list.slice(i, end + 1).reverse());
       i = end;
     }
     return list;
   };
   // The line's direction comes from its letters; digits have none of their own ("سنة 2026" is right to left).
-  return countOf(texts, RTL) >= countOf(texts, LTR_LETTERS) ? flipRuns(order.reverse(), 'L') : flipRuns(order, 'R');
+  if (countOf(texts, RTL) < countOf(texts, LTR_LETTERS)) return Object.assign(flipRuns(order, 'R'), { turned: new Set() });
+  const result = flipRuns(order.reverse(), 'L');
+  // In a right-to-left line, a piece of only digits and punctuation outside English ("1:" stored as ":1", or the
+  // quote and semicolon after English) is kept in the order it shows on the page: it reads the other way round.
+  result.turned = new Set(texts.map((t, k) => k).filter(k => !/\p{L}/u.test(texts[k]) && !inEnglish.has(k) && /[^\s\d\u0660-\u0669\u06F0-\u06F9]/.test(texts[k]) && texts[k].trim().length > 1));
+  return result;
 }
+// A piece of digits and punctuation, read the other way round: numbers stay as they are, brackets face the other way.
+const MIRROR = { '(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{', '<': '>', '>': '<', '«': '»', '»': '«' };
+const turnAround = text => (text.match(/[\d\u0660-\u0669\u06F0-\u06F9]+(?:[.,٫٬][\d\u0660-\u0669\u06F0-\u06F9]+)*|./gsu) || []).reverse().map(c => MIRROR[c] || c).join('');
 
 // Some PDFs store Arabic letters as their shaped "presentation forms" (ﻟ for ل, ﻷ for لأ): turn them back into
 // plain letters, so words can be read, looked up and searched. Positions inside a piece shift with it.
@@ -105,7 +117,9 @@ function arrangeLine(pieces) {
   const rtl = clean.some(t => isRtl(t));
   let bases = pieces.map((_, i) => i).filter(i => !isMark[i] && clean[i] !== '');
   if (rtl) bases = bases.sort((a, b) => (pieces[a].left + pieces[a].right) - (pieces[b].left + pieces[b].right));
-  const order = readingOrder(bases.map(i => clean[i])).map(k => bases[k]);
+  const ordered = readingOrder(bases.map(i => clean[i]));
+  for (const k of ordered.turned) clean[bases[k]] = turnAround(clean[bases[k]]);
+  const order = ordered.map(k => bases[k]);
   // Each diacritic joins its letter. Programs place marks differently: Chrome draws a zero-width mark at the left
   // edge of its letter, Core Text (Pages, TextEdit) centres a mark with a width over it. In a piece of several
   // letters, a letter's place is estimated from the piece's width shared among its letters (not its marks); the

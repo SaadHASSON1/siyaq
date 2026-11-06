@@ -51,6 +51,8 @@ When you read a book in a language you're still learning, every unknown word mea
 
 **Reading**
 - 📚 **PDF and EPUB**, opened by double-clicking like any reader
+- ✏️ **Write and draw on PDF pages**: a pen in four colours, text typed anywhere on the page (Arabic too), an eraser and undo
+- 💾 **Save as** PDF (the original pages with your highlights, writing and drawings, and notes as sticky notes), images, Word or Markdown
 - 🔍 **Scanned books too**: picture-only pages are read on your device (OCR), in all three languages
 - 📍 **Picks up where you left off** in every book, with your recent books on the start screen
 - 🧭 **Contents sidebar, search** (`⌘F` / `Ctrl+F`) and working links

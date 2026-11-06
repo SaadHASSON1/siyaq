@@ -32,6 +32,7 @@ function goHome() {
   closeSearch();
   if (askMode) setAskMode(false);
   setReading(false);
+  setInkMode(false);
   pdfDoc = null; bookPath = null; bookName = ''; bookKey = ''; bookLang = null; tocItems = []; lastLookup = null;
   viewer.replaceChildren(welcomeScreen);
   viewer.scrollTop = 0;

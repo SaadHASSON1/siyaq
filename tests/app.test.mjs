@@ -430,6 +430,67 @@ test('updates: found from Settings, it stays in Settings; found on its own, it i
   await page.eval(`document.querySelector('#settings').close()`);
 });
 
+test('writing and drawing on a PDF page: pen, text, eraser, undo; kept with the book', async () => {
+  await fresh();
+  await openPdf('/books/arabic.pdf');
+  await page.eval(`document.querySelector('#drawBtn').click()`);
+  assert.ok(await page.eval(`document.body.classList.contains('ink-mode') && !document.querySelector('#inkBar').hidden`));
+  const at = (fx, fy) => `(() => { const r = document.querySelector('.page[data-page="1"]').getBoundingClientRect(); return [r.left + r.width * ${fx}, r.top + r.height * ${fy}]; })()`;
+  const fire = (type, fx, fy) => page.eval(`{ const [x, y] = ${at(fx, fy)}; document.elementFromPoint(x, y).dispatchEvent(new PointerEvent('${type}', { bubbles: true, clientX: x, clientY: y, button: 0, pointerId: 1 })); }`);
+  // a stroke with the pen
+  await fire('pointerdown', 0.2, 0.25);
+  for (let i = 1; i <= 10; i++) await fire('pointermove', 0.2 + i * 0.03, 0.25 + (i % 2) * 0.01);
+  await fire('pointerup', 0.5, 0.25);
+  assert.equal(await page.eval(`bookInks().filter(i => i.kind === 'pen').length`), 1);
+  assert.equal(await page.eval(`document.querySelectorAll('.page[data-page="1"] .ink-layer path').length`), 1);
+  assert.equal(await page.eval(`lastLookup`), null, 'drawing over words looks nothing up');
+  // Arabic text typed on the page
+  await page.eval(`document.querySelector('#inkBar [data-tool="text"]').click()`);
+  await fire('pointerdown', 0.6, 0.33);
+  await page.eval(`document.execCommand('insertText', false, 'ملاحظة على الصفحة')`);
+  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+  assert.deepEqual(await page.eval(`bookInks().filter(i => i.kind === 'text').map(i => i.text)`), ['ملاحظة على الصفحة']);
+  // the eraser takes the stroke; undo brings it back
+  await page.eval(`document.querySelector('#inkBar [data-tool="eraser"]').click()`);
+  await fire('pointerdown', 0.35, 0.25);
+  await fire('pointerup', 0.35, 0.25);
+  assert.equal(await page.eval(`bookInks().filter(i => i.kind === 'pen').length`), 0, 'erased');
+  await page.eval(`document.querySelector('#inkUndo').click()`);
+  assert.equal(await page.eval(`bookInks().filter(i => i.kind === 'pen').length`), 1, 'undone');
+  // stays with the book, at another zoom too
+  await page.eval(`document.querySelector('#inkDone').click()`);
+  await page.eval(`zoomStep(1)`);
+  await page.waitFor(`document.querySelector('.page[data-page="1"] .ink-layer .ink-text')`);
+  assert.equal(await page.eval(`document.querySelector('.page[data-page="1"] .ink-text').textContent`), 'ملاحظة على الصفحة');
+  assert.ok(await page.eval(`store.get('inks')[bookKey].length === 2`));
+});
+
+test('Save as: PDF with the marks and notes, images, Word and Markdown', async () => {
+  // (the book, its ink and a highlight with a note, from above)
+  await page.eval(`{ const sp = [...document.querySelectorAll(PIECE)].find(s => s.textContent.trim().length > 3);
+    const r = document.createRange(); r.selectNodeContents(sp); const h = addHighlight(r, sp.textContent.trim(), 'green'); updateHighlight(h.id, { note: 'ملاحظتي' }); }`);
+  const got = await page.eval(`await (async () => {
+    const files = {}; saveBytes = async (name, bytes) => { files[name] = bytes; return '/saved/' + name; };
+    for (const k of ['pdf', 'images', 'word', 'text']) await EXPORTS[k]();
+    const pdfName = Object.keys(files).find(n => n.endsWith('.pdf')), out = await (await loadPdfLib()).PDFDocument.load(files[pdfName]);
+    const annots = out.getPage(0).node.Annots()?.asArray().map(r => out.context.lookup(r).get(PDFLib.PDFName.of('Subtype')).toString());
+    const docx = fflate.unzipSync(files[Object.keys(files).find(n => n.endsWith('.docx'))]);
+    const zip = fflate.unzipSync(files[Object.keys(files).find(n => n.endsWith('.zip'))]);
+    const md = new TextDecoder().decode(files[Object.keys(files).find(n => n.endsWith('.md'))]);
+    const docXml = new TextDecoder().decode(docx['word/document.xml']);
+    return { names: Object.keys(files).map(n => n.split('.').pop()).sort(), pages: out.getPageCount(), annots, xobject: out.getPage(0).node.Resources().lookup(PDFLib.PDFName.of('XObject'))?.keys().some(k => k.toString().startsWith('/SiyaqMarks')),
+      docxOk: !!new DOMParser().parseFromString(docXml, 'application/xml').querySelector('body') && !/parsererror/.test(docXml), docxNote: docXml.includes('ملاحظتي'), docxHighlight: docXml.includes('w:highlight w:val="green"'),
+      docxPicture: Object.keys(docx).some(n => n.startsWith('word/media/')), images: Object.keys(zip), md: md.includes('==') && md.includes('ملاحظتي') && md.includes('✎ ملاحظة على الصفحة') };
+  })()`);
+  assert.deepEqual(got.names, ['docx', 'md', 'pdf', 'zip']);
+  assert.equal(got.pages, await page.eval(`pdfDoc.numPages`));
+  assert.deepEqual(got.annots, ['/Text'], 'the note as a sticky note');
+  assert.ok(got.xobject, 'the marks laid over the page');
+  assert.ok(got.docxOk && got.docxNote && got.docxHighlight && got.docxPicture, 'Word: text, highlight, note, and the drawing as a picture');
+  assert.deepEqual(got.images, ['page-1.png']);
+  assert.ok(got.md, 'Markdown: highlight, note, writing');
+});
+
 test('no JavaScript errors anywhere above', () => {
   assert.deepEqual(page.errors, []);
 });

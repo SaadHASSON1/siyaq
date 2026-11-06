@@ -17,7 +17,7 @@ const backupMessage = (text, error = false) => { const el = $('#backupMsg'); el.
 $('#backupSave').onclick = async () => {
   const { apiKey, ...safeSettings } = settings;
   const data = { app: 'siyaq', format: 1, version: await appVersion(), exported: new Date().toISOString(),
-    settings: safeSettings, vocab, positions: store.get('positions', {}), library: library(), highlights };
+    settings: safeSettings, vocab, positions: store.get('positions', {}), library: library(), highlights, inks };
   try {
     const where = await saveText(`siyaq-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 1), 'application/json');
     if (where) backupMessage(t('backupSaved')(vocab.length));
@@ -47,6 +47,12 @@ function restoreBackup(text) {
     highlights[k] = [...(highlights[k] || []), ...list.filter(h => !ids.has(h.id))];
   }
   store.set('highlights', highlights);
+  for (const [k, list] of Object.entries(data.inks || {})) { // writing and drawings, merged the same way
+    const ids = new Set((inks[k] || []).map(i => i.id));
+    inks[k] = [...(inks[k] || []), ...list.filter(i => !ids.has(i.id))];
+  }
+  store.set('inks', inks);
+  if (pdfDoc) drawAllInk();
   const paths = new Set(library().map(b => b.path));
   store.set('library', [...library(), ...(data.library || []).filter(b => !paths.has(b.path))].slice(0, 12));
   const { apiKey, ...restored } = data.settings || {};

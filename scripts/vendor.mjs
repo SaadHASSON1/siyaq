@@ -22,7 +22,8 @@ for (const dir of ['cmaps', 'standard_fonts', 'iccs', 'wasm']) cpSync(`node_modu
   if (js.split(from).length !== 2) throw new Error('PDF.js changed: update the right-to-left ligature fix in scripts/vendor.mjs');
   writeFileSync(file, js.replace(from, to));
 }
-copyFileSync('node_modules/fflate/umd/index.js', 'src/vendor/fflate.min.js'); // unzips EPUB books
+copyFileSync('node_modules/fflate/umd/index.js', 'src/vendor/fflate.min.js'); // unzips EPUB books; zips saved images and Word files
+copyFileSync('node_modules/pdf-lib/dist/pdf-lib.min.js', 'src/vendor/pdf-lib.min.js'); // saves a book with your marks on it
 
 // OCR for scanned pages: Tesseract, its WebAssembly core, and compact Arabic, English and Turkish models.
 copy('node_modules/tesseract.js/dist/', 'src/vendor/tesseract/', ['tesseract.min.js', 'worker.min.js']);
@@ -31,4 +32,4 @@ copy('node_modules/tesseract.js-core/', 'src/vendor/tesseract/core/',
 for (const lang of ['ara', 'eng', 'tur']) {
   copy(`node_modules/@tesseract.js-data/${lang}/4.0.0_best_int/`, 'src/vendor/tesseract/lang/', [`${lang}.traineddata.gz`]);
 }
-console.log('PDF.js, fflate and Tesseract copied to src/vendor');
+console.log('PDF.js, fflate, pdf-lib and Tesseract copied to src/vendor');

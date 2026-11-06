@@ -178,6 +178,43 @@ async fn save_file(app: tauri::AppHandle, name: String, contents: String) -> Res
     Ok(Some(path.display().to_string()))
 }
 
+/// Saves a file of any kind (a book with your marks, images, a Word file): its bytes come as the request's body,
+/// as they are, and its name in a header (percent-encoded, so Arabic and Turkish names arrive whole).
+#[cfg(desktop)]
+#[tauri::command]
+async fn save_bytes(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected the file's bytes".into());
+    };
+    let name = request.headers().get("x-name").and_then(|v| v.to_str().ok()).map(percent_decode).unwrap_or_else(|| "siyaq".into());
+    let Some(path) = app.dialog().file().set_file_name(&name).blocking_save_file() else {
+        return Ok(None);
+    };
+    let path = path.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    Ok(Some(path.display().to_string()))
+}
+
+#[cfg(desktop)]
+fn percent_decode(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'%' && i + 2 < b.len() {
+            if let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
+                out.push(v);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(b[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
 // Phones open books through the system's share and file apps instead.
 #[cfg(mobile)]
 #[tauri::command]
@@ -188,6 +225,12 @@ async fn pick_file() -> Option<String> {
 #[cfg(mobile)]
 #[tauri::command]
 async fn save_file() -> Result<Option<String>, String> {
+    Ok(None)
+}
+
+#[cfg(mobile)]
+#[tauri::command]
+async fn save_bytes() -> Result<Option<String>, String> {
     Ok(None)
 }
 
@@ -224,6 +267,7 @@ pub fn run() {
             install_update,
             pick_file,
             save_file,
+            save_bytes,
             mcp::mcp_share,
             mcp::mcp_share_book,
             mcp::mcp_take_inbox,

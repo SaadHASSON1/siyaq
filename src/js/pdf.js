@@ -83,6 +83,9 @@ async function finishOpening(doc, name) {
   backTo = null;
   $('#backBtn').hidden = true;
   $('#tools').hidden = false;
+  // Writing, drawing and Save as are for PDF pages (an EPUB's text reflows).
+  $('#drawBtn').hidden = $('#exportBtn').hidden = bookType === 'epub';
+  undoStack.length = 0;
   $('#pageTotal').textContent = doc.numPages;
   updatePageLabel();
   updateZoomLabel();
@@ -137,6 +140,7 @@ async function renderPage(div) {
   if (s !== scale || !layer.isConnected) return;
   highlightSearch(div);
   drawPageHighlights(div);
+  drawPageInk(div);
   // Scanned pages are pictures of text: almost no text, and an image covering most of the page.
   const chars = textContent.items.reduce((n, it) => n + it.str.replace(/\s/g, '').length, 0);
   // A page with plenty of text that drew nothing at all means the drawing failed quietly.
