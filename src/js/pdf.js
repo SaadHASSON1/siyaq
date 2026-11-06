@@ -299,10 +299,26 @@ $('#backBtn').onclick = () => {
 const ZOOM_STEPS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 const zoomStep = dir => setZoom(dir > 0 ? ZOOM_STEPS.find(z => z > zoom + 0.001) ?? zoom : [...ZOOM_STEPS].reverse().find(z => z < zoom - 0.001) ?? zoom);
 
-function setZoom(z, keepFit = false) {
+// The point of the page at (x, y) on screen, to keep it there through a change of size.
+function anchorAt(x = viewer.getBoundingClientRect().left + viewer.clientWidth / 2, y = viewer.getBoundingClientRect().top + viewer.clientHeight / 3) {
+  for (const div of viewer.querySelectorAll('.page')) {
+    const r = div.getBoundingClientRect();
+    if (r.bottom < y) continue;
+    return { div, x, y, fx: (x - r.left) / r.width, fy: Math.max(0, (y - r.top) / r.height) };
+  }
+  return null;
+}
+function keepAnchor(a) {
+  if (!a?.div.isConnected) return;
+  const r = a.div.getBoundingClientRect();
+  viewer.scrollTop += r.top + a.fy * r.height - a.y;
+  viewer.scrollLeft += r.left + a.fx * r.width - a.x;
+}
+
+// A new zoom; the point at `anchor` (the middle of the view, or where fingers pinched) stays where it was.
+function setZoom(z, keepFit = false, anchor = anchorAt()) {
   if (!pdfDoc) return;
   if (bookType === 'epub') { zoomEpub(z); return; }
-  const page = currentPage();
   if (!keepFit) zoom = z;
   scale = fitScale * zoom;
   for (const div of viewer.children) {
@@ -313,7 +329,8 @@ function setZoom(z, keepFit = false) {
     observer.unobserve(div);
     observer.observe(div); // re-observing re-renders the pages in view
   }
-  goToPage(page, false);
+  viewer.style.removeProperty('--live-zoom');
+  keepAnchor(anchor);
   updateZoomLabel();
 }
 

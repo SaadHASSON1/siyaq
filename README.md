@@ -56,6 +56,7 @@ When you read a book in a language you're still learning, every unknown word mea
 - 🔍 **Scanned books too**: picture-only pages are read on your device (OCR), in all three languages
 - 📍 **Picks up where you left off** in every book, with your recent books on the start screen
 - 🧭 **Contents sidebar, search** (`⌘F` / `Ctrl+F`) and working links
+- 🤏 **Trackpad**: pinch to zoom around your fingers, swipe sideways (or press ← →) to turn pages, the right way round in Arabic books
 - 👓 **Reading mode** (`⌘⇧F` / `Ctrl+Shift+F`): only the page, with a warm or soft green reading colour if you like; a word's meaning shows in a small card over it, and `Esc` brings everything back as it was
 - ↔️ **A side panel your size**: drag its edge to make it wider or narrower, or hide it (`⌘\` / `Ctrl+\`) and it comes back when you click a word
 - 🌙 **Dark mode** that darkens pages but keeps pictures in their real colours

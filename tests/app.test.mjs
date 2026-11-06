@@ -55,6 +55,7 @@ before(async () => {
     '/books/english.pdf': await page.pdf(englishHtml),
     '/books/arabic.pdf': await page.pdf(arabicHtml),
     '/books/test.epub': epub(),
+    '/books/long.pdf': await page.pdf(`<html><body style="font:16pt serif;margin:60px">${Array.from({ length: 4 }, (_, i) => `<h1 style="page-break-before:always">Chapter ${i + 1}</h1>${'<p>The river ran past the old mill and the boats went by in the evening light. '.repeat(30)}</p>`).join('')}</body></html>`),
   };
   server = await serve(fileURLToPath(new URL('../src/', import.meta.url)), books);
   url = server.url;
@@ -531,6 +532,30 @@ test('selecting text on a PDF page shows one even bar per line, not a box per pi
   await page.eval(`getSelection().removeAllRanges()`);
   await page.sleep(100);
   assert.equal(await page.eval(`document.querySelectorAll('.sel-layer').length`), 0, 'gone with the selection');
+});
+
+test('trackpad: pinch zooms around the fingers; swiping sideways and the arrow keys turn pages', async () => {
+  await fresh();
+  await page.eval(`openTestBook('/books/long.pdf')`);
+  await page.waitFor(`document.querySelector('.page[data-page="1"] .textLayer span')`);
+  await page.sleep(400);
+  // a pinch (as Chrome sends it: wheel events with Ctrl) over a point on page 1
+  const before = await page.eval(`(() => { const r = document.querySelector('.page[data-page="1"]').getBoundingClientRect(); window.__pt = [r.left + r.width * 0.7, r.top + r.height * 0.3]; return { zoom, x: (__pt[0] - r.left) / r.width, y: (__pt[1] - r.top) / r.height }; })()`);
+  for (let i = 0; i < 6; i++) await page.eval(`viewer.dispatchEvent(new WheelEvent('wheel', { deltaY: -12, ctrlKey: true, clientX: __pt[0], clientY: __pt[1], bubbles: true, cancelable: true }))`);
+  assert.ok(await page.eval(`!!viewer.style.getPropertyValue('--live-zoom')`), 'the pages follow the fingers at once');
+  await page.waitFor(`!viewer.style.getPropertyValue('--live-zoom') && zoom > ${before.zoom}`, 2000);
+  const after = await page.eval(`(() => { const r = document.querySelector('.page[data-page="1"]').getBoundingClientRect(); return { x: (__pt[0] - r.left) / r.width, y: (__pt[1] - r.top) / r.height }; })()`);
+  assert.ok(Math.abs(after.x - before.x) < 0.02 && Math.abs(after.y - before.y) < 0.02, `the point under the fingers stays put (${JSON.stringify([before, after])})`);
+  await page.eval(`setZoom(1)`);
+  await page.sleep(300);
+  // two fingers to the left: the next page
+  const from = await page.eval(`currentPage()`);
+  for (let i = 0; i < 8; i++) await page.eval(`viewer.dispatchEvent(new WheelEvent('wheel', { deltaX: 20, deltaY: 1, bubbles: true, cancelable: true }))`);
+  await page.waitFor(`currentPage() === ${from + 1}`, 3000);
+  // ← goes back (an English book: left is back)
+  await page.sleep(300);
+  await page.eval(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }))`);
+  await page.waitFor(`currentPage() === ${from}`, 3000);
 });
 
 test('no JavaScript errors anywhere above', () => {
