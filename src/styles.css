@@ -223,7 +223,11 @@ mark.hl { color: inherit; border-radius: 2px; }
   --scale-x: 1; --rotate: 0deg; transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
 }
 .textLayer .markedContent { display: contents; }
-.textLayer ::selection { background: rgba(47, 111, 94, .3); }
+.textLayer ::selection { background: transparent; } /* drawn as even bars instead (drawSelection) */
+.sel-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.sel-layer > div { position: absolute; border-radius: 2px; background: rgba(47, 111, 94, .28); mix-blend-mode: multiply; }
+:root[data-theme="dark"] .sel-layer > div { background: rgba(63, 191, 133, .35); mix-blend-mode: screen; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sel-layer > div { background: rgba(63, 191, 133, .35); mix-blend-mode: screen; } }
 
 /* ---------- EPUB chapters: flowing text in the reader's own colours ---------- */
 .page.epub-chapter {

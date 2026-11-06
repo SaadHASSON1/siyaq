@@ -491,6 +491,25 @@ test('Save as: PDF with the marks and notes, images, Word and Markdown', async (
   assert.ok(got.md, 'Markdown: highlight, note, writing');
 });
 
+test('selecting text on a PDF page shows one even bar per line, not a box per piece', async () => {
+  await fresh();
+  await openPdf();
+  const bars = await page.eval(`await (async () => {
+    const spans = [...document.querySelectorAll(PIECE)].filter(s => s.textContent.trim());
+    const r = document.createRange(); r.setStart(spans[0].firstChild, 0); r.setEnd(spans[spans.length - 1].firstChild, spans[spans.length - 1].textContent.length);
+    getSelection().removeAllRanges(); getSelection().addRange(r);
+    await new Promise(res => setTimeout(res, 100));
+    const lines = new Set(spans.map(s => Math.round(s.getBoundingClientRect().top / 4))).size;
+    const b = [...document.querySelectorAll('.sel-layer > div')].map(d => d.getBoundingClientRect());
+    return { bars: b.length, lines, overlap: b.some((x, i) => b.some((y, j) => i !== j && x.top < y.bottom - 1 && y.top < x.bottom - 1 && x.left < y.right && y.left < x.right)) };
+  })()`);
+  assert.ok(bars.bars > 0 && bars.bars <= bars.lines, `${bars.bars} bars for ${bars.lines} lines`);
+  assert.equal(bars.overlap, false, 'no bar on top of another');
+  await page.eval(`getSelection().removeAllRanges()`);
+  await page.sleep(100);
+  assert.equal(await page.eval(`document.querySelectorAll('.sel-layer').length`), 0, 'gone with the selection');
+});
+
 test('no JavaScript errors anywhere above', () => {
   assert.deepEqual(page.errors, []);
 });

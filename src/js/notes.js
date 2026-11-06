@@ -88,18 +88,79 @@ function addHighlight(range, text, color) {
   return h;
 }
 
-// Text layers give a box per piece of text; join neighbours on the same line into one.
+// Text layers give a box per piece of text; join those on the same line into one bar, across the spaces between
+// words (justified lines have wide ones), but not across a gap as wide as a column's.
 function mergeRects(rects) {
   rects.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
   const out = [];
   for (const r of rects) {
     const last = out[out.length - 1];
-    if (last && Math.abs(last[1] - r[1]) < last[3] * 0.5 && r[0] <= last[0] + last[2] + 0.01) {
+    if (last && Math.abs(last[1] - r[1]) < last[3] * 0.5 && r[0] <= last[0] + last[2] + 0.06) {
       const right = Math.max(last[0] + last[2], r[0] + r[2]);
       last[0] = Math.min(last[0], r[0]); last[2] = right - last[0]; last[3] = Math.max(last[3], r[3]);
     } else out.push([...r]);
   }
   return out;
+}
+
+// ---------- The selection on PDF pages ----------
+// The browser paints a PDF selection piece by piece, with gaps between words and ragged heights. It is drawn
+// here instead, as the pages' readers do: one even bar per line, from where it starts to where it ends.
+let selFrame = 0;
+document.addEventListener('selectionchange', () => { if (!selFrame) selFrame = requestAnimationFrame(() => { selFrame = 0; drawSelection(); }); });
+function drawSelection() {
+  viewer.querySelectorAll('.sel-layer').forEach(l => l.remove());
+  const sel = getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  for (const layer of viewer.querySelectorAll('.page .textLayer')) {
+    if (!range.intersectsNode(layer)) continue;
+    const page = layer.closest('.page'), pr = page.getBoundingClientRect(), boxes = [];
+    // The selected part of each piece of text (not whole elements, whose boxes can be the whole page).
+    const walker = document.createTreeWalker(layer, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (!node.textContent.trim() || !range.intersectsNode(node)) continue;
+      const part = document.createRange();
+      part.selectNodeContents(node);
+      if (node === range.startContainer) part.setStart(node, range.startOffset);
+      if (node === range.endContainer) part.setEnd(node, range.endOffset);
+      for (const r of part.getClientRects()) if (r.width >= 1 && r.height >= 1) boxes.push([r.left - pr.left, r.top - pr.top, r.width, r.height]);
+    }
+    const lines = selectionLines(boxes);
+    if (!lines.length) continue;
+    const div = document.createElement('div');
+    div.className = 'sel-layer';
+    div.innerHTML = lines.map(([x, y, w, h]) => `<div style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></div>`).join('');
+    page.append(div);
+  }
+}
+// Boxes on the same line (their middles close) become one bar, unless a gap wider than a few letters splits them
+// (two columns). Each bar is as tall as the line's tallest box.
+function selectionLines(boxes) {
+  boxes.sort((a, b) => (a[1] + a[3] / 2) - (b[1] + b[3] / 2) || a[0] - b[0]);
+  const lines = [];
+  for (const b of boxes) {
+    const mid = b[1] + b[3] / 2;
+    const line = lines.find(l => Math.abs(l.mid - mid) < Math.min(l.h, b[3]) * 0.5);
+    if (line) { line.boxes.push(b); line.h = Math.max(line.h, b[3]); } else lines.push({ mid, h: b[3], boxes: [b] });
+  }
+  // Lines set close together have boxes that reach into each other: they meet halfway instead of overlapping.
+  lines.sort((a, b) => a.mid - b.mid);
+  for (const l of lines) { l.top = Math.min(...l.boxes.map(b => b[1])); l.bottom = Math.max(...l.boxes.map(b => b[1] + b[3])); }
+  for (let i = 1; i < lines.length; i++) {
+    const up = lines[i - 1], down = lines[i];
+    if (up.bottom > down.top) up.bottom = down.top = (Math.max(up.mid, down.top) + Math.min(down.mid, up.bottom)) / 2;
+  }
+  return lines.flatMap(l => {
+    const bars = [];
+    for (const b of l.boxes.sort((a, c) => a[0] - c[0])) {
+      const last = bars[bars.length - 1];
+      if (last && b[0] - (last[0] + last[2]) < l.h * 2.5) last[2] = Math.max(last[2], b[0] + b[2] - last[0]);
+      else bars.push([b[0], 0, b[2], 0]);
+    }
+    return bars.map(([x, , w]) => [x, l.top, w, l.bottom - l.top]);
+  });
 }
 
 const pin = h => `<button class="hl-pin c-${h.color}" data-hl="${h.id}" title="${esc(h.note || t('addNote'))}">${h.note ? icon('note') : ''}</button>`;
