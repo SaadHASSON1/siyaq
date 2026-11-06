@@ -239,7 +239,6 @@ mark.hl { color: inherit; border-radius: 2px; }
 .epub-chapter td, .epub-chapter th { border: 1px solid var(--border); padding: 4px 8px; }
 .epub-chapter pre { white-space: pre-wrap; }
 .epub-chapter .hit { background: rgba(242, 201, 76, .35); border-radius: 3px; }
-.epub-chapter mark.known { background: none; color: inherit; border-bottom: 2px solid var(--accent); }
 .epub-chapter ::selection { background: rgba(47, 111, 94, .3); }
 
 /* ---------- Side panel ---------- */
@@ -466,7 +465,7 @@ dialog[open]::backdrop { animation: backdrop-in .28s ease; }
 [dir="rtl"] .v-acts .go .i { transform: scaleX(-1); }
 .v-acts .x { opacity: 0; }
 .vocab-list li:hover .x, .vocab-list .x:focus-visible { opacity: 1; }
-.textLayer mark.blink, .epub-chapter mark.blink { animation: word-blink 1.6s ease 2; }
+.word-glow { position: absolute; z-index: 4; border-radius: 3px; pointer-events: none; animation: word-blink 1.6s ease 2; }
 @keyframes word-blink { 0%, 100% { background: transparent; } 40% { background: var(--mark); box-shadow: 0 0 0 4px var(--mark); } }
 
 /* ---------- Settings ---------- */
@@ -524,7 +523,6 @@ dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24
 .searchbar .count { min-width: 70px; text-align: center; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .searchbar .icon-btn { width: 30px; height: 30px; }
 .textLayer span.hit { background: rgba(242, 201, 76, .55); border-radius: 2px; }
-.textLayer mark.known { color: transparent; background: none; border-bottom: 2px solid var(--accent); opacity: .75; }
 
 /* ---------- Toast and page notes ---------- */
 .toast {
@@ -653,7 +651,6 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
 .demo-ask .bubble svg { width: 15px; height: 15px; }
 .slide.on .demo-ask .bubble { animation: pop 3.6s ease infinite; animation-delay: .4s; }
 .demo-words p { font-size: 15px; }
-.demo-words u { text-decoration: none; border-bottom: 2px solid var(--accent); }
 .demo .flash { position: absolute; left: 50%; bottom: 14px; width: 150px; height: 58px; margin-left: -75px; perspective: 600px; }
 .demo .flash .face { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
   box-shadow: var(--shadow-pop); backface-visibility: hidden; font: 700 17px system-ui, sans-serif; }

@@ -83,6 +83,5 @@ function buildOcrLayer(layer, lines, s) {
     const natural = span.getBoundingClientRect().width;
     if (natural) span.style.transform = `scaleX(${width / natural})`;
   }
-  markKnownWords(layer);
   highlightSearch(layer.parentElement);
 }

@@ -205,36 +205,3 @@ $('#searchPrev').onclick = () => stepSearch(-1);
 $('#searchNext').onclick = () => stepSearch(1);
 $('#searchClose').onclick = closeSearch;
 
-// ---------- Words looked up before, underlined in the book ----------
-let knownRe = null;
-// Older Safari engines (macOS before 13.3) cannot read look-behind, so the letter before a word is captured instead.
-const knownMatches = text => [...text.matchAll(knownRe)].map(m => ({ index: m.index + m[1].length, word: m[2] }));
-function refreshKnown() {
-  const words = [...new Set(vocab.map(v => v.word.toLowerCase()).filter(w => /^[\p{L}\p{M}'’-]+$/u.test(w)))];
-  knownRe = words.length
-    ? new RegExp(`(^|[^\\p{L}\\p{M}])(${words.sort((a, b) => b.length - a.length).map(escRe).join('|')})(?![\\p{L}\\p{M}])`, 'giu')
-    : null;
-  viewer.querySelectorAll('.textLayer').forEach(markKnownWords);
-  viewer.querySelectorAll('.epub-chapter').forEach(markKnownInEpub);
-}
-
-function markKnownWords(layer) {
-  for (const span of layer.querySelectorAll('span:not(.markedContent)')) {
-    if (span.querySelector('mark')) span.textContent = span.textContent; // back to plain text first
-    if (!knownRe) continue;
-    const text = span.textContent, matches = knownMatches(text);
-    if (!matches.length) continue;
-    const parts = [];
-    let last = 0;
-    for (const m of matches) {
-      parts.push(text.slice(last, m.index));
-      const mark = document.createElement('mark');
-      mark.className = 'known';
-      mark.textContent = m.word;
-      parts.push(mark);
-      last = m.index + m.word.length;
-    }
-    parts.push(text.slice(last));
-    span.replaceChildren(...parts);
-  }
-}

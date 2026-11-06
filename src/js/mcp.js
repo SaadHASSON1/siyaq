@@ -99,7 +99,6 @@ async function takeInbox() {
   }
   store.set('vocab', vocab);
   updateVocabCount();
-  refreshKnown();
   if (!$('#vocab').hidden && !reviewQueue) renderVocab();
   showToast(t('mcpAdded').replace('{n}', added.length));
 }

@@ -155,7 +155,6 @@ target.onchange = () => {
 applyTheme();
 applyUiLanguage();
 updateVocabCount();
-refreshKnown();
 // New readers get the tour once; people who already have a key, or chose Later before, don't.
 if (!settings.apiKey && settings.provider === 'gemini' && !store.get('setupSkipped', false)) openSetup(!store.get('toured', false));
 

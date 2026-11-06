@@ -193,7 +193,6 @@ function saveWord(word, sentence, r) {
     lang: settings.lang, from: LANGS[bookLang] ? bookLang : guessLang(word), date: new Date().toISOString() });
   store.set('vocab', vocab);
   updateVocabCount();
-  refreshKnown();
 }
 
 const updateVocabCount = () => { $('#vocabCount').textContent = vocab.length || ''; };
@@ -255,10 +254,24 @@ function renderVocab() {
   pane.onclick = e => {
     const x = e.target.closest('[data-x]'), go = e.target.closest('[data-go]'), open = e.target.closest('[data-open]'), pair = e.target.closest('[data-pair]');
     if (pair) { vocabPair = pair.dataset.pair; renderVocab(); }
-    else if (x) { vocab.splice(+x.dataset.x, 1); store.set('vocab', vocab); refreshKnown(); renderVocab(); }
+    else if (x) { vocab.splice(+x.dataset.x, 1); store.set('vocab', vocab); renderVocab(); }
     else if (go) goToWord(vocab[+go.dataset.go]);
     else if (open) { const v = vocab[+open.dataset.open]; lastLookup = { word: v.word, sentence: v.sentence }; showTab('lookup'); renderSaved(v.word, v.sentence, v); }
   };
+}
+
+// Where a word is on a page (its first whole-word appearance), as a range.
+function findOnPage(page, word) {
+  const re = new RegExp(`(^|[^\\p{L}\\p{M}])(${escRe(word)})(?![\\p{L}\\p{M}])`, 'iu');
+  const walker = document.createTreeWalker(page, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const m = walker.currentNode.textContent.match(re);
+    if (!m) continue;
+    const range = document.createRange(), i = m.index + m[1].length;
+    range.setStart(walker.currentNode, i); range.setEnd(walker.currentNode, i + m[2].length);
+    return range;
+  }
+  return null;
 }
 
 // Back to the page a word was looked up on, with the word flashing there; or say which book to open.
@@ -269,10 +282,15 @@ function goToWord(v) {
   $('#backBtn').hidden = false;
   goToPage(v.page);
   setTimeout(() => {
-    const page = viewer.querySelector(`.page[data-page="${v.page}"]`);
-    const marks = [...(page?.querySelectorAll('mark.known') || [])].filter(m => m.textContent.toLowerCase() === v.word.toLowerCase());
-    marks.forEach(m => { m.classList.remove('blink'); void m.offsetWidth; m.classList.add('blink'); });
-    marks[0]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const page = viewer.querySelector(`.page[data-page="${v.page}"]`), at = page && findOnPage(page, v.word);
+    if (!at) return;
+    // A glow over the word for a moment, where it is on the page.
+    const r = at.getBoundingClientRect(), pr = page.getBoundingClientRect(), glow = document.createElement('div');
+    glow.className = 'word-glow';
+    Object.assign(glow.style, { left: r.left - pr.left + 'px', top: r.top - pr.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+    page.append(glow);
+    setTimeout(() => glow.remove(), 3400);
+    glow.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, 600);
 }
 

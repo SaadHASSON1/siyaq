@@ -80,7 +80,7 @@ test('PDF: clicking a word shows its meaning in its sentence and saves it', asyn
   assert.equal(await page.eval(`document.querySelector('#lookup .tr').textContent`), 'T-ar');
   assert.equal(await page.eval(`document.querySelector('#lookup .sentence').textContent`), 'She sat on the bank of the river, watching the water.');
   assert.deepEqual(await page.eval(`[vocab[0].word, vocab[0].page, vocab[0].lang]`), ['bank', 1, 'ar']);
-  assert.ok(await page.eval(`!!document.querySelector('mark.known')`), 'the saved word is underlined');
+  assert.equal(await page.eval(`document.querySelectorAll('mark.known').length`), 0, 'saved, with no line under it in the book');
 });
 
 test('changing the translation language translates the open word again', async () => {
@@ -94,6 +94,7 @@ test('My words: a tab per language pair, and the arrow back to the page', async 
   assert.deepEqual(tabs, ['all', 'en>tr', 'en>ar']);
   await page.eval(`document.querySelector('#vocab [data-go]').click()`);
   assert.equal(await page.eval(`$('#backBtn').hidden`), false);
+  await page.waitFor(`document.querySelector('.word-glow')`, 3000); // the word glows where it is
 });
 
 test('review cards turn over to show the answer', async () => {

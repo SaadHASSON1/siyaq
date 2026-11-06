@@ -59,7 +59,7 @@ When you read a book in a language you're still learning, every unknown word mea
 - 🌙 **Dark mode** that darkens pages but keeps pictures in their real colours
 
 **Remembering**
-- 📝 **Every word you look up is saved** and underlined wherever it appears again
+- 📝 **Every word you look up is saved** in My words
 - 🃏 **Flashcards** with spaced repetition, or export to Anki
 - ↩️ **Back to the page**: jump from any saved word to the page you found it on
 - 💾 **Backup** your words, progress and settings to a file, and restore them on another computer

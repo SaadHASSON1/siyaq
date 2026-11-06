@@ -57,7 +57,6 @@ function restoreBackup(text) {
   applyUiLanguage();
   target.value = settings.lang;
   updateVocabCount();
-  refreshKnown();
   renderRecent();
   backupMessage(t('backupRestored')(added));
 }

@@ -135,7 +135,6 @@ async function renderPage(div) {
   await new pdfjsLib.TextLayer({ textContentSource: textContent, container: layer, viewport: vp }).render();
   layer.dataset.ready = '1'; // all its text is in place (PDF.js adds it in batches)
   if (s !== scale || !layer.isConnected) return;
-  markKnownWords(layer);
   highlightSearch(div);
   drawPageHighlights(div);
   // Scanned pages are pictures of text: almost no text, and an image covering most of the page.

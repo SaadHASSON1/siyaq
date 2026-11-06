@@ -86,7 +86,6 @@ async function openEpub(data, name) {
   zoom = 1;
   viewer.style.setProperty('--epub-zoom', 1);
   viewer.replaceChildren(...chapters);
-  chapters.forEach(markKnownInEpub);
   await finishOpening(doc, name);
 }
 
@@ -206,30 +205,6 @@ function clickEpub(e, sel, selected) {
   while (end < text.length && isWordChar(text[end])) end++;
   const word = text.slice(start, end).replace(/^['’-]+|['’-]+$/g, '');
   if (word && /\p{L}/u.test(word)) askMode ? openAsk(cutSentence(text, start)) : lookup(word, cutSentence(text, start));
-}
-
-function markKnownInEpub(section) {
-  for (const m of section.querySelectorAll('mark.known')) m.replaceWith(m.textContent);
-  section.normalize();
-  if (!knownRe) return;
-  const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT), nodes = [];
-  while (walker.nextNode()) nodes.push(walker.currentNode);
-  for (const node of nodes) {
-    const text = node.textContent, matches = knownMatches(text);
-    if (!matches.length) continue;
-    const parts = [];
-    let last = 0;
-    for (const m of matches) {
-      parts.push(text.slice(last, m.index));
-      const mark = document.createElement('mark');
-      mark.className = 'known';
-      mark.textContent = m.word;
-      parts.push(mark);
-      last = m.index + m.word.length;
-    }
-    parts.push(text.slice(last));
-    node.replaceWith(...parts);
-  }
 }
 
 function highlightEpub(section) {
