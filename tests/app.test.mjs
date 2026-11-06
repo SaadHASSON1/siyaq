@@ -414,20 +414,43 @@ test('layout: nothing overlaps or is cut off, in every language and width', asyn
   assert.deepEqual(found, []);
 });
 
-test('updates: found from Settings, it stays in Settings; found on its own, it is offered at the bottom', async () => {
-  const desktop = FAKE_DESKTOP.replace("if (cmd === 'mcp_take_inbox') return [];", "if (cmd === 'mcp_take_inbox') return []; if (cmd === 'check_update') return '9.9.10';");
+test('updates: found from Settings, it stays in Settings with its progress; found on its own, the notice shows it', async () => {
+  // A pretend update: 10 MB downloaded in steps, then installed, then the app would restart.
+  const desktop = FAKE_DESKTOP.replace("core: { invoke:", "core: { Channel: class {}, invoke:").replace("if (cmd === 'mcp_take_inbox') return [];", `if (cmd === 'mcp_take_inbox') return [];
+    if (cmd === 'check_update') return '9.9.10';
+    if (cmd === 'install_update') { const say = m => args.onProgress.onmessage(m), total = 10 * 1048576;
+      for (let i = 1; i <= 5; i++) { await new Promise(r => setTimeout(r, 300)); say({ stage: 'download', done: total * i / 5, total }); }
+      await new Promise(r => setTimeout(r, 300)); say({ stage: 'install' });
+      await new Promise(r => setTimeout(r, 400)); say({ stage: 'restart' });
+      return new Promise(() => {}); }`);
   await fresh(undefined, FAKE_AI + desktop);
-  // on its own, a few seconds after starting
+  // on its own, a few seconds after starting: offered at the bottom
   await page.waitFor(`!document.querySelector('#toast').hidden && document.querySelector('#toast').textContent.includes('9.9.10')`, 6000);
   await page.eval(`document.querySelector('#toast').hidden = true`);
+  // from Settings: it stays there, with an Update now button
   await page.eval(`{ openSettings('about'); document.querySelector('#updateCheck').click(); }`);
   await page.waitFor(`document.querySelector('#updateNowBtn')`);
   assert.ok(await page.eval(`document.querySelector('#settings').open && document.querySelector('#toast').hidden`), 'Settings stays open, no toast');
-  assert.ok(await page.eval(`document.querySelector('#updateMsg').textContent.includes('9.9.10')`));
   await page.eval(`document.querySelector('#updateNowBtn').click()`);
-  await page.waitFor(`__calls.some(([c]) => c === 'install_update')`);
-  assert.ok(await page.eval(`document.querySelector('#settings').open && document.querySelector('#updateMsg').textContent === t('updating')`), 'and it updates from there');
+  // the download bar fills, saying how much is left
+  await page.waitFor(`+document.querySelector('#updateMsg .upd-bar')?.getAttribute('aria-valuenow') >= 40`);
+  const mid = await page.eval(`({ text: document.querySelector('#updateMsg .upd-row small').textContent, width: parseFloat(document.querySelector('#updateMsg .upd-bar i').style.width) })`);
+  assert.match(mid.text, /MB/);
+  assert.ok(mid.width >= 40 && mid.width < 100);
+  // then the install, still in Settings
+  await page.waitFor(`document.querySelector('#updateMsg .upd-row:last-child .upd-bar.busy')`);
+  await page.waitFor(`document.querySelector('#updateMsg').textContent.includes(t('updRestarting'))`);
+  assert.ok(await page.eval(`document.querySelector('#settings').open`));
   await page.eval(`document.querySelector('#settings').close()`);
+  // from the notice: the same bars in it
+  await page.eval(`offerUpdate('9.9.10')`);
+  await page.eval(`document.querySelector('#toastBtn').click()`);
+  await page.waitFor(`document.querySelector('#toast.with-progress .upd-bar') && !document.querySelector('#toast').hidden`);
+  await page.waitFor(`document.querySelector('#toast').textContent.includes(t('updRestarting'))`, 5000);
+  for (const lang of ['ar', 'en', 'tr']) {
+    await page.eval(`{ settings.uiLang = '${lang}'; }`);
+    assert.ok((await page.eval(`updateProgress({ stage: 'download', done: 1048576, total: 4194304 }, 2)`)).includes('25%'));
+  }
 });
 
 test('writing and drawing on a PDF page: pen, text, eraser, undo; kept with the book', async () => {

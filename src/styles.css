@@ -763,3 +763,20 @@ body.ink-mode .textLayer { pointer-events: none; }
 .export-menu button b { font-size: 14px; }
 .export-menu button small { color: var(--muted); font-size: 12px; line-height: 1.4; }
 @media (max-width: 760px) { .ink-bar { top: 8px; flex-wrap: wrap; justify-content: center; } }
+
+/* ---------- Update progress (the notice at the bottom, and Settings) ---------- */
+.toast.with-progress { min-width: min(340px, calc(100% - 32px)); padding: 12px 14px; }
+.upd { display: grid; gap: 10px; width: 100%; }
+.upd-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.upd-head b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.upd-bar { position: relative; height: 6px; margin: 5px 0 3px; border-radius: 3px; overflow: hidden; background: color-mix(in srgb, currentColor 18%, transparent); }
+.upd-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--accent); transition: width .25s ease; }
+[dir="rtl"] .upd-bar i { inset: 0 0 0 auto; }
+/* still going, but it can't say how far: a stripe that sweeps across */
+.upd-bar.busy i { width: 35% !important; animation: upd-sweep 1.1s ease-in-out infinite; }
+@keyframes upd-sweep { from { transform: translateX(-110%); } to { transform: translateX(310%); } }
+[dir="rtl"] .upd-bar.busy i { animation-name: upd-sweep-rtl; }
+@keyframes upd-sweep-rtl { from { transform: translateX(110%); } to { transform: translateX(-310%); } }
+.upd small { display: block; font-size: 12px; opacity: .75; font-variant-numeric: tabular-nums; }
+.update-msg .upd { margin-top: 4px; color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .upd-bar.busy i { animation: none; width: 100% !important; opacity: .5; } .upd-bar i { transition: none; } }

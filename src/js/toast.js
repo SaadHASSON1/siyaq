@@ -3,6 +3,7 @@
 // ---------- Toast ----------
 function showToast(text, action) {
   const el = $('#toast');
+  el.classList.remove('with-progress');
   el.innerHTML = `<span>${esc(text)}</span>`
     + (action ? `<button class="btn small primary" id="toastBtn">${esc(action.label)}</button>` : '')
     + `<button class="icon-btn" id="toastClose" aria-label="${t('close')}">${icon('x')}</button>`;

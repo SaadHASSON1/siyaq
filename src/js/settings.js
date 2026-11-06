@@ -193,14 +193,49 @@ appVersion().then(v => {
   showVersion();
 });
 
-// Installs the update; `say` shows how it goes (a toast, or the line in Settings).
-async function installUpdate(say = text => showToast(text)) {
-  say(t('updating'));
-  try { await tauri.core.invoke('install_update'); } catch (err) { say(t('updateFailed') + err, 'error'); }
+// Installs the update, showing how far it has got where it was asked for (the notice at the bottom, or the line in
+// Settings): two bars, the download (how much is left and about how long) and then the install.
+async function installUpdate(where = 'notice') {
+  const box = where === 'notice' ? $('#toast') : $('#updateMsg');
+  const draw = html => {
+    if (where === 'notice') { clearTimeout(showToast.timer); box.classList.add('with-progress'); }
+    else box.className = 'update-msg';
+    box.innerHTML = html;
+    box.hidden = false;
+  };
+  const started = performance.now();
+  let state = { stage: 'download', done: 0, total: 0 };
+  const render = () => draw(updateProgress(state, (performance.now() - started) / 1000));
+  render();
+  const channel = new tauri.core.Channel();
+  channel.onmessage = m => { state = m; render(); };
+  try { await tauri.core.invoke('install_update', { onProgress: channel }); }
+  catch (err) {
+    box.classList.remove('with-progress');
+    if (where === 'notice') showToast(t('updateFailed') + err);
+    else { box.className = 'update-msg error'; box.textContent = t('updateFailed') + err; }
+  }
+}
+function updateProgress({ stage, done = 0, total = 0 }, seconds) {
+  const mb = b => (b / 1048576).toFixed(1);
+  const downloaded = stage !== 'download', pct = downloaded ? 100 : total ? Math.min(100, Math.round(done / total * 100)) : null;
+  // about how long is left, from the speed so far (once there is enough to tell)
+  let eta = '';
+  if (!downloaded && total && done > 0 && seconds > 1.5) {
+    const left = Math.max(1, Math.round((total - done) / (done / seconds)));
+    eta = left < 60 ? t('updSeconds')(left) : t('updMinutes')(Math.ceil(left / 60));
+  }
+  const row = (label, value, bar, note) => `<div class="upd-row"><div class="upd-head"><span>${label}</span><b>${value}</b></div>
+    <div class="upd-bar${bar == null ? ' busy' : ''}" role="progressbar" aria-label="${label}"${bar == null ? '' : ` aria-valuenow="${bar}" aria-valuemin="0" aria-valuemax="100"`}><i style="width:${bar ?? 0}%"></i></div>${note ? `<small>${note}</small>` : ''}</div>`;
+  const download = row(t('updDownload'), pct == null ? `${mb(done)} MB` : `${pct}%`, pct,
+    downloaded ? t('updDownloaded') : total ? t('updLeft')(mb(Math.max(0, total - done)), eta) : '');
+  const install = row(t('updInstall'), stage === 'restart' ? '100%' : '', stage === 'install' ? null : stage === 'restart' ? 100 : 0,
+    stage === 'install' ? t('updInstalling') : stage === 'restart' ? t('updRestarting') : t('updAfterDownload'));
+  return `<div class="upd">${download}${install}</div>`;
 }
 // An update found on its own, while reading: offered at the bottom of the window.
 function offerUpdate(version) {
-  showToast(t('updateAvail')(version), { label: t('updateNow'), run: () => installUpdate() });
+  showToast(t('updateAvail')(version), { label: t('updateNow'), run: () => installUpdate('notice') });
 }
 
 // On its own a few seconds after starting (installed app only), and from Settings whenever asked.
@@ -222,7 +257,7 @@ $('#updateCheck').onclick = async () => {
     // Asked for here: the answer stays here, with its button, and Settings stays open.
     say(t('updateAvail')(version), 'ok');
     const btn = Object.assign(document.createElement('button'), { type: 'button', className: 'btn small primary', id: 'updateNowBtn', textContent: t('updateNow') });
-    btn.onclick = () => { btn.remove(); installUpdate(say); };
+    btn.onclick = () => { btn.remove(); installUpdate('settings'); };
     msg.append(' ', btn);
   } catch (err) {
     say(t('updateCheckFailed') + err, 'error');

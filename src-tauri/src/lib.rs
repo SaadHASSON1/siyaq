@@ -125,14 +125,36 @@ async fn check_update(app: tauri::AppHandle) -> Result<Option<String>, String> {
     Ok(update.map(|u| u.version))
 }
 
-/// Downloads the signed update, installs it and restarts.
+/// Downloads the signed update, installs it and restarts, telling the page how far it has got:
+/// {"stage":"download","done":bytes,"total":bytes} as it downloads (total 0 when the server doesn't say),
+/// then {"stage":"install"}, then {"stage":"restart"}.
 #[cfg(desktop)]
 #[tauri::command]
-async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+async fn install_update(app: tauri::AppHandle, on_progress: tauri::ipc::Channel<serde_json::Value>) -> Result<(), String> {
     use tauri_plugin_updater::UpdaterExt;
     let updater = app.updater().map_err(|e| e.to_string())?;
     if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
-        update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+        let mut done: u64 = 0;
+        let mut sent = std::time::Instant::now() - std::time::Duration::from_secs(1);
+        let progress = on_progress.clone();
+        let bytes = update
+            .download(
+                move |chunk, total| {
+                    done += chunk as u64;
+                    // a few times a second is plenty for a progress bar
+                    if sent.elapsed().as_millis() >= 120 || total.is_some_and(|t| done >= t) {
+                        sent = std::time::Instant::now();
+                        let _ = progress.send(serde_json::json!({ "stage": "download", "done": done, "total": total.unwrap_or(0) }));
+                    }
+                },
+                || {},
+            )
+            .await
+            .map_err(|e| e.to_string())?;
+        let _ = on_progress.send(serde_json::json!({ "stage": "install" }));
+        update.install(bytes).map_err(|e| e.to_string())?;
+        let _ = on_progress.send(serde_json::json!({ "stage": "restart" }));
+        std::thread::sleep(std::time::Duration::from_millis(900)); // a moment to read "reopening"
         app.restart();
     }
     Ok(())
