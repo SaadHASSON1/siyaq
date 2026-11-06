@@ -558,6 +558,26 @@ test('trackpad: pinch zooms around the fingers; swiping sideways and the arrow k
   await page.waitFor(`currentPage() === ${from}`, 3000);
 });
 
+test('zooming never leaves the page blank: the old picture stays until the new one is drawn', async () => {
+  await fresh();
+  await openPdf();
+  await page.waitFor(`document.querySelector('.page[data-page="1"] canvas') && !document.querySelector('.page.loading')`);
+  // Watch every frame while zooming in and out: page 1 always shows a picture.
+  const blank = await page.eval(`await (async () => {
+    let blankFrames = 0, frames = 0, watching = true;
+    const shown = () => [...document.querySelectorAll('.page[data-page="1"] canvas')].some(c => c.style.visibility !== 'hidden' && c.getBoundingClientRect().width > 0);
+    (function tick() { if (!watching) return; frames++; if (!shown()) blankFrames++; requestAnimationFrame(tick); })();
+    zoomStep(1); await new Promise(r => setTimeout(r, 500));
+    zoomStep(1); await new Promise(r => setTimeout(r, 500));
+    zoomStep(-1); await new Promise(r => setTimeout(r, 500));
+    watching = false;
+    return { blankFrames, frames, canvases: document.querySelectorAll('.page[data-page="1"] canvas').length, stale: document.querySelectorAll('.page canvas.stale').length };
+  })()`);
+  assert.equal(blank.blankFrames, 0, `blank in ${blank.blankFrames} of ${blank.frames} frames`);
+  assert.equal(blank.canvases, 1, 'one picture once it is drawn');
+  assert.equal(blank.stale, 0);
+});
+
 test('no JavaScript errors anywhere above', () => {
   assert.deepEqual(page.errors, []);
 });

@@ -115,19 +115,26 @@ async function renderPage(div) {
   canvas.height = Math.floor(vp.height * dpr);
   canvas.style.width = vp.width + 'px';
   canvas.style.height = vp.height + 'px';
+  // After a zoom the old picture stays on show, stretched, while this one is drawn out of sight.
+  const stale = div.querySelector('canvas.stale');
+  if (stale) canvas.style.visibility = 'hidden';
   div.appendChild(canvas);
-  div.classList.add('loading'); // heavy pages (scans) can take a while on older computers
+  if (!stale) div.classList.add('loading'); // heavy pages (scans) can take a while on older computers
   try {
     await page.render({ canvas, viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
   } catch (err) {
     // Say so on the page instead of leaving it blank, with the reason, so it can be reported.
     div.classList.remove('loading');
+    stale?.remove();
     showPageError(div, err);
     return;
   }
   div.classList.remove('loading');
   if (s !== scale || !canvas.isConnected) return;
   if (isDark()) await darkenPage(canvas, page, vp, dpr);
+  if (s !== scale || !canvas.isConnected) return;
+  canvas.style.visibility = '';
+  stale?.remove();
 
   const layer = document.createElement('div');
   layer.className = 'textLayer';
@@ -321,8 +328,16 @@ function setZoom(z, keepFit = false, anchor = anchorAt()) {
   if (bookType === 'epub') { zoomEpub(z); return; }
   if (!keepFit) zoom = z;
   scale = fitScale * zoom;
+  // The pages in view keep their old picture, stretched to the new size, until the new one is drawn (no blank
+  // moment, no flash); pages further away are simply cleared.
+  const vr = viewer.getBoundingClientRect(), near = new Set([...viewer.children].filter(div => {
+    const r = div.getBoundingClientRect();
+    return r.bottom > vr.top - vr.height && r.top < vr.bottom + vr.height;
+  }));
   for (const div of viewer.children) {
-    div.replaceChildren();
+    const shown = [...div.querySelectorAll('canvas')].find(c => !c.classList.contains('stale') && c.style.visibility !== 'hidden') || div.querySelector('canvas.stale');
+    div.replaceChildren(...(shown && near.has(div) ? [shown] : []));
+    if (shown && near.has(div)) shown.classList.add('stale');
     delete div.dataset.rendered;
     div.style.width = (+div.dataset.w || pageSize.w) * scale + 'px';
     div.style.height = (+div.dataset.h || pageSize.h) * scale + 'px';
