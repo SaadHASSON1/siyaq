@@ -1,7 +1,7 @@
 {
   "name": "siyaq",
   "private": true,
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Context-aware word lookup for any PDF",
   "license": "MIT",
   "type": "module",
