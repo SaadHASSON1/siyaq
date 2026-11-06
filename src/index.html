@@ -246,6 +246,7 @@
     </div>
     <div class="mcp-box">
       <button class="btn small" type="button" id="tourAgain"><i data-icon="sparkle"></i><span data-i18n="tourAgain"></span></button>
+      <button class="btn small" type="button" id="whatsNewBtn"><i data-icon="list"></i><span data-i18n="whatsNew"></span></button>
     </div>
     <div class="mcp-box feedback">
       <b data-i18n="fbTitle"></b>
@@ -262,6 +263,13 @@
       <button class="btn primary" value="save" data-i18n="save"></button>
     </div>
   </form>
+</dialog>
+
+<dialog id="whatsNew" class="whats-new">
+  <span class="tour-icon"><i data-icon="sparkle"></i></span>
+  <h3></h3>
+  <div class="wn-body"></div>
+  <div class="row"><button class="btn primary" type="button" id="whatsNewOk" data-i18n="whatsNewOk"></button></div>
 </dialog>
 
 <dialog id="setup" class="tour">
@@ -365,6 +373,7 @@
 <script src="js/ink.js"></script>
 <script src="js/export.js"></script>
 <script src="js/settings.js"></script>
+<script src="js/whatsnew.js"></script>
 <script src="js/demo.js"></script>
 <script src="js/ui.js"></script>
 </body>

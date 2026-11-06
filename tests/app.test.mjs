@@ -3,6 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { launch, serve } from './browser.mjs';
 import { englishHtml, arabicHtml, epub } from './fixtures.mjs';
 
@@ -576,6 +577,28 @@ test('zooming never leaves the page blank: the old picture stays until the new o
   assert.equal(blank.blankFrames, 0, `blank in ${blank.blankFrames} of ${blank.frames} frames`);
   assert.equal(blank.canvases, 1, 'one picture once it is drawn');
   assert.equal(blank.stale, 0);
+});
+
+test('what’s new: after an update, once, in the reader’s language; every version has its notes', async () => {
+  const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version;
+  const desktop = FAKE_DESKTOP.replace("getVersion: async () => '9.9.9'", `getVersion: async () => '${version}'`);
+  // updated from 0.7.3: the notes since then
+  await fresh({ toured: true, setupSkipped: true, seenVersion: '0.7.3', settings: { uiLang: 'ar', lang: 'en', apiKey: 'x' } }, FAKE_AI + desktop);
+  await page.waitFor(`document.querySelector('#whatsNew').open`, 4000);
+  const shown = await page.eval(`({ title: document.querySelector('#whatsNew h3').textContent, versions: [...document.querySelectorAll('#whatsNew h4')].map(h => h.textContent), items: document.querySelectorAll('#whatsNew li').length, arabic: /[؀-ۿ]/.test(document.querySelector('#whatsNew li').textContent) })`);
+  assert.ok(shown.title.includes(version), shown.title);
+  assert.ok(shown.items > 0 && shown.arabic);
+  assert.ok(!shown.versions.some(v => v.includes('0.7.3')), 'not what was there before');
+  await page.eval(`document.querySelector('#whatsNewOk').click()`);
+  assert.equal(await page.eval(`store.get('seenVersion')`), version);
+  // a first run: no window (the tour shows the app)
+  await fresh({ settings: { uiLang: 'en', lang: 'ar' } }, FAKE_AI + desktop);
+  await page.sleep(1500);
+  assert.equal(await page.eval(`document.querySelector('#whatsNew').open`), false);
+  // The release can't go out without its notes: this version is listed first, in all three languages alike.
+  const notes = await page.eval(`CHANGES.map(c => ({ v: c.version, n: [c.ar.length, c.en.length, c.tr.length] }))`);
+  assert.equal(notes[0].v, version, 'add this version’s notes at the top of CHANGES in src/js/whatsnew.js');
+  for (const { v, n } of notes) assert.ok(n[0] > 0 && n[0] === n[1] && n[1] === n[2], `${v}: the same notes in Arabic, English and Turkish`);
 });
 
 test('no JavaScript errors anywhere above', () => {
