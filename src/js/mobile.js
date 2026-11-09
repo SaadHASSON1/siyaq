@@ -52,6 +52,7 @@ const fingerGap = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clie
 let touchPinch = null, swipeStart = null;
 viewer.addEventListener('touchstart', e => {
   if (!pdfDoc || inkMode && !penSeen) return; // drawing with a finger: every finger draws (with a pen, two zoom)
+  if (stroke || penWaiting) return; // the pen is down: a hand touching the screen now isn't a pinch
   if (e.touches.length === 2) {
     const [a, b] = e.touches;
     touchPinch = { gap: Math.max(1, fingerGap(a, b)), from: pinch?.zoom ?? zoom };
@@ -63,7 +64,7 @@ viewer.addEventListener('touchstart', e => {
   }
 }, { passive: false });
 viewer.addEventListener('touchmove', e => {
-  if (!touchPinch || e.touches.length < 2) return;
+  if (!touchPinch || e.touches.length < 2 || stroke) return;
   e.preventDefault();
   const [a, b] = e.touches;
   pinchTo(touchPinch.from * fingerGap(a, b) / touchPinch.gap, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
@@ -71,7 +72,7 @@ viewer.addEventListener('touchmove', e => {
 const touchDone = e => {
   if (touchPinch && e.touches.length < 2) { touchPinch = null; endPinch(); swipeStart = null; return; }
   // One finger, quickly sideways (not scrolling, not selecting text): the next or previous page.
-  if (!swipeStart || e.touches.length || !e.changedTouches.length) return;
+  if (!swipeStart || e.touches.length || !e.changedTouches.length || inkMode || penNear) return; // (a pen line isn't a swipe)
   const p = e.changedTouches[0], dx = p.clientX - swipeStart.x, dy = p.clientY - swipeStart.y;
   const quick = performance.now() - swipeStart.at < 700, start = swipeStart;
   swipeStart = null;

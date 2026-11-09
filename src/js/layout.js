@@ -101,9 +101,11 @@ function setReading(on) {
   $('#readBtn').classList.toggle('on', on);
   if (on) wakeExit();
 }
-// A word was just looked up: its card in reading mode, or the panel back in its place.
+// A word was just looked up: its card in reading mode, and on a phone (the page stays in view, the meaning next to
+// the word, Details for the rest); otherwise the panel back in its place.
 function revealPanel(word) {
-  if (reading) showWordCard(word);
+  const fromPage = clickPoint?.inBook && performance.now() - clickPoint.at < 4000; // a word tapped on the page
+  if (reading || phoneScreen() && fromPage && panel.classList.contains('closed')) showWordCard(word);
   else if (panel.classList.contains('closed')) setPanelHidden(false);
 }
 
@@ -115,11 +117,14 @@ card.setAttribute('role', 'status');
 document.body.append(card);
 let clickPoint = null;
 document.addEventListener('click', e => {
-  clickPoint = { x: e.clientX, y: e.clientY };
+  clickPoint = { x: e.clientX, y: e.clientY, at: performance.now(), inBook: !!e.target.closest?.('#viewer') };
   if (!card.hidden && !card.contains(e.target)) hideWordCard(); // a click elsewhere closes it (a word opens a new one)
 }, true);
 function showWordCard(word) {
-  card.innerHTML = `<div class="wc-word" dir="auto">${esc(word)}</div><p class="wc-tr" dir="${LANGS[settings.lang].dir}"></p><div class="wc-wait"><span></span></div>`;
+  card.innerHTML = `<div class="wc-word" dir="auto">${esc(word)}</div><p class="wc-tr" dir="${LANGS[settings.lang].dir}"></p><div class="wc-wait"><span></span></div>`
+    + (reading ? '' : `<button class="wc-more" type="button">${esc(t('wcMore'))}${icon('arrow')}</button>`);
+  const more = card.querySelector('.wc-more');
+  if (more) more.onclick = () => { hideWordCard(); setPanelHidden(false, false); };
   card.hidden = false;
   card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
   // Only what the lookup writes from now on: the panel still shows the last word (or the hint) until then.
@@ -145,15 +150,19 @@ function syncWordCard() {
 // Under the word, or over it when there's no room below; never past the window's edges.
 function placeWordCard() {
   if (card.hidden || !clickPoint) return;
+  // (clear of the status and navigation bars on Android)
+  const inset = side => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--inset-' + side)) || 0;
+  const top = 12 + inset('top'), bottom = innerHeight - 12 - inset('bottom');
   const w = card.offsetWidth, h = card.offsetHeight, gap = 18;
-  const x = Math.max(12, Math.min(innerWidth - w - 12, clickPoint.x - w / 2));
-  const below = clickPoint.y + gap + h < innerHeight - 12;
+  const x = Math.max(12 + inset('left'), Math.min(innerWidth - inset('right') - w - 12, clickPoint.x - w / 2));
+  const below = clickPoint.y + gap + h < bottom;
   card.style.left = x + 'px';
-  card.style.top = (below ? clickPoint.y + gap : Math.max(12, clickPoint.y - gap - h)) + 'px';
+  card.style.top = (below ? clickPoint.y + gap : Math.max(top, clickPoint.y - gap - h)) + 'px';
   card.classList.toggle('above', !below);
   card.style.setProperty('--tail', Math.max(14, Math.min(w - 14, clickPoint.x - x)) + 'px');
 }
 viewer.addEventListener('scroll', () => { if (!card.hidden) hideWordCard(); }, { passive: true });
+addEventListener('resize', () => { if (!card.hidden) hideWordCard(); }); // turned or resized: the word has moved
 
 // The exit button fades while the pointer rests, so it doesn't sit on the page.
 function wakeExit() {

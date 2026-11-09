@@ -85,7 +85,11 @@ function setInkMode(on) {
   else finishText();
 }
 // Over the middle of the pages (not the side panel).
-const placeInkBar = () => { $('#inkBar').style.left = viewer.offsetLeft + viewer.clientWidth / 2 + 'px'; };
+const placeInkBar = () => {
+  // (and never past the window's edge: a tablet turned upright leaves the pages less room than the bar)
+  const bar = $('#inkBar'), half = bar.offsetWidth / 2, mid = viewer.offsetLeft + viewer.clientWidth / 2, room = bar.offsetParent?.clientWidth || innerWidth;
+  bar.style.left = Math.max(half + 8, Math.min(room - half - 8, mid)) + 'px';
+};
 new ResizeObserver(() => { if (inkMode) placeInkBar(); }).observe(viewer);
 function syncInkBar() {
   const bar = $('#inkBar');
@@ -145,9 +149,20 @@ function pagePoint(div, e) {
 // on the screen leaves no marks. Holding the pen's side button (or turning it to its eraser end) erases.
 let penSeen = false;
 const penErases = e => e.pointerType === 'pen' && ((e.buttons & 2) || (e.buttons & 32) || e.button === 2 || e.button === 5);
+// The pen near the screen (the S Pen is felt before it touches): from then on the page doesn't move under it, so a
+// line starts where the pen comes down, and the hand resting on the screen does nothing but move the page.
+let penNear = false, penAway = 0;
+function feelPen(e) {
+  if (e.pointerType !== 'pen' || !pdfDoc || bookType === 'epub') return;
+  if (!penNear) { penNear = true; document.body.classList.add('pen-near'); }
+  clearTimeout(penAway);
+  penAway = setTimeout(() => { penNear = false; document.body.classList.remove('pen-near'); }, 2500);
+}
+for (const type of ['pointerover', 'pointermove', 'pointerdown']) viewer.addEventListener(type, feelPen, true);
+const handOnly = () => inkMode && penSeen || penNear; // fingers move the page, the pen draws
 let fingerPan = null;
 viewer.addEventListener('pointerdown', e => {
-  if (!inkMode || !penSeen || e.pointerType !== 'touch') return;
+  if (!handOnly() || e.pointerType !== 'touch') return;
   fingerPan = { id: e.pointerId, x: e.clientX, y: e.clientY, left: viewer.scrollLeft, top: viewer.scrollTop };
 }, true);
 viewer.addEventListener('pointermove', e => {
@@ -173,7 +188,26 @@ viewer.addEventListener('pointerleave', () => { penDot.hidden = true; });
 // (a pointer the browser no longer tracks can't be captured: drawing goes on without it)
 const capture = (el, e) => { try { el.setPointerCapture?.(e.pointerId); } catch {} };
 let stroke = null;
+// Not in writing mode: the pen still writes. It comes down, and once it moves a little it is a line (writing mode
+// opens, with the pen's tools); lifted without moving, it was a tap, and the word under it is looked up as usual.
+let penWaiting = null;
 viewer.addEventListener('pointerdown', e => {
+  if (inkMode || e.pointerType !== 'pen' || e.button !== 0 || !pdfDoc || bookType === 'epub' || askMode) return;
+  const div = e.target.closest('.page[data-rendered]');
+  if (div) penWaiting = { e, div, x: e.clientX, y: e.clientY };
+}, true);
+viewer.addEventListener('pointermove', e => {
+  if (!penWaiting || e.pointerType !== 'pen' || Math.hypot(e.clientX - penWaiting.x, e.clientY - penWaiting.y) < 6) return;
+  const { e: down } = penWaiting;
+  penWaiting = null;
+  window.getSelection().removeAllRanges();
+  if (INK.tool === 'text') INK.tool = 'pen';
+  setInkMode(true);
+  startInk(down);
+}, true);
+viewer.addEventListener('pointerup', () => { penWaiting = null; }, true);
+viewer.addEventListener('pointerdown', e => { if (inkMode) startInk(e); });
+function startInk(e) {
   if (!inkMode) return;
   if (e.pointerType === 'pen') penSeen = true;
   else if (penSeen && e.pointerType === 'touch') return; // a finger, once a pen is in use: moves the page instead
@@ -199,7 +233,7 @@ viewer.addEventListener('pointerdown', e => {
   else { path.setAttribute('stroke', INK.color); path.setAttribute('stroke-width', INK.width); }
   drawStroke(stroke);
   capture(div, e);
-});
+}
 viewer.addEventListener('pointermove', e => {
   if (!stroke) return;
   if (stroke.erase) { eraseAt(stroke.div, e); return; }

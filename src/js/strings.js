@@ -36,7 +36,7 @@ const STRINGS = {
     setupChecking: 'عم نجرّب المفتاح…', setupOk: 'المفتاح شغّال ✓', setupBad: 'المفتاح ما زبط: ',
     resumed: n => `رجعناك للصفحة ${n}، وين وقفت آخر مرة`, ocrRunning: 'عم نقرأ نص الصفحة…',
     whatsNew: 'شو الجديد', whatsNewTitle: v => `الجديد بسياق ${v}`, whatsNewOk: 'تمام',
-    updDownload: 'التنزيل', updInstall: 'التثبيت', updLeft: (mb, eta) => `باقي ${mb} MB${eta ? ` · حوالي ${eta}` : ''}`, updDownloaded: 'نزل التحديث كامل', updAfterDownload: 'بيبلّش بعد التنزيل', updInstalling: 'عم يثبّت… ثواني قليلة', updRestarting: 'خلص التثبيت، عم يفتح سياق من جديد…', backAgain: 'كبس رجوع كمان مرة لتطلع من سياق', updApk: 'عم ينزل التحديث بالمتصفح. لما يخلص افتحه وكبس «تثبيت».', updSeconds: n => `${n} ثانية`, updMinutes: n => `${n} دقيقة`,
+    updDownload: 'التنزيل', updInstall: 'التثبيت', updLeft: (mb, eta) => `باقي ${mb} MB${eta ? ` · حوالي ${eta}` : ''}`, updDownloaded: 'نزل التحديث كامل', updAfterDownload: 'بيبلّش بعد التنزيل', updInstalling: 'عم يثبّت… ثواني قليلة', updRestarting: 'خلص التثبيت، عم يفتح سياق من جديد…', wcMore: 'التفاصيل', backAgain: 'كبس رجوع كمان مرة لتطلع من سياق', updApk: 'عم ينزل التحديث بالمتصفح. لما يخلص افتحه وكبس «تثبيت».', updSeconds: n => `${n} ثانية`, updMinutes: n => `${n} دقيقة`,
     updateCheck: 'دوّر على تحديث', updateChecking: 'عم دوّر على تحديث…', updateNone: 'عندك آخر نسخة ✓', updateCheckFailed: 'ما قدرت اتأكد، تأكّد من الإنترنت: ', versionLabel: v => `الإصدار ${v}`, updateAvail: v => `في نسخة جديدة من سياق (${v})`, updateNow: 'حدّث هلق', updating: 'عم يتحدّث… سياق رح يفتح من جديد', updateFailed: 'ما زبط التحديث: ',
   },
   en: {
@@ -74,7 +74,7 @@ const STRINGS = {
     setupChecking: 'Checking the key…', setupOk: 'The key works ✓', setupBad: 'The key didn’t work: ',
     resumed: n => `Back on page ${n}, where you left off`, ocrRunning: 'Reading the page’s text…',
     whatsNew: 'What’s new', whatsNewTitle: v => `New in Siyaq ${v}`, whatsNewOk: 'Got it',
-    updDownload: 'Download', updInstall: 'Install', updLeft: (mb, eta) => `${mb} MB left${eta ? ` · about ${eta}` : ''}`, updDownloaded: 'Downloaded', updAfterDownload: 'Starts after the download', updInstalling: 'Installing… a few seconds', updRestarting: 'Installed. Siyaq is reopening…', backAgain: 'Press Back again to leave Siyaq', updApk: 'The update is downloading in your browser. When it’s done, open it and tap “Install”.', updSeconds: n => `${n} s`, updMinutes: n => `${n} min`,
+    updDownload: 'Download', updInstall: 'Install', updLeft: (mb, eta) => `${mb} MB left${eta ? ` · about ${eta}` : ''}`, updDownloaded: 'Downloaded', updAfterDownload: 'Starts after the download', updInstalling: 'Installing… a few seconds', updRestarting: 'Installed. Siyaq is reopening…', wcMore: 'Details', backAgain: 'Press Back again to leave Siyaq', updApk: 'The update is downloading in your browser. When it’s done, open it and tap “Install”.', updSeconds: n => `${n} s`, updMinutes: n => `${n} min`,
     updateCheck: 'Check for updates', updateChecking: 'Checking for updates…', updateNone: 'You have the latest version ✓', updateCheckFailed: 'Couldn’t check. Are you online? ', versionLabel: v => `Version ${v}`, updateAvail: v => `A new version of Siyaq is available (${v})`, updateNow: 'Update now', updating: 'Updating… Siyaq will reopen', updateFailed: 'Update failed: ',
   },
   tr: {
@@ -112,7 +112,7 @@ const STRINGS = {
     setupChecking: 'Anahtar deneniyor…', setupOk: 'Anahtar çalışıyor ✓', setupBad: 'Anahtar çalışmadı: ',
     resumed: n => `Kaldığınız yere, ${n}. sayfaya döndünüz`, ocrRunning: 'Sayfanın metni okunuyor…',
     whatsNew: 'Yenilikler', whatsNewTitle: v => `Siyaq ${v} ile gelenler`, whatsNewOk: 'Tamam',
-    updDownload: 'İndirme', updInstall: 'Yükleme', updLeft: (mb, eta) => `${mb} MB kaldı${eta ? ` · yaklaşık ${eta}` : ''}`, updDownloaded: 'İndirildi', updAfterDownload: 'İndirmeden sonra başlar', updInstalling: 'Yükleniyor… birkaç saniye', updRestarting: 'Yüklendi. Siyaq yeniden açılıyor…', backAgain: 'Siyaq’tan çıkmak için tekrar Geri’ye basın', updApk: 'Güncelleme tarayıcınızda iniyor. Bitince açın ve “Yükle”ye dokunun.', updSeconds: n => `${n} sn`, updMinutes: n => `${n} dk`,
+    updDownload: 'İndirme', updInstall: 'Yükleme', updLeft: (mb, eta) => `${mb} MB kaldı${eta ? ` · yaklaşık ${eta}` : ''}`, updDownloaded: 'İndirildi', updAfterDownload: 'İndirmeden sonra başlar', updInstalling: 'Yükleniyor… birkaç saniye', updRestarting: 'Yüklendi. Siyaq yeniden açılıyor…', wcMore: 'Ayrıntılar', backAgain: 'Siyaq’tan çıkmak için tekrar Geri’ye basın', updApk: 'Güncelleme tarayıcınızda iniyor. Bitince açın ve “Yükle”ye dokunun.', updSeconds: n => `${n} sn`, updMinutes: n => `${n} dk`,
     updateCheck: 'Güncellemeleri denetle', updateChecking: 'Güncellemeler denetleniyor…', updateNone: 'En son sürümü kullanıyorsunuz ✓', updateCheckFailed: 'Denetlenemedi. İnternete bağlı mısınız? ', versionLabel: v => `Sürüm ${v}`, updateAvail: v => `Siyaq’ın yeni sürümü var (${v})`, updateNow: 'Şimdi güncelle', updating: 'Güncelleniyor… Siyaq yeniden açılacak', updateFailed: 'Güncelleme başarısız: ',
   },
 };

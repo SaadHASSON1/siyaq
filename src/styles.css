@@ -37,6 +37,9 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; }
+/* No flash of the system's tap colour over what a finger touches (on a PDF page that would be a whole run of words,
+   not the one tapped): the app marks the word itself. */
+* { -webkit-tap-highlight-color: transparent; }
 body {
   background: var(--canvas); color: var(--text);
   font: 14px/1.55 system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
@@ -78,6 +81,10 @@ button, input, select { font: inherit; color: inherit; }
   padding-inline-start: 12px; border-inline-start: 1px solid var(--border);
 }
 .tools { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
+/* the book's tools give way when the bar runs out of room (a narrow window, a phone turned sideways), scrolling sideways */
+.tools { flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tools::-webkit-scrollbar { display: none; }
+.tools > * { flex: none; }
 .tools .icon-btn { width: 28px; height: 28px; }
 .ask-btn { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 8px; border: 0; border-radius: 7px; background: none; color: var(--accent-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 [dir="rtl"] .ask-btn { padding: 0 8px 0 10px; }
@@ -480,6 +487,8 @@ dialog[open]::backdrop { animation: backdrop-in .28s ease; }
 dialog {
   border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text);
   width: min(440px, calc(100vw - 32px)); padding: 24px; box-shadow: var(--shadow-pop);
+  /* never taller than the window (a phone turned sideways): what doesn't fit scrolls */
+  max-height: calc(100vh - 24px - var(--inset-top, 0px) - var(--inset-bottom, 0px)); overflow: auto; overscroll-behavior: contain; box-sizing: border-box;
 }
 dialog::backdrop { background: rgba(0,0,0,.35); }
 dialog h3 { margin: 0 0 4px; font-size: 18px; }
@@ -708,10 +717,6 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
 @media (max-width: 900px) {
   .book-title { display: none; }
   .brand + .tools { margin-inline-start: auto; }
-  /* (a tablet standing up, a narrow window) the book's tools take the room left and scroll sideways if it isn't enough */
-  .tools { flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-  .tools::-webkit-scrollbar { display: none; }
-  .tools > * { flex: none; }
 }
 @media (max-width: 760px) {
   .page.epub-chapter { padding: 28px 22px; }
@@ -841,3 +846,11 @@ html.android .word-card { max-height: calc(100vh - var(--inset-top, 0px) - var(-
   :root:not([data-theme="light"]) .ink-layer path[style*="rgb(31, 41, 55)"], :root:not([data-theme="light"]) .ink-layer path[style*="#1f2937"] { fill: #e5e7eb !important; }
   :root:not([data-theme="light"]) .ink-text[style*="rgb(31, 41, 55)"] { color: #e5e7eb !important; }
 }
+/* The card on a phone: its Details opens the whole answer (explanation, sentence, saving) in the panel */
+.wc-more { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 4px 0; border: 0; background: none; color: var(--accent-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.wc-more .i { width: 14px; height: 14px; }
+[dir="rtl"] .wc-more .i { transform: scaleX(-1); }
+/* Writing, or a pen near the screen: the page doesn't scroll under the pen (fingers move it, by the app's own hand),
+   and the pen doesn't select text */
+body.ink-mode #viewer, body.pen-near #viewer { touch-action: none; }
+body.pen-near #viewer .textLayer { -webkit-user-select: none; user-select: none; }

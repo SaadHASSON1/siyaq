@@ -2,6 +2,25 @@
 // Every release adds its entry at the top (all three languages), before it is tagged.
 
 const CHANGES = [
+  { version: '0.8.1', ar: [
+    'قلم S Pen بيكتب دغري: ما في داعي تفتح أدوات الرسم، ارسم خط بالقلم وبتبلّش الكتابة، ونقرة خفيفة فيه بتجيب معنى الكلمة. والصفحة ما بتتحرك تحت القلم.',
+    'لما الشاشة تحس بالقلم، إيدك ما بتكتب: الأصابع بتحرّك الصفحة وبتكبّرها بس.',
+    'على الموبايل: معنى الكلمة بيطلع ببطاقة صغيرة جنبها، و«التفاصيل» بتفتح الشرح كلو.',
+    'ما عاد في لون أزرق بيغطي كذا كلمة لما تكبس على كلمة.',
+    'التطبيق بيتظبّط مع تدوير الشاشة، والنوافذ بتنزل لتحت إذا ما وسعت.',
+  ], en: [
+    'The S Pen writes right away: no need to open the drawing tools. Draw a line with the pen and writing starts; a light tap looks the word up. The page stays still under the pen.',
+    'Once the screen feels the pen, your hand doesn’t write: fingers only move and zoom the page.',
+    'On a phone, a word’s meaning shows in a small card beside it; “Details” opens the whole explanation.',
+    'No more blue flash over several words when you tap one.',
+    'Everything fits when the screen turns, and windows scroll when they don’t fit.',
+  ], tr: [
+    'S Pen hemen yazıyor: çizim araçlarını açmanıza gerek yok. Kalemle bir çizgi çizin, yazma başlasın; hafif bir dokunuş kelimenin anlamını getirir. Sayfa kalemin altında kıpırdamıyor.',
+    'Ekran kalemi algıladığında eliniz yazmıyor: parmaklar yalnızca sayfayı kaydırıyor ve yakınlaştırıyor.',
+    'Telefonda kelimenin anlamı yanında küçük bir kartta görünüyor; “Ayrıntılar” açıklamanın tamamını açıyor.',
+    'Bir kelimeye dokununca birkaç kelimenin üstünde mavi bir parlama artık yok.',
+    'Ekran döndüğünde her şey sığıyor; sığmayan pencereler kaydırılabiliyor.',
+  ] },
   { version: '0.8.0', ar: [
     'سياق صار على أندرويد، للموبايل والتابلت: كل شي موجود، من معنى الكلمة بجملتها لحد الكتابة والرسم والحفظ.',
     'ظلّل كلمة بأي تطبيق تاني واختار «سياق» من القائمة، بيطلعلك معناها.',

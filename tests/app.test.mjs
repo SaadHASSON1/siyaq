@@ -543,6 +543,18 @@ test('a pen (S Pen): its pressure shapes the line, its side button erases, and f
   await fire('pointerup', 0.35, 0.3, { buttons: 0 });
   assert.equal(await page.eval(`bookInks().length`), 0, 'erased with the side button');
   await page.eval(`setInkMode(false)`);
+  // Writing mode off: a pen tap is a tap (nothing drawn); a pen line opens writing mode and is drawn at once
+  await fire('pointerdown', 0.3, 0.5, { pressure: 0.4 });
+  await fire('pointerup', 0.3, 0.5, { buttons: 0 });
+  assert.equal(await page.eval(`inkMode`), false, 'a tap leaves writing mode off');
+  await fire('pointerdown', 0.3, 0.5, { pressure: 0.4 });
+  for (let i = 1; i <= 6; i++) await fire('pointermove', 0.3 + i * 0.03, 0.5, { pressure: 0.5 });
+  await fire('pointerup', 0.5, 0.5, { buttons: 0 });
+  assert.equal(await page.eval(`inkMode`), true, 'the line opened writing mode');
+  assert.equal(await page.eval(`bookInks().length`), 1, 'and was drawn, from where the pen came down');
+  assert.ok(await page.eval(`bookInks()[0].pts[0][0]`) < await page.eval(`bookInks()[0].pts.at(-1)[0]`) - 20);
+  assert.ok(await page.eval(`getComputedStyle(viewer).touchAction === 'none'`), 'with a pen near, the page doesn\'t scroll under it');
+  await page.eval(`setInkMode(false)`);
 });
 
 test('selecting text on a PDF page shows one even bar per line, not a box per piece', async () => {
