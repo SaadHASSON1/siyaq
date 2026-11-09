@@ -3,10 +3,11 @@
 // PDF.js is an ES module; load it from here and wait for it before opening a PDF.
 const vendorUrl = path => new URL('vendor/pdfjs/' + path, document.baseURI).href;
 const pdfjsReady = import(vendorUrl('pdf.min.mjs')).then(lib => {
-  lib.GlobalWorkerOptions.workerSrc = vendorUrl('pdf.worker.min.mjs');
+  lib.GlobalWorkerOptions.workerSrc = new URL('js/pdf-worker.mjs', document.baseURI).href; // PDF.js's worker, with polyfills.js
   return (window.pdfjsLib = lib);
 });
 const tauri = window.__TAURI__; // set when running as the installed app
+const onAndroid = !!tauri && /Android/.test(navigator.userAgent); // the Android app (phones and tablets)
 
 const $ = s => document.querySelector(s);
 // A piece of PDF text in the text layer. Tagged PDFs group pieces in .markedContent spans, so not only direct children.

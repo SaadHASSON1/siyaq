@@ -516,6 +516,35 @@ test('Save as: PDF with the marks and notes, images, Word and Markdown', async (
   assert.ok(got.md, 'Markdown: highlight, note, writing');
 });
 
+test('a pen (S Pen): its pressure shapes the line, its side button erases, and fingers then move the page', async () => {
+  await fresh();
+  await openPdf('/books/long.pdf');
+  await page.eval(`document.querySelector('#drawBtn').click()`);
+  const fire = (type, fx, fy, o = {}) => page.eval(`{ const r = document.querySelector('.page[data-page="1"]').getBoundingClientRect(), x = r.left + r.width * ${fx}, y = r.top + r.height * ${fy};
+    document.elementFromPoint(x, y).dispatchEvent(new PointerEvent('${type}', Object.assign({ bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, buttons: 1, pointerId: 7, pointerType: 'pen' }, ${JSON.stringify(o)}))); }`);
+  // light, then pressing hard: the line widens
+  await fire('pointerdown', 0.2, 0.3, { pressure: 0.1 });
+  for (let i = 1; i <= 10; i++) await fire('pointermove', 0.2 + i * 0.03, 0.3, { pressure: 0.1 + i * 0.09 });
+  await fire('pointerup', 0.5, 0.3, { pressure: 0, buttons: 0 });
+  const ink = await page.eval(`bookInks()[0]`);
+  assert.ok(ink && ink.pts.every(p => p.length === 3), 'each point keeps the pressure');
+  assert.ok(ink.pts.at(-1)[2] > ink.pts[0][2] + 0.3, `pressing harder is recorded (${JSON.stringify(ink.pts.map(p => p[2]))})`);
+  assert.ok(await page.eval(`document.querySelector('.page[data-page="1"] .ink-layer path').style.fill !== ''`), 'drawn as a filled shape');
+  // a finger now moves the page and draws nothing
+  await page.eval(`{ const r = document.querySelector('.page[data-page="1"]').getBoundingClientRect(); const t = document.elementFromPoint(r.left + 100, r.top + 300);
+    t.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: r.left + 100, clientY: r.top + 300, button: 0, buttons: 1, pointerId: 9, pointerType: 'touch' }));
+    t.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, clientX: r.left + 100, clientY: r.top + 200, buttons: 1, pointerId: 9, pointerType: 'touch' }));
+    t.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, clientX: r.left + 100, clientY: r.top + 200, pointerId: 9, pointerType: 'touch' })); }`);
+  assert.equal(await page.eval(`bookInks().length`), 1, 'the finger drew nothing');
+  assert.ok(await page.eval(`viewer.scrollTop`) > 50, 'the finger moved the page');
+  await page.eval(`viewer.scrollTop = 0`);
+  // the side button held: the pen erases
+  await fire('pointerdown', 0.35, 0.3, { pressure: 0.5, button: 2, buttons: 3 });
+  await fire('pointerup', 0.35, 0.3, { buttons: 0 });
+  assert.equal(await page.eval(`bookInks().length`), 0, 'erased with the side button');
+  await page.eval(`setInkMode(false)`);
+});
+
 test('selecting text on a PDF page shows one even bar per line, not a box per piece', async () => {
   await fresh();
   await openPdf();

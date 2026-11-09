@@ -4,6 +4,9 @@
 // The app opens books with the system's picker or by dropping them on the window, so it knows where each
 // one is and can list the last ones on the start screen and under the folder button.
 const desktopApp = tauri && !/Android|iPhone|iPad/.test(navigator.userAgent);
+// The app opens and saves files with the system's own screens: on computers, and on Android (where each book is
+// copied into the app, so Recent books can open it again).
+const nativeFiles = desktopApp || onAndroid;
 let bookPath = null; // where the open book is on disk, when known
 const library = () => store.get('library', []);
 
@@ -36,7 +39,7 @@ const newReader = () => !store.get('demoDone', false) && !library().length && !v
 function renderRecent() {
   const box = $('#recent');
   if (!box) return; // the start screen is gone once a book is open
-  const books = desktopApp ? library().slice(0, 5) : [];
+  const books = nativeFiles ? library().slice(0, 5) : [];
   box.hidden = !books.length;
   // The demo book is for a first look: once someone has opened a book (the demo included), it leaves the start
   // screen. (It is still at the end of the tour, under Settings.)
@@ -71,7 +74,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#openMenu').hidden = true; });
 
-if (desktopApp) {
+if (nativeFiles) {
   // The folder buttons use the system's picker; the toolbar one also lists recent books.
   document.querySelectorAll('.file-input').forEach(input => input.closest('label').addEventListener('click', e => {
     e.preventDefault();

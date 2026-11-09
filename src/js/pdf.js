@@ -83,6 +83,8 @@ async function finishOpening(doc, name) {
   backTo = null;
   $('#backBtn').hidden = true;
   $('#tools').hidden = false;
+  // On a phone the book gets the whole screen: the panel comes up when a word is looked up.
+  if (phoneScreen()) setPanelHidden(true, false);
   // Writing, drawing and Save as are for PDF pages (an EPUB's text reflows).
   $('#drawBtn').hidden = $('#exportBtn').hidden = bookType === 'epub';
   undoStack.length = 0;

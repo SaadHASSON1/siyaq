@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="https://github.com/SaadHASSON1/siyaq/releases/latest"><img alt="آخر إصدار" src="https://img.shields.io/github/v/release/SaadHASSON1/siyaq?label=download&color=1f9e66"></a>
-  <img alt="الأنظمة" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-475559">
+  <img alt="الأنظمة" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux%20%C2%B7%20Android-475559">
   <a href="LICENSE"><img alt="رخصة MIT" src="https://img.shields.io/github/license/SaadHASSON1/siyaq?color=127a52"></a>
 </p>
 
@@ -79,12 +79,13 @@
 | **macOS** (Apple Silicon وIntel) | `Siyaq-Mac.dmg` |
 | **Windows** | `Siyaq-Windows-Setup.exe` |
 | **Linux** | `Siyaq-Linux.AppImage` |
+| **Android** (الموبايل والتابلت، مع قلم S Pen) | `Siyaq-Android.apk` |
 
 الطريقة الأسهل: **[موقع سياق](https://saadhasson1.github.io/siyaq/?lang=ar)** يختار الملف المناسب لجهازك تلقائياً. أو افتح **[آخر إصدار](https://github.com/SaadHASSON1/siyaq/releases/latest)** وحمّل ملفاً واحداً فقط يناسب جهازك من الجدول في أعلى الصفحة.
 
 > [!NOTE]
 > سياق غير موقّع بشهادة مطوّر مدفوعة حتى الآن، لذلك يظهر تحذير عند أول تشغيل.
-> **macOS:** انقر بالزر الأيمن على Siyaq ثم اختر **Open**. **Windows:** اختر **More info** ثم **Run anyway**.
+> **macOS:** انقر بالزر الأيمن على Siyaq ثم اختر **Open**. **Windows:** اختر **More info** ثم **Run anyway**. **Android:** افتح ملف APK بعد التنزيل واسمح بالتثبيت من هذا المصدر إذا طُلب منك.
 
 ## البداية
 
@@ -125,7 +126,7 @@ npm test        # الاختبارات، في Chrome دون واجهة
 
 الأمر `npm run web` يشغّل الواجهة وحدها على http://localhost:8765 للعمل السريع على التصميم.
 
-كل دفعة إلى `main` تُبنى تلقائياً لـ macOS وWindows وLinux عبر GitHub Actions. ونشر وسم مثل `v0.5.0` يُنشئ مسودة إصدار فيها ملفات تثبيت وملفات تحديث موقّعة.
+كل دفعة إلى `main` تُبنى تلقائياً لـ macOS وWindows وLinux وAndroid عبر GitHub Actions. ونشر وسم مثل `v0.5.0` يُنشئ مسودة إصدار فيها ملفات تثبيت وملفات تحديث موقّعة.
 
 **مبني باستخدام** [Tauri](https://tauri.app) و[PDF.js](https://mozilla.github.io/pdf.js/) و[Tesseract.js](https://tesseract.projectnaptha.com) و[fflate](https://github.com/101arrowz/fflate).
 
@@ -134,7 +135,7 @@ npm test        # الاختبارات، في Chrome دون واجهة
 - [x] PDF وEPUB، والصفحات الممسوحة ضوئياً، والوضع الداكن
 - [x] العربية والإنجليزية والتركية، للواجهة وللترجمة
 - [x] بطاقات المراجعة، والكلمات المحفوظة، والتحديث التلقائي
-- [ ] Android للهواتف والأجهزة اللوحية، مع خيار *سياق* في قائمة تحديد النص في كل التطبيقات
+- [x] Android للهواتف والأجهزة اللوحية، مع خيار *سياق* في قائمة تحديد النص في كل التطبيقات
 
 ## المشاكل والاقتراحات
 

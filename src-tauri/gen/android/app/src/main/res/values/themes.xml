@@ -1,0 +1,6 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- The app's own colours behind the page while it loads (no white flash in dark mode). -->
+    <style name="Theme.siyaq" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/siyaq_surface</item>
+    </style>
+</resources>

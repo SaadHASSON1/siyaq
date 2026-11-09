@@ -160,19 +160,6 @@ async fn install_update(app: tauri::AppHandle, on_progress: tauri::ipc::Channel<
     Ok(())
 }
 
-// Phones and tablets update through their app stores.
-#[cfg(mobile)]
-#[tauri::command]
-async fn check_update() -> Result<Option<String>, String> {
-    Ok(None)
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-async fn install_update() -> Result<(), String> {
-    Ok(())
-}
-
 /// Asks for a file with the system's own picker, so the app knows where it is (for Recent books).
 #[cfg(desktop)]
 #[tauri::command]
@@ -218,7 +205,7 @@ async fn save_bytes(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> 
     Ok(Some(path.display().to_string()))
 }
 
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 fn percent_decode(s: &str) -> String {
     let b = s.as_bytes();
     let mut out = Vec::with_capacity(b.len());
@@ -237,20 +224,172 @@ fn percent_decode(s: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
-// Phones open books through the system's share and file apps instead.
-#[cfg(mobile)]
+// ---------- Android ----------
+// Books are opened with the system's file picker (or "Open with" / "Share" from another app); each is copied into
+// the app's own folder, so it can be opened again from Recent books after a restart. Saving goes through the
+// system's "save to" screen. Both are done by the app's own Android code (SiyaqPlugin.kt).
+#[cfg(target_os = "android")]
+mod android {
+    use serde::de::DeserializeOwned;
+    use tauri::{plugin::{Builder, PluginHandle, TauriPlugin}, Manager, Runtime, Wry};
+
+    pub struct Native<R: Runtime>(PluginHandle<R>);
+
+    pub fn init<R: Runtime>() -> TauriPlugin<R> {
+        Builder::new("siyaq")
+            .setup(|app, api| {
+                app.manage(Native(api.register_android_plugin("app.siyaq.reader", "SiyaqPlugin")?));
+                Ok(())
+            })
+            .build()
+    }
+
+    pub async fn call<T: DeserializeOwned>(app: &tauri::AppHandle, command: &str, args: serde_json::Value) -> Result<T, String> {
+        app.state::<Native<Wry>>().0.run_mobile_plugin_async(command, args).await.map_err(|e| e.to_string())
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct Picked {
+        pub path: Option<String>,
+        #[serde(default)]
+        pub text: Option<String>,
+    }
+    #[derive(serde::Deserialize)]
+    pub struct Saved {
+        pub saved: bool,
+    }
+
+    fn mime(ext: &str) -> &'static str {
+        match ext {
+            "pdf" => "application/pdf",
+            "epub" => "application/epub+zip",
+            "json" => "application/json",
+            "png" => "image/png",
+            "zip" => "application/zip",
+            "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "md" => "text/markdown",
+            "txt" => "text/plain",
+            "csv" | "tsv" => "text/plain",
+            _ => "application/octet-stream",
+        }
+    }
+
+    pub async fn pick(app: &tauri::AppHandle, extensions: &[String]) -> Option<String> {
+        // Some file apps call an EPUB (or a backup) just "a file": those are let through, and checked when opened.
+        let mut types: Vec<&str> = extensions.iter().map(|e| mime(e)).collect();
+        types.push("application/octet-stream");
+        let books = extensions.iter().any(|e| e == "pdf" || e == "epub");
+        let r: Picked = call(app, "pickFile", serde_json::json!({ "mimeTypes": types, "folder": if books { "books" } else { "picked" } })).await.ok()?;
+        r.path
+    }
+
+    pub async fn save(app: &tauri::AppHandle, name: &str, bytes: &[u8]) -> Result<Option<String>, String> {
+        let dir = app.path().app_cache_dir().map_err(|e| e.to_string())?.join("out");
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let source = dir.join(format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0)));
+        std::fs::write(&source, bytes).map_err(|e| e.to_string())?;
+        let ext = name.rsplit('.').next().unwrap_or("").to_lowercase();
+        let r: Result<Saved, String> = call(app, "saveFile", serde_json::json!({ "source": source.display().to_string(), "name": name, "mime": mime(&ext) })).await;
+        let _ = std::fs::remove_file(&source);
+        Ok(r?.saved.then(|| name.to_string()))
+    }
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn pick_file(app: tauri::AppHandle, label: String, extensions: Vec<String>) -> Option<String> {
+    let _ = label;
+    android::pick(&app, &extensions).await
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn save_file(app: tauri::AppHandle, name: String, contents: String) -> Result<Option<String>, String> {
+    android::save(&app, &name, contents.as_bytes()).await
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn save_bytes(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> Result<Option<String>, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected the file's bytes".into());
+    };
+    let name = request.headers().get("x-name").and_then(|v| v.to_str().ok()).map(percent_decode).unwrap_or_else(|| "siyaq".into());
+    android::save(&app, &name, bytes).await
+}
+
+/// Android's bridge carries text only, so a file to save (Save as) comes as base64.
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn save_base64(app: tauri::AppHandle, name: String, data: String) -> Result<Option<String>, String> {
+    use base64::Engine;
+    let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
+    android::save(&app, &name, &bytes).await
+}
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+async fn save_base64() -> Result<Option<String>, String> {
+    Err("Android only".into())
+}
+
+/// The sizes of the status bar, navigation bar and keyboard (CSS pixels), with the bars' icons set for a light or
+/// dark page.
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn android_bars(app: tauri::AppHandle, dark: bool) -> Result<serde_json::Value, String> {
+    android::call(&app, "bars", serde_json::json!({ "dark": dark })).await
+}
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+async fn android_bars() -> Result<serde_json::Value, String> {
+    Ok(serde_json::Value::Null)
+}
+
+/// On Android a new version is an APK on GitHub Releases: the newer version, if there is one...
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn check_update(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let r = send(client().get("https://github.com/SaadHASSON1/siyaq/releases/latest/download/latest.json")).await?;
+    if !r.status().is_success() {
+        return Err(format!("HTTP {}", r.status().as_u16()));
+    }
+    let v: serde_json::Value = r.json().await.map_err(|e| e.to_string())?;
+    let latest = v["version"].as_str().unwrap_or("").trim_start_matches('v').to_string();
+    let parts = |s: &str| s.split('.').map(|n| n.parse::<u64>().unwrap_or(0)).collect::<Vec<_>>();
+    Ok((parts(&latest) > parts(&app.package_info().version.to_string())).then_some(latest))
+}
+
+/// ...and it is downloaded by the browser, which hands it to Android's installer (the system asks first).
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_url("https://github.com/SaadHASSON1/siyaq/releases/latest/download/Siyaq-Android.apk", None::<&str>)
+        .map_err(|e| e.to_string())
+}
+
+#[cfg(target_os = "ios")]
+#[tauri::command]
+async fn check_update() -> Result<Option<String>, String> {
+    Ok(None)
+}
+#[cfg(target_os = "ios")]
+#[tauri::command]
+async fn install_update() -> Result<(), String> {
+    Ok(())
+}
+#[cfg(target_os = "ios")]
 #[tauri::command]
 async fn pick_file() -> Option<String> {
     None
 }
-
-#[cfg(mobile)]
+#[cfg(target_os = "ios")]
 #[tauri::command]
 async fn save_file() -> Result<Option<String>, String> {
     Ok(None)
 }
-
-#[cfg(mobile)]
+#[cfg(target_os = "ios")]
 #[tauri::command]
 async fn save_bytes() -> Result<Option<String>, String> {
     Ok(None)
@@ -262,8 +401,25 @@ fn read_book(path: String) -> Result<Response, String> {
 }
 
 #[tauri::command]
-fn take_pending_file(state: tauri::State<PendingFile>) -> Option<String> {
-    state.0.lock().unwrap().take().map(|p| p.display().to_string())
+async fn take_pending_file(app: tauri::AppHandle) -> Option<String> {
+    #[cfg(target_os = "android")]
+    if let Ok(picked) = android::call::<android::Picked>(&app, "takeOpened", serde_json::json!({})).await {
+        if let Some(text) = picked.text {
+            *app.state::<SharedText>().0.lock().unwrap() = Some(text);
+        }
+        if let Some(p) = picked.path {
+            return Some(p);
+        }
+    }
+    app.state::<PendingFile>().0.lock().unwrap().take().map(|p| p.display().to_string())
+}
+
+/// Words another app sent with "Siyaq" from its text-selection menu (Android), once.
+#[derive(Default)]
+struct SharedText(Mutex<Option<String>>);
+#[tauri::command]
+fn take_shared_text(state: tauri::State<SharedText>) -> Option<String> {
+    state.0.lock().unwrap().take()
 }
 
 fn open_file(app: &tauri::AppHandle, path: PathBuf) {
@@ -278,12 +434,16 @@ fn open_file(app: &tauri::AppHandle, path: PathBuf) {
 pub fn run() {
     tauri::Builder::default()
         .manage(PendingFile::default())
+        .manage(SharedText::default())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             ai_request,
             ai_stream,
             read_book,
             take_pending_file,
+            take_shared_text,
+            android_bars,
+            save_base64,
             open_link,
             check_update,
             install_update,
@@ -297,6 +457,8 @@ pub fn run() {
             mcp::mcp_add_to_claude
         ])
         .setup(|app| {
+            #[cfg(target_os = "android")]
+            app.handle().plugin(android::init())?;
             #[cfg(desktop)]
             {
                 app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;

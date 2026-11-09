@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/SaadHASSON1/siyaq/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/SaadHASSON1/siyaq?label=download&color=1f9e66"></a>
-  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-475559">
+  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux%20%C2%B7%20Android-475559">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/SaadHASSON1/siyaq?color=127a52"></a>
 </p>
 
@@ -80,12 +80,13 @@ When you read a book in a language you're still learning, every unknown word mea
 | **macOS** (Apple Silicon and Intel) | `Siyaq-Mac.dmg` |
 | **Windows** | `Siyaq-Windows-Setup.exe` |
 | **Linux** | `Siyaq-Linux.AppImage` |
+| **Android** (phones and tablets, S Pen included) | `Siyaq-Android.apk` |
 
 The easiest way: **[saadhasson1.github.io/siyaq](https://saadhasson1.github.io/siyaq/)** picks the right file for your device. Or open the **[latest release](https://github.com/SaadHASSON1/siyaq/releases/latest)** and download the one file for your device from the table at the top.
 
 > [!NOTE]
 > Siyaq isn't signed with a paid developer certificate yet, so the first launch shows a warning.
-> **macOS:** right-click Siyaq → **Open**. **Windows:** **More info** → **Run anyway**.
+> **macOS:** right-click Siyaq → **Open**. **Windows:** **More info** → **Run anyway**. **Android:** open the APK after downloading and allow installing from that source if asked.
 
 ## Getting started
 
@@ -126,7 +127,7 @@ Pushing a tag such as `v0.5.0` builds signed installers and update files for eve
 - [x] PDF and EPUB, scanned pages, dark mode
 - [x] Arabic, English and Turkish interface and translations
 - [x] Flashcards, saved words, automatic updates
-- [ ] Android, with *Siyaq* in the text-selection menu of every app
+- [x] Android, with *Siyaq* in the text-selection menu of every app
 
 ## Problems and ideas
 

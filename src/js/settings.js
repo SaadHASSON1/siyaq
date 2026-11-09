@@ -4,7 +4,7 @@
 // One file with My words (and their review progress), reading positions, recent books and settings.
 // The API key is left out on purpose: it is a secret, and easy to paste again.
 async function saveText(name, text, type) {
-  if (desktopApp) return tauri.core.invoke('save_file', { name, contents: text });
+  if (nativeFiles) return tauri.core.invoke('save_file', { name, contents: text });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type }));
   a.download = name;
@@ -68,7 +68,7 @@ function restoreBackup(text) {
 }
 
 $('#backupLoad').onclick = async () => {
-  if (!desktopApp) { $('#backupFile').click(); return; }
+  if (!nativeFiles) { $('#backupFile').click(); return; }
   const path = await tauri.core.invoke('pick_file', { label: t('backupTitle'), extensions: ['json'] }).catch(() => null);
   if (!path) return;
   try { restoreBackup(new TextDecoder().decode(new Uint8Array(await tauri.core.invoke('read_book', { path })))); }
@@ -125,7 +125,7 @@ function showSlide(n, back = false) {
   $('#tourSkip').hidden = part !== 'intro';
   $('#tourDots').innerHTML = SLIDES.map((_, i) => `<span class="${i === slide ? 'on' : ''}"></span>`).join('');
   $('#tourDots').hidden = !tourFull;
-  if (name === 'key') setTimeout(() => $('#setupKey').focus(), 50);
+  if (name === 'key' && !matchMedia('(pointer: coarse)').matches) setTimeout(() => $('#setupKey').focus(), 50); // (on a touch screen the keyboard would cover the steps)
 }
 
 // The whole tour for a new reader; straight to the key from Settings or a lookup without one.
@@ -197,6 +197,12 @@ appVersion().then(v => {
 // Settings): two bars, the download (how much is left and about how long) and then the install.
 async function installUpdate(where = 'notice') {
   const box = where === 'notice' ? $('#toast') : $('#updateMsg');
+  // Android: the browser downloads the new APK and hands it to the system's installer.
+  if (onAndroid) {
+    try { await tauri.core.invoke('install_update'); where === 'notice' ? showToast(t('updApk')) : Object.assign(box, { className: 'update-msg ok', textContent: t('updApk'), hidden: false }); }
+    catch (err) { where === 'notice' ? showToast(t('updateFailed') + err) : Object.assign(box, { className: 'update-msg error', textContent: t('updateFailed') + err, hidden: false }); }
+    return;
+  }
   const draw = html => {
     if (where === 'notice') { clearTimeout(showToast.timer); box.classList.add('with-progress'); }
     else box.className = 'update-msg';
@@ -248,8 +254,8 @@ if (tauri) setTimeout(async () => {
 
 $('#updateCheck').onclick = async () => {
   const msg = $('#updateMsg'), say = (text, cls = '') => { msg.textContent = text; msg.className = 'update-msg ' + cls; msg.hidden = false; };
-  // Phones update from their app store; the web version is always the latest.
-  if (!tauri || /Android|iPhone|iPad/.test(navigator.userAgent)) { say(t('updateNone'), 'ok'); return; }
+  // The web version is always the latest.
+  if (!tauri || /iPhone|iPad/.test(navigator.userAgent)) { say(t('updateNone'), 'ok'); return; }
   say(t('updateChecking'));
   try {
     const version = await tauri.core.invoke('check_update');

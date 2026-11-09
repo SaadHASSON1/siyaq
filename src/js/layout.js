@@ -13,6 +13,9 @@ function setPanelWidth(w, save = false) {
 setPanelWidth(store.get('panelWidth', PANEL_WIDTH));
 addEventListener('resize', () => setPanelWidth(store.get('panelWidth', PANEL_WIDTH)));
 
+// A phone, or a window as narrow as one: the panel is a sheet at the bottom.
+const phoneScreen = () => matchMedia('(max-width: 760px)').matches;
+
 function setPanelHidden(hidden, save = true) {
   if (hidden !== panel.classList.contains('closed') && save && !matchMedia('(prefers-reduced-motion: reduce)').matches) slidePanel(hidden);
   else panel.classList.toggle('closed', hidden);

@@ -88,6 +88,7 @@ function applyTheme() {
   $('#themeBtn').innerHTML = icon(isDark() ? 'sun' : 'moon');
   if (pagesDark !== null && pagesDark !== isDark()) recolorPages(); // the pages in the new colours
   pagesDark = isDark();
+  tellBars();
 }
 // The quick toggle picks the opposite of what's on screen and keeps it, whatever the system does later.
 // Light and dark: the whole window crossfades. Engines without view transitions ease the colours instead.
@@ -163,5 +164,14 @@ if (!settings.apiKey && settings.provider === 'gemini' && !store.get('setupSkipp
 if (tauri) {
   tauri.event.listen('open-file', () => tauri.core.invoke('take_pending_file').then(openFromOS));
   tauri.core.invoke('take_pending_file').then(openFromOS);
+  // Android: a book sent from another app ("Open with", "Share") is copied in first, which can take a moment, and
+  // it can come while Siyaq is already open: asked for again for a few seconds, and whenever the app comes back.
+  if (onAndroid) {
+    // Words selected in another app and sent with "Siyaq" from its menu: their meaning, at once.
+    const sharedText = () => tauri.core.invoke('take_shared_text').then(text => { if (text) { if (!pdfDoc && phoneScreen()) setPanelHidden(false, false); lookup(text, text); } });
+    const ask = (tries = 10) => tauri.core.invoke('take_pending_file').then(p => { sharedText(); return p ? openFromOS(p) : tries > 1 && setTimeout(() => ask(tries - 1), 500); });
+    ask();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) ask(); });
+  }
 }
 movePill(document.querySelector('.seg'));

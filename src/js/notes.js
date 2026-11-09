@@ -32,9 +32,18 @@ function showSelBar() {
   bar.hidden = false;
   const w = bar.offsetWidth, h = bar.offsetHeight;
   bar.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
-  bar.style.top = (r.top - h - 10 > 60 ? r.top - h - 10 : r.bottom + 10) + 'px';
+  // On a touch screen the system's own menu (Copy, Share…) sits above the selection: this bar goes below its handles.
+  const below = r.bottom + (touchScreen ? 40 : 10);
+  bar.style.top = (touchScreen ? (below + h < innerHeight - 8 ? below : r.top - h - 70) : r.top - h - 10 > 60 ? r.top - h - 10 : r.bottom + 10) + 'px';
 }
 viewer.addEventListener('mouseup', () => setTimeout(showSelBar, 0));
+// A finger selects with a long press and the handles, and there is no mouseup: the bar comes once it stops changing.
+const touchScreen = matchMedia('(pointer: coarse)').matches;
+let selSettle = 0;
+if (touchScreen) document.addEventListener('selectionchange', () => {
+  clearTimeout(selSettle);
+  selSettle = setTimeout(() => { if (selectionInBook()) showSelBar(); else $('#selBar').hidden = true; }, 350);
+});
 viewer.addEventListener('scroll', () => { $('#selBar').hidden = true; }, { passive: true });
 document.addEventListener('mousedown', e => { if (!e.target.closest('#selBar')) $('#selBar').hidden = true; });
 

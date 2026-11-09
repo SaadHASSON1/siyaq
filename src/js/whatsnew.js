@@ -2,6 +2,25 @@
 // Every release adds its entry at the top (all three languages), before it is tagged.
 
 const CHANGES = [
+  { version: '0.8.0', ar: [
+    'سياق صار على أندرويد، للموبايل والتابلت: كل شي موجود، من معنى الكلمة بجملتها لحد الكتابة والرسم والحفظ.',
+    'ظلّل كلمة بأي تطبيق تاني واختار «سياق» من القائمة، بيطلعلك معناها.',
+    'قلم S Pen وأي قلم تاني: الخط بيتخن كل ما ضغطت، وزر القلم الجانبي بيصير ممحاة، وبعد ما ترسم بالقلم أصابعك بتحرّك الصفحة بس، فإيدك ما بتخربش على الصفحة.',
+    'وإنت عم ترسم، الحبر الغامق بيبيّن فاتح بالوضع الليلي.',
+    'إذا الشباك ضيق، أدوات الكتاب ما عادت تطلع برّا الشاشة.',
+  ], en: [
+    'Siyaq is on Android, for phones and tablets: everything is there, from a word’s meaning in its sentence to writing, drawing and saving.',
+    'Select words in any other app and choose “Siyaq” from the menu to see what they mean.',
+    'The S Pen and other styluses: the line grows thicker as you press, the pen’s side button erases, and once the pen has drawn, fingers only move the page, so a resting hand leaves no marks.',
+    'Dark ink shows light in dark mode.',
+    'In a narrow window the book’s tools no longer run off the screen.',
+  ], tr: [
+    'Siyaq artık Android’de, telefon ve tabletler için: bir kelimenin cümlesindeki anlamından yazma, çizme ve kaydetmeye kadar her şey var.',
+    'Başka bir uygulamada kelimeleri seçip menüden “Siyaq”ı seçin, anlamlarını görün.',
+    'S Pen ve diğer kalemler: bastırdıkça çizgi kalınlaşıyor, kalemin yan düğmesi siliyor ve kalem çizdikten sonra parmaklar yalnızca sayfayı kaydırıyor; elinizi dayasanız da iz kalmıyor.',
+    'Koyu mürekkep karanlık modda açık renkte görünüyor.',
+    'Dar bir pencerede kitabın araçları artık ekrandan taşmıyor.',
+  ] },
   { version: '0.7.6', ar: [
     'قرصة التكبير صارت ناعمة: الصفحة بتلحق أصابعك بدون تقطيع، وبتنرسم واضحة لما توقف.',
     'إخفاء وإظهار القائمة الجانبية صار ينزلق بنعومة، والصفحة ما بتنط.',

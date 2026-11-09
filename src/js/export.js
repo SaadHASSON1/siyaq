@@ -8,7 +8,9 @@
 
 // Saves bytes to a file the user picks (desktop), or downloads them (browser): where it went, or null.
 async function saveBytes(name, bytes, type) {
-  if (desktopApp) return tauri.core.invoke('save_bytes', bytes, { headers: { 'x-name': encodeURIComponent(name) } });
+  // (Android's bridge to the app carries text only: the bytes go as base64.)
+  if (onAndroid) return tauri.core.invoke('save_base64', { name, data: new Uint8Array(bytes.buffer ?? bytes, bytes.byteOffset ?? 0, bytes.byteLength).toBase64() });
+  if (nativeFiles) return tauri.core.invoke('save_bytes', bytes, { headers: { 'x-name': encodeURIComponent(name) } });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([bytes], { type }));
   a.download = name;
@@ -33,6 +35,7 @@ function paintMarks(ctx, n, w, h, k) {
   }
   ctx.lineCap = ctx.lineJoin = 'round';
   for (const i of list.filter(i => i.kind === 'pen')) {
+    if (hasPressure(i.pts)) { ctx.fillStyle = i.color; ctx.fill(new Path2D(pressurePath(i.pts.map(([x, y, p]) => [x * k, y * k, p]), i.width * k))); continue; }
     ctx.strokeStyle = i.color;
     ctx.lineWidth = i.width * k;
     ctx.stroke(new Path2D(strokePath(i.pts.map(([x, y]) => [x * k, y * k]))));

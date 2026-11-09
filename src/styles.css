@@ -603,7 +603,7 @@ dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24
 
 /* ---------- First-run setup ---------- */
 dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; overflow: hidden auto; }
-.tour-skip { position: absolute; top: 14px; inset-inline-end: 16px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; padding: 4px 6px; }
+.tour-skip { position: absolute; z-index: 2; top: 14px; inset-inline-end: 16px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; padding: 4px 6px; }
 .tour-skip:hover { color: var(--text); }
 .slide { display: none; min-height: 368px; text-align: center; }
 .slide.on { display: flex; flex-direction: column; justify-content: center; animation: slide-in .35s ease both; }
@@ -708,6 +708,10 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
 @media (max-width: 900px) {
   .book-title { display: none; }
   .brand + .tools { margin-inline-start: auto; }
+  /* (a tablet standing up, a narrow window) the book's tools take the room left and scroll sideways if it isn't enough */
+  .tools { flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .tools::-webkit-scrollbar { display: none; }
+  .tools > * { flex: none; }
 }
 @media (max-width: 760px) {
   .page.epub-chapter { padding: 28px 22px; }
@@ -718,6 +722,7 @@ dialog.tour { width: min(540px, calc(100vw - 32px)); padding: 28px 30px 22px; ov
   main { flex-direction: column-reverse; }
   .panel { width: 100%; height: 45vh; border-inline-end: 0; border-top: 1px solid var(--border); }
   .panel.closed { margin: 0 0 calc(-45vh - 1px); }
+  main { overflow: hidden; } /* the hidden sheet, below the window's edge, adds nothing to scroll */
   .panel-grip { display: none; }
   .panel-show { top: auto; bottom: 16px; }
 
@@ -793,3 +798,46 @@ dialog.whats-new { width: min(460px, calc(100vw - 32px)); max-height: min(560px,
 .whats-new ul { margin: 0; padding-inline-start: 20px; display: grid; gap: 8px; line-height: 1.6; }
 .whats-new li::marker { color: var(--accent); }
 .whats-new .row { display: flex; justify-content: flex-end; margin-top: 20px; }
+
+/* ---------- Android ---------- */
+/* The page runs under the status and navigation bars and keeps clear of them (and of the keyboard) itself: the
+   strips they cover show the toolbar's colour. */
+html.android body {
+  box-sizing: border-box; background: var(--surface);
+  padding: var(--inset-top, 0px) var(--inset-right, 0px) var(--inset-bottom, 0px) var(--inset-left, 0px);
+}
+html.android main { background: var(--canvas); }
+/* The window itself never scrolls (only the book and the panel do) */
+html.android, html.android body { overflow: hidden; overscroll-behavior: none; }
+html.android [data-i18n="dropHint"] { display: none; }
+html.android body.reading .bar { top: var(--inset-top, 0px); }
+html.android .toast { margin-bottom: var(--inset-bottom, 0px); }
+html.android .word-card { max-height: calc(100vh - var(--inset-top, 0px) - var(--inset-bottom, 0px) - 24px); }
+/* Fingers: buttons big enough to tap */
+@media (pointer: coarse) {
+  .icon-btn { min-width: 40px; min-height: 40px; }
+}
+@media (max-width: 520px) { .toast { width: calc(100% - 32px); box-sizing: border-box; } .toast > span:first-child { flex: 1; min-width: 0; } }
+/* A phone: the brand is just its logo, and the book's tools are one row that scrolls sideways when it doesn't fit */
+@media (max-width: 520px) {
+  .brand span[data-i18n="brand"] { display: none; }
+  .bar { column-gap: 8px; }
+  .tools { overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
+  .tools::-webkit-scrollbar { display: none; }
+  .tools > * { flex: none; }
+  .tools .divider { margin: 0 3px; }
+}
+@media (pointer: coarse) { .tools .icon-btn { min-width: 36px; min-height: 36px; } }
+/* Where a hovering pen will draw */
+.pen-dot { position: fixed; z-index: 40; pointer-events: none; border-radius: 50%; transform: translate(-50%, -50%); opacity: .55; }
+.pen-dot.erasing { border: 1.5px solid var(--text); opacity: .7; }
+.pen-dot[hidden] { display: none; }
+/* The default dark ink on dark pages shows light, like the text it sits on */
+:root[data-theme="dark"] .ink-layer path[stroke="#1f2937"] { stroke: #e5e7eb; }
+:root[data-theme="dark"] .ink-layer path[style*="rgb(31, 41, 55)"], :root[data-theme="dark"] .ink-layer path[style*="#1f2937"] { fill: #e5e7eb !important; }
+:root[data-theme="dark"] .ink-text[style*="rgb(31, 41, 55)"] { color: #e5e7eb !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ink-layer path[stroke="#1f2937"] { stroke: #e5e7eb; }
+  :root:not([data-theme="light"]) .ink-layer path[style*="rgb(31, 41, 55)"], :root:not([data-theme="light"]) .ink-layer path[style*="#1f2937"] { fill: #e5e7eb !important; }
+  :root:not([data-theme="light"]) .ink-text[style*="rgb(31, 41, 55)"] { color: #e5e7eb !important; }
+}
